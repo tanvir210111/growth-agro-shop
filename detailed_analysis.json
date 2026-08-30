@@ -1,0 +1,308 @@
+[
+  {
+    "jsonFile": "bags (1).json",
+    "htmlFile": "bags (1)__step_1_checkout__widget_4259dac.html",
+    "length": 25078,
+    "title": "UrbanCarry — প্রিমিয়াম ব্যাগ কালেকশন",
+    "h1": "স্টাইল আর জায়গা, দুটোই একসাথে",
+    "metaDesc": "স্টাইল আর স্টোরেজ, দুটোই এক ব্যাগে। UrbanCarry — টেকসই, স্পেসিয়াস, প্রিমিয়াম।",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits",
+      "FAQ Accordion",
+      "Sticky CTA Bars",
+      "Floating Action Buttons (FAB)",
+      "Checkout Integration"
+    ],
+    "waLinks": [
+      "https://wa.me/8801XXXXXXXXX"
+    ],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 42,
+    "issues": [
+      "Placeholder WhatsApp number (8801XXXXXXXXX / dummy)",
+      "Contains placeholder 8801XXXXXXXXX",
+      "No <img> tags used (relying purely on emojis/CSS placeholders)"
+    ]
+  },
+  {
+    "jsonFile": "bags.json",
+    "htmlFile": "bags__step_1_checkout__widget_4259dac.html",
+    "length": 36053,
+    "title": "AeroStep — প্রিমিয়াম কমফোর্ট স্নিকার্স",
+    "h1": "সারাদিন হাঁটুন, একদম আরাম নিয়ে",
+    "metaDesc": "সারাদিন হাঁটুন, একদম আরাম নিয়ে। AeroStep স্নিকার্স — হালকা, টেকসই, স্টাইলিশ।",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits",
+      "FAQ Accordion",
+      "Sticky CTA Bars",
+      "Floating Action Buttons (FAB)",
+      "Checkout Integration"
+    ],
+    "waLinks": [
+      "https://wa.me/8801XXXXXXXXX"
+    ],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 60,
+    "issues": [
+      "Placeholder WhatsApp number (8801XXXXXXXXX / dummy)",
+      "Contains placeholder 8801XXXXXXXXX",
+      "No <img> tags used (relying purely on emojis/CSS placeholders)",
+      "Mismatch: bags.json contains Shoes/Sneakers content instead of Bags"
+    ]
+  },
+  {
+    "jsonFile": "bp-machine.json",
+    "htmlFile": "bp-machine__step_1_checkout__widget_4259dac.html",
+    "length": 28888,
+    "title": "PulseCare — ডিজিটাল ব্লাড প্রেশার মনিটর",
+    "h1": "বাসায় বসেই নির্ভুল রক্তচাপ পরীক্ষা",
+    "metaDesc": "বাসায় বসেই নির্ভুল রক্তচাপ পরীক্ষা। PulseCare — সহজ, দ্রুত, নির্ভরযোগ্য।",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits",
+      "FAQ Accordion",
+      "Sticky CTA Bars",
+      "Floating Action Buttons (FAB)",
+      "Checkout Integration"
+    ],
+    "waLinks": [
+      "https://wa.me/8801XXXXXXXXX"
+    ],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 35,
+    "issues": [
+      "Placeholder WhatsApp number (8801XXXXXXXXX / dummy)",
+      "Contains placeholder 8801XXXXXXXXX",
+      "No <img> tags used (relying purely on emojis/CSS placeholders)"
+    ]
+  },
+  {
+    "jsonFile": "digital-prodact.json",
+    "htmlFile": "digital-prodact__step_1_checkout__widget_4259dac.html",
+    "length": 47390,
+    "title": "LaunchKit Pro — সম্পূর্ণ ডিজিটাল বিজনেস স্টার্টার সিস্টেম",
+    "h1": "আপনার বিজনেসকে বদলে দিন এই পাওয়ারফুল ডিজিটাল সিস্টেম দিয়ে",
+    "metaDesc": "আপনার বিজনেস দ্রুত শুরু ও বড় করার জন্য দরকারি সব টেমপ্লেট, গাইড এবং টুলস — এক জায়গায়।",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits",
+      "FAQ Accordion",
+      "Sticky CTA Bars",
+      "Floating Action Buttons (FAB)",
+      "Checkout Integration"
+    ],
+    "waLinks": [
+      "https://wa.me/8801XXXXXXXXX"
+    ],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 71,
+    "issues": [
+      "Placeholder WhatsApp number (8801XXXXXXXXX / dummy)",
+      "Contains placeholder 8801XXXXXXXXX",
+      "No <img> tags used (relying purely on emojis/CSS placeholders)"
+    ]
+  },
+  {
+    "jsonFile": "kids-clothig.json",
+    "htmlFile": "kids-clothig__step_1_checkout__widget_4259dac.html",
+    "length": 5981,
+    "title": "বাচ্চাদের টি-শার্ট | অর্ডার করুন আজই",
+    "h1": "বাচ্চার গায়ে আরাম,মায়ের মনে শান্তি",
+    "metaDesc": "No meta description",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits"
+    ],
+    "waLinks": [],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 24,
+    "issues": [
+      "No <img> tags used (relying purely on emojis/CSS placeholders)",
+      "Very short/basic landing page compared to advanced ones"
+    ]
+  },
+  {
+    "jsonFile": "mens-clothing-pk-polo.json",
+    "htmlFile": "mens-clothing-pk-polo__step_1_checkout__widget_4259dac.html",
+    "length": 6262,
+    "title": "মেনস পোলো শার্ট | অর্ডার করুন আজই",
+    "h1": "প্রতিটা দিন,প্রিমিয়াম লুক",
+    "metaDesc": "No meta description",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits"
+    ],
+    "waLinks": [],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 15,
+    "issues": [
+      "No <img> tags used (relying purely on emojis/CSS placeholders)",
+      "Very short/basic landing page compared to advanced ones"
+    ]
+  },
+  {
+    "jsonFile": "perfume.json",
+    "htmlFile": "perfume__step_1_checkout__widget_4259dac.html",
+    "length": 25399,
+    "title": "Velour — প্রিমিয়াম পারফিউম কালেকশন",
+    "h1": "এক স্প্রে, সারাদিনের উপস্থিতি",
+    "metaDesc": "দীর্ঘস্থায়ী সুবাস, প্রিমিয়াম ফিল। Velour — লাক্সারি ফ্র্যাগ্র্যান্স, প্রতিটা মুহূর্তের জন্য।",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits",
+      "FAQ Accordion",
+      "Sticky CTA Bars",
+      "Floating Action Buttons (FAB)",
+      "Checkout Integration"
+    ],
+    "waLinks": [
+      "https://wa.me/8801XXXXXXXXX"
+    ],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 41,
+    "issues": [
+      "Placeholder WhatsApp number (8801XXXXXXXXX / dummy)",
+      "Contains placeholder 8801XXXXXXXXX",
+      "No <img> tags used (relying purely on emojis/CSS placeholders)"
+    ]
+  },
+  {
+    "jsonFile": "sarri-meyder.json",
+    "htmlFile": "sarri-meyder__step_1_checkout__widget_4259dac.html",
+    "length": 40371,
+    "title": "প্রতিটি অনুষ্ঠানে অভিজাত শাড়ি | প্রিমিয়াম শাড়ি কালেকশন",
+    "h1": "প্রতিটি অনুষ্ঠানেঅভিজাত শাড়ি",
+    "metaDesc": "জামদানি, টাঙ্গাইল তাঁত, রাজশাহী সিল্কসহ প্রিমিয়াম শাড়ি কালেকশন। ১০০% মান পরীক্ষিত, ক্যাশ অন ডেলিভারি, সারাদেশে ডেলিভারি। এখনই অর্ডার করুন।",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits",
+      "FAQ Accordion",
+      "Floating Action Buttons (FAB)",
+      "Checkout Integration"
+    ],
+    "waLinks": [
+      "https://wa.me/8801XXXXXXXXX"
+    ],
+    "telLinks": [
+      "tel:+8801XXXXXXXXX"
+    ],
+    "samplePrices": [],
+    "imgCount": 23,
+    "emojiCount": 46,
+    "issues": [
+      "Placeholder WhatsApp number (8801XXXXXXXXX / dummy)",
+      "Contains placeholder 8801XXXXXXXXX"
+    ]
+  },
+  {
+    "jsonFile": "shoes.json",
+    "htmlFile": "shoes__step_1_checkout__widget_4259dac.html",
+    "length": 36053,
+    "title": "AeroStep — প্রিমিয়াম কমফোর্ট স্নিকার্স",
+    "h1": "সারাদিন হাঁটুন, একদম আরাম নিয়ে",
+    "metaDesc": "সারাদিন হাঁটুন, একদম আরাম নিয়ে। AeroStep স্নিকার্স — হালকা, টেকসই, স্টাইলিশ।",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits",
+      "FAQ Accordion",
+      "Sticky CTA Bars",
+      "Floating Action Buttons (FAB)",
+      "Checkout Integration"
+    ],
+    "waLinks": [
+      "https://wa.me/8801XXXXXXXXX"
+    ],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 60,
+    "issues": [
+      "Placeholder WhatsApp number (8801XXXXXXXXX / dummy)",
+      "Contains placeholder 8801XXXXXXXXX",
+      "No <img> tags used (relying purely on emojis/CSS placeholders)"
+    ]
+  },
+  {
+    "jsonFile": "watches.json",
+    "htmlFile": "watches__step_1_checkout__widget_4259dac.html",
+    "length": 25476,
+    "title": "TimeWear — প্রিমিয়াম ওয়াচ কালেকশন",
+    "h1": "স্টাইল আর সময়, দুটোই নিখুঁত",
+    "metaDesc": "স্টাইল আর নির্ভুল সময়, দুটোই এক হাতে। TimeWear — টেকসই, ওয়াটারপ্রুফ, প্রিমিয়াম।",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits",
+      "FAQ Accordion",
+      "Sticky CTA Bars",
+      "Floating Action Buttons (FAB)",
+      "Checkout Integration"
+    ],
+    "waLinks": [
+      "https://wa.me/8801XXXXXXXXX"
+    ],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 36,
+    "issues": [
+      "Placeholder WhatsApp number (8801XXXXXXXXX / dummy)",
+      "Contains placeholder 8801XXXXXXXXX",
+      "No <img> tags used (relying purely on emojis/CSS placeholders)"
+    ]
+  },
+  {
+    "jsonFile": "wlp.json",
+    "htmlFile": "wlp__step_1_checkout__widget_4259dac.html",
+    "length": 31427,
+    "title": "Svelte — ন্যাচারাল ওয়েট ম্যানেজমেন্ট সাপ্লিমেন্ট",
+    "h1": "ছোট্ট একটা অভ্যাস, দৃশ্যমান পরিবর্তন",
+    "metaDesc": "প্রাকৃতিক উপাদান, নিয়মিত রুটিন — Svelte দিয়ে শুরু করুন আপনার ফিটনেস জার্নি।",
+    "sections": [
+      "Hero",
+      "Social Proof / Reviews",
+      "Features / Benefits",
+      "FAQ Accordion",
+      "Sticky CTA Bars",
+      "Floating Action Buttons (FAB)",
+      "Checkout Integration"
+    ],
+    "waLinks": [
+      "https://wa.me/8801XXXXXXXXX"
+    ],
+    "telLinks": [],
+    "samplePrices": [],
+    "imgCount": 0,
+    "emojiCount": 39,
+    "issues": [
+      "Placeholder WhatsApp number (8801XXXXXXXXX / dummy)",
+      "Contains placeholder 8801XXXXXXXXX",
+      "No <img> tags used (relying purely on emojis/CSS placeholders)"
+    ]
+  }
+]

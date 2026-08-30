@@ -1,0 +1,188 @@
+/**
+ * Responsive Styles & Media Queries
+ * Tested and optimized for 375px, 390px, 430px, 768px, 1024px, 1280px, 1440px
+ */
+
+/* Tablet & Smaller Desktops (< 1024px) */
+@media (max-width: 1023px) {
+  :root {
+    --section-spacing: 3.5rem;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .gallery-container {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .dosage-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .order-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 1.5rem;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+/* Tablet & Mobile (< 768px) */
+@media (max-width: 767px) {
+  :root {
+    --section-spacing: 2.75rem;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+  }
+
+  .hero-product-title {
+    font-size: 1.65rem;
+  }
+
+  .hero-product-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .price-main {
+    font-size: 1.85rem;
+  }
+
+  .price-regular {
+    font-size: 1.1rem;
+  }
+
+  .header-actions .header-hotline-btn {
+    display: none;
+  }
+
+  .header-order-btn {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.875rem;
+  }
+
+  .trust-badges-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .dosage-table th, .dosage-table td {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.875rem;
+  }
+
+  .package-card {
+    padding: 1rem;
+  }
+
+  .package-name {
+    font-size: 1rem;
+  }
+
+  .price-current {
+    font-size: 1.25rem;
+  }
+
+  .delivery-options-group {
+    flex-direction: column;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .sticky-mobile-cta {
+    display: block;
+  }
+
+  /* Add bottom padding so content doesn't get covered by sticky bar */
+  body {
+    padding-bottom: 70px;
+  }
+
+  .btn-primary-order {
+    font-size: 1.1rem;
+    padding: 0.85rem 1.25rem;
+  }
+
+  .final-cta-title {
+    font-size: 1.65rem;
+  }
+
+  .btn-cta-white {
+    font-size: 1.1rem;
+    padding: 0.9rem 1.75rem;
+  }
+}
+
+/* Small Mobile Screens (375px - 430px) */
+@media (max-width: 430px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .top-offer-bar {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .top-bar-inner {
+    gap: 0.4rem;
+  }
+
+  .brand-name {
+    font-size: 1.15rem;
+  }
+
+  .hero-product-title {
+    font-size: 1.45rem;
+  }
+
+  .order-box-header {
+    padding: 1.25rem 1rem;
+  }
+
+  .order-box-header h2 {
+    font-size: 1.35rem;
+  }
+
+  .order-layout-grid {
+    padding: 1.5rem 1rem;
+  }
+
+  .order-summary-card {
+    padding: 1.15rem;
+  }
+
+  .btn-submit-order {
+    font-size: 1.05rem;
+    padding: 0.85rem;
+  }
+
+  .package-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .package-pricing {
+    text-align: left;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+}

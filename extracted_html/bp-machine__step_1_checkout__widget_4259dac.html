@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PulseCare — ডিজিটাল ব্লাড প্রেশার মনিটর</title>
+<meta name="description" content="বাসায় বসেই নির্ভুল রক্তচাপ পরীক্ষা। PulseCare — সহজ, দ্রুত, নির্ভরযোগ্য।">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@600;700;800&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#2563EB;--primary-dark:#1D4ED8;--primary-tint:#EAF1FF;
+    --ink:#0F172A;--ink-soft:#55606F;--bg:#FFFFFF;--bg-alt:#F5F8FC;
+    --success:#16A34A;--danger:#EF4444;--accent:#06B6D4;--line:#E3E9F2;
+    --container:1200px;--radius:18px;--radius-btn:14px;
+    --shadow-sm:0 2px 10px rgba(15,23,42,.06);--shadow-md:0 12px 32px rgba(15,23,42,.09);
+    --shadow-lg:0 24px 60px rgba(15,23,42,.16);--shadow-primary:0 14px 30px rgba(37,99,235,.26);
+    --font-display:'Hind Siliguri','Poppins', sans-serif;--font-body:'Hind Siliguri', sans-serif;
+    --font-mono:'Roboto Mono', monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:var(--font-body);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.65;overflow-x:hidden;}
+  img{max-width:100%;display:block;}
+  a{color:inherit;text-decoration:none;}
+  ul{list-style:none;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  .container{width:100%;max-width:var(--container);margin:0 auto;padding:0 24px;}
+  section{position:relative;}
+  h1,h2,h3{font-family:var(--font-display);font-weight:700;line-height:1.28;color:var(--ink);}
+  .eng{font-family:'Poppins', sans-serif;}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--primary-dark);background:var(--primary-tint);padding:7px 14px;border-radius:999px;}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:16.5px;padding:16px 30px;border-radius:var(--radius-btn);transition:transform .22s ease, box-shadow .22s ease;white-space:nowrap;}
+  .btn-primary{background:linear-gradient(180deg,#3B82F6,var(--primary));color:#fff;box-shadow:var(--shadow-primary);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(37,99,235,.34);}
+  .btn-block{width:100%;}
+  .btn-lg{padding:19px 36px;font-size:19px;}
+
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1);}
+  .reveal.in-view{opacity:1;transform:translateY(0);}
+  .reveal-delay-1{transition-delay:.08s;}
+  .reveal-delay-2{transition-delay:.16s;}
+  .reveal-delay-3{transition-delay:.24s;}
+  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none;}html{scroll-behavior:auto;}}
+
+  .nav{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:19px;}
+  .brand-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#60A5FA);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800;}
+  .nav-cta{display:flex;align-items:center;gap:14px;}
+  .nav-price{display:none;}
+  @media(min-width:860px){.nav-price{display:inline-block;font-weight:700;color:var(--ink-soft);font-size:14px;}}
+
+  /* HERO */
+  .hero{padding:52px 0 58px;background:radial-gradient(680px 420px at 84% -6%, rgba(37,99,235,.10), transparent 60%),radial-gradient(500px 340px at -6% 30%, rgba(6,182,212,.08), transparent 60%),var(--bg);overflow:hidden;}
+  .hero-grid{display:grid;grid-template-columns:1fr;gap:40px;align-items:center;}
+  @media(min-width:960px){.hero-grid{grid-template-columns:1fr .95fr;gap:56px;}}
+  .badge-pulse{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;font-weight:600;font-size:13.5px;padding:8px 16px;border-radius:999px;margin-bottom:20px;}
+  .badge-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulseDot 1.6s infinite;}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.35);}}
+  .hero h1{font-size:clamp(28px,4.1vw,42px);margin-bottom:14px;}
+  .hero h1 .hl{color:var(--primary);}
+  .hero-sub{font-size:17.5px;color:var(--ink-soft);max-width:480px;margin-bottom:22px;}
+
+  .hero-points{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:24px;max-width:460px;}
+  .hero-point{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px;}
+  .check-ic{width:19px;height:19px;border-radius:50%;flex:none;background:var(--primary-tint);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  .price-box{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow-md);max-width:440px;}
+  .price-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .price-old{font-size:18px;color:#9A9A9F;text-decoration:line-through;font-weight:600;}
+  .price-now{font-size:32px;font-weight:800;font-family:var(--font-display);color:var(--ink);}
+  .price-badge{background:var(--primary-tint);color:var(--primary-dark);font-weight:700;font-size:13px;padding:5px 11px;border-radius:999px;}
+  .price-note{font-size:13px;color:var(--ink-soft);margin-bottom:14px;}
+  .pay-icons{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .pay-icons span{font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid var(--line);color:var(--ink-soft);background:var(--bg-alt);}
+  .trust-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .trust-row span{display:flex;align-items:center;gap:6px;}
+
+  /* signature — device display mockup */
+  .hero-visual{position:relative;display:flex;justify-content:center;align-items:center;min-height:340px;}
+  .device-card{position:relative;width:100%;max-width:400px;background:linear-gradient(165deg,#0B1220,#111C33);border-radius:26px;box-shadow:var(--shadow-lg);padding:26px;color:#fff;}
+  .device-card::before{content:"";position:absolute;inset:0;border-radius:26px;background:radial-gradient(220px 160px at 90% 0%, rgba(37,99,235,.35), transparent 70%);}
+  .device-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:relative;font-size:12px;color:#8FA6D6;font-weight:700;}
+  .device-top .live{display:flex;align-items:center;gap:6px;}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:#22C55E;animation:pulseDot 1.4s infinite;}
+  .display-screen{background:#08101F;border-radius:16px;padding:22px 20px;position:relative;border:1px solid rgba(255,255,255,.08);}
+  .reading-row{display:flex;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .reading-block{text-align:center;flex:1;}
+  .reading-num{font-family:var(--font-mono);font-size:34px;font-weight:700;color:#5EEAD4;letter-spacing:-1px;}
+  .reading-num.sub{color:#93C5FD;font-size:28px;}
+  .reading-label{font-size:9.5px;color:#7C8BAE;margin-top:2px;letter-spacing:.05em;}
+  .divider-dot{align-self:center;font-family:var(--font-mono);font-size:26px;color:#3A4A6B;padding:0 2px;}
+  .device-status{display:flex;justify-content:space-between;align-items:center;border-top:1px dashed rgba(255,255,255,.12);padding-top:12px;}
+  .status-pill{font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#4ADE80;padding:4px 10px;border-radius:999px;}
+  .heart-ic{font-size:14px;}
+  .device-stats{display:flex;gap:10px;margin-top:16px;position:relative;}
+  .device-stat{flex:1;background:rgba(255,255,255,.06);border-radius:12px;padding:10px 8px;text-align:center;}
+  .device-stat b{display:block;font-family:var(--font-display);font-size:15px;}
+  .device-stat span{font-size:10px;color:#8FA6D6;}
+
+  /* PROOF */
+  .proof{padding:32px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-alt);}
+  .proof-inner{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;}
+  .stars{color:var(--accent);font-size:17px;letter-spacing:2px;}
+  .proof-stat{display:flex;flex-direction:column;}
+  .proof-stat b{font-family:var(--font-display);font-size:20px;}
+  .proof-stat span{font-size:12.5px;color:var(--ink-soft);}
+  .badge-row{display:flex;gap:20px;flex-wrap:wrap;color:var(--ink-soft);font-size:12.5px;font-weight:600;}
+  .badge-row span{display:flex;align-items:center;gap:6px;}
+
+  .sec{padding:64px 0;}
+  .sec-head{max-width:600px;margin:0 auto 36px;text-align:center;}
+  .sec-head h2{font-size:clamp(23px,3vw,32px);margin-top:12px;}
+  .sec-head p{color:var(--ink-soft);font-size:15.5px;margin-top:10px;}
+  .sec-alt{background:var(--bg-alt);}
+
+  .grid{display:grid;gap:18px;}
+  .grid-3{grid-template-columns:1fr;}
+  .grid-4{grid-template-columns:1fr 1fr;}
+  @media(min-width:900px){.grid-3{grid-template-columns:repeat(3,1fr);}.grid-4{grid-template-columns:repeat(4,1fr);}}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease;}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:transparent;}
+  .card-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px;background:var(--primary-tint);}
+  .card h3{font-size:16px;margin-bottom:6px;}
+  .card p{color:var(--ink-soft);font-size:13.5px;}
+
+  /* timeline */
+  .timeline{display:grid;grid-template-columns:1fr;gap:24px;position:relative;}
+  @media(min-width:800px){.timeline{grid-template-columns:repeat(3,1fr);}
+    .timeline::before{content:"";position:absolute;top:24px;left:12%;right:12%;height:2px;background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 16px);}}
+  .tl-step{position:relative;text-align:center;}
+  .tl-num{width:48px;height:48px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;margin:0 auto 14px;position:relative;z-index:2;font-size:17px;}
+  .tl-step:nth-child(2) .tl-num{background:var(--primary);}
+  .tl-step h3{font-size:16px;margin-bottom:6px;}
+  .tl-step p{font-size:13.5px;color:var(--ink-soft);max-width:220px;margin:0 auto;}
+
+  .test-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
+  .test-stars{color:var(--accent);font-size:13px;margin-bottom:10px;}
+  .test-quote{font-size:14.5px;color:var(--ink);margin-bottom:14px;}
+  .test-who{display:flex;align-items:center;gap:10px;}
+  .test-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#60A5FA);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+  .test-who b{font-size:13px;display:block;}
+  .test-who span{font-size:11.5px;color:var(--ink-soft);}
+
+  .faq-item{border-bottom:1px solid var(--line);}
+  .faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 4px;text-align:right;flex-direction:row-reverse;font-weight:600;font-size:15px;}
+  .faq-q .plus{flex:none;width:24px;height:24px;border-radius:50%;background:var(--bg-alt);display:flex;align-items:center;justify-content:center;transition:transform .3s ease, background .3s ease;font-size:15px;color:var(--ink);}
+  .faq-item.open .faq-q .plus{transform:rotate(45deg);background:var(--primary);color:#fff;}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+  .faq-a-inner{padding:0 4px 18px;color:var(--ink-soft);font-size:14px;max-width:640px;text-align:right;margin-left:auto;}
+
+  .disclaimer{font-size:12px;color:var(--ink-soft);text-align:center;max-width:640px;margin:28px auto 0;line-height:1.7;}
+
+  .final-cta{background:linear-gradient(155deg,var(--primary),#3B82F6);border-radius:var(--radius);padding:48px 26px;text-align:center;color:#fff;position:relative;overflow:hidden;}
+  .final-cta::after{content:"";position:absolute;inset:0;background:radial-gradient(400px 200px at 85% 0%, rgba(255,255,255,.18), transparent 70%);}
+  .final-cta h2{color:#fff;font-size:clamp(21px,3vw,29px);margin-bottom:10px;}
+  .final-cta p{color:rgba(255,255,255,.92);margin-bottom:20px;position:relative;font-size:14.5px;}
+  .stock-bar{max-width:400px;margin:0 auto 22px;position:relative;}
+  .stock-track{height:8px;background:rgba(255,255,255,.28);border-radius:999px;overflow:hidden;}
+  .stock-fill{height:100%;width:73%;background:#fff;border-radius:999px;}
+  .stock-label{font-size:12px;margin-top:8px;color:rgba(255,255,255,.92);font-weight:600;}
+  .final-cta .btn-primary{background:#0B1220;box-shadow:0 14px 30px rgba(0,0,0,.28);}
+
+  .fab-stack{position:fixed;right:20px;bottom:96px;display:flex;flex-direction:column;gap:12px;z-index:70;}
+  @media(min-width:860px){.fab-stack{bottom:28px;}}
+  .fab{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;box-shadow:var(--shadow-md);transition:transform .25s ease, opacity .25s ease;opacity:0;transform:translateY(14px) scale(.8);pointer-events:none;}
+  .fab.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+  .fab:hover{transform:translateY(-3px) scale(1.05);}
+  .fab-wa{background:#25D366;}
+  .fab-msg{background:linear-gradient(135deg,#0084FF,#00C6FF);}
+  .fab-top{background:var(--ink);font-size:16px;}
+
+  .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:65;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(15,23,42,.08);padding:12px 16px;display:flex;align-items:center;gap:14px;transform:translateY(110%);transition:transform .3s ease;}
+  .sticky-cta.show{transform:translateY(0);}
+  .sticky-cta .sc-price b{display:block;font-family:var(--font-display);font-size:17px;}
+  .sticky-cta .sc-price s{font-size:12px;color:#9A9A9F;}
+  .sticky-cta .btn{flex:1;padding:13px 16px;font-size:15px;}
+  @media(min-width:860px){.sticky-cta{display:none;}}
+
+  .desktop-sticky-bar{position:fixed;top:0;left:0;right:0;z-index:59;background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--shadow-sm);transform:translateY(-110%);transition:transform .3s ease;}
+  .desktop-sticky-bar.show{transform:translateY(0);}
+  .dsb-inner{display:flex;align-items:center;justify-content:space-between;height:68px;}
+  .dsb-left{display:flex;align-items:center;gap:14px;}
+  .dsb-left b{font-family:var(--font-display);font-size:15px;}
+  .dsb-left span{font-size:12.5px;color:var(--ink-soft);}
+  @media(max-width:859px){.desktop-sticky-bar{display:none;}}
+
+  .mt-24{margin-top:24px;}
+  a:focus-visible,button:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px;}
+</style>
+</head>
+<body>
+
+<div class="desktop-sticky-bar" id="desktopBar">
+  <div class="container dsb-inner">
+    <div class="dsb-left">
+      <span class="brand-mark eng" style="width:26px;height:26px;font-size:12px;">PC</span>
+      <div><b>PulseCare</b><span>ডিজিটাল ব্লাড প্রেশার মনিটর</span></div>
+    </div>
+    <a href="#buy" class="btn btn-primary">অর্ডার করুন — ৳২,৪৯০</a>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <div class="brand"><span class="brand-mark eng">PC</span><span class="eng">PulseCare</span></div>
+    <div class="nav-cta">
+      <span class="nav-price"><s style="color:#9A9A9F;font-weight:500;">৳৩,৯৯০</s>&nbsp; ৳২,৪৯০</span>
+      <a href="#buy" class="btn btn-primary">অর্ডার করুন</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="badge-pulse"><span class="badge-dot"></span> 🔥 লঞ্চ অফার — ৩৮% ছাড়</span>
+      <h1>বাসায় বসেই <span class="hl">নির্ভুল রক্তচাপ পরীক্ষা</span></h1>
+      <p class="hero-sub">PulseCare ডিজিটাল BP মেশিন — এক বাটনে মাপুন, বড় ডিসপ্লেতে স্পষ্ট রিডিং দেখুন। পরিবারের সবার স্বাস্থ্য পর্যবেক্ষণ এখন আরও সহজ।</p>
+
+      <div class="hero-points">
+        <div class="hero-point"><span class="check-ic">✓</span> ওয়ান-টাচ অটোমেটিক</div>
+        <div class="hero-point"><span class="check-ic">✓</span> বড় LCD ডিসপ্লে</div>
+        <div class="hero-point"><span class="check-ic">✓</span> ৯০ রিডিং মেমোরি</div>
+        <div class="hero-point"><span class="check-ic">✓</span> ১ বছর ওয়ারেন্টি</div>
+      </div>
+
+      <div class="price-box" id="buy">
+        <div class="price-row">
+          <span class="price-old">৳৩,৯৯০</span>
+          <span class="price-now">৳২,৪৯০</span>
+          <span class="price-badge">৩৮% সাশ্রয়</span>
+        </div>
+        <p class="price-note">সারাদেশে ডেলিভারি। ক্যাশ অন ডেলিভারি সুবিধা আছে।</p>
+        <div class="pay-icons">
+          <span>bKash</span><span>Nagad</span><span>Rocket</span><span>Card</span><span>COD</span>
+        </div>
+        <a href="#buy-final" class="btn btn-primary btn-block btn-lg">অর্ডার করুন</a>
+        <div class="trust-row">
+          <span>🔒 সিকিউর পেমেন্ট</span>
+          <span>🚚 ২৪–৭২ ঘণ্টায় ডেলিভারি</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="device-card reveal">
+        <div class="device-top">
+          <span>PulseCare BP-200</span>
+          <span class="live"><span class="live-dot"></span> রিডিং নিচ্ছে</span>
+        </div>
+        <div class="display-screen">
+          <div class="reading-row">
+            <div class="reading-block">
+              <div class="reading-num eng">118</div>
+              <div class="reading-label">SYS (mmHg)</div>
+            </div>
+            <div class="divider-dot">/</div>
+            <div class="reading-block">
+              <div class="reading-num sub eng">76</div>
+              <div class="reading-label">DIA (mmHg)</div>
+            </div>
+            <div class="reading-block">
+              <div class="reading-num sub eng">72</div>
+              <div class="reading-label">PULSE /মিনিট</div>
+            </div>
+          </div>
+          <div class="device-status">
+            <span class="status-pill">✓ স্বাভাবিক রেঞ্জ</span>
+            <span class="heart-ic">🫀</span>
+          </div>
+        </div>
+        <div class="device-stats">
+          <div class="device-stat"><b class="eng">±3</b><span>mmHg নির্ভুলতা</span></div>
+          <div class="device-stat"><b class="eng">90</b><span>রিডিং মেমোরি</span></div>
+          <div class="device-stat"><b class="eng">2</b><span>ইউজার প্রোফাইল</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- PROOF -->
+<section class="proof">
+  <div class="container proof-inner">
+    <div class="proof-stat"><span class="stars">★★★★★</span></div>
+    <div class="proof-stat"><b>৪.৮/৫</b><span>গড় রেটিং</span></div>
+    <div class="proof-stat"><b>৪,৭০০+</b><span>বিক্রি হয়েছে</span></div>
+    <div class="badge-row">
+      <span>✅ CE সার্টিফায়েড</span>
+      <span>🩺 ক্লিনিক্যালি ভ্যালিডেটেড</span>
+      <span>🛡️ ১ বছর ওয়ারেন্টি</span>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">কেন PulseCare</span>
+      <h2>ব্যবহার যত সহজ, ফলাফল তত নির্ভরযোগ্য</h2>
+    </div>
+    <div class="grid grid-4">
+      <div class="card reveal"><div class="card-ic">👆</div><h3>ওয়ান-টাচ অপারেশন</h3><p>একটা বাটনে চাপ দিলেই মাপ শুরু, জটিল সেটিং লাগে না।</p></div>
+      <div class="card reveal reveal-delay-1"><div class="card-ic">🔍</div><h3>বড়, স্পষ্ট ডিসপ্লে</h3><p>বড় সংখ্যা, দূর থেকেও সহজে পড়া যায়।</p></div>
+      <div class="card reveal reveal-delay-2"><div class="card-ic">🫀</div><h3>অনিয়মিত হার্টবিট শনাক্তকরণ</h3><p>রিডিংয়ের সময় অস্বাভাবিক ছন্দ থাকলে সতর্ক করে।</p></div>
+      <div class="card reveal reveal-delay-3"><div class="card-ic">💾</div><h3>৯০ রিডিং মেমোরি</h3><p>২ জন ব্যবহারকারীর জন্য আলাদা হিস্টোরি সংরক্ষণ করে।</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW TO USE -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">ব্যবহারবিধি</span>
+      <h2>তিনটা সহজ ধাপ</h2>
+    </div>
+    <div class="timeline">
+      <div class="tl-step reveal"><div class="tl-num">১</div><h3>কাফ পরুন</h3><p>উপরের বাহুতে কাফটা আরামদায়কভাবে বসিয়ে নিন।</p></div>
+      <div class="tl-step reveal reveal-delay-1"><div class="tl-num">২</div><h3>বাটন চাপুন</h3><p>শান্ত হয়ে বসে স্টার্ট বাটনে চাপ দিন।</p></div>
+      <div class="tl-step reveal reveal-delay-2"><div class="tl-num">৩</div><h3>রিডিং দেখুন</h3><p>কয়েক সেকেন্ডেই SYS, DIA আর পালস রেট দেখতে পাবেন।</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">গ্রাহকদের অভিজ্ঞতা</span>
+      <h2>যারা PulseCare ব্যবহার করছেন</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="test-card reveal">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">বাবা-মায়ের জন্য নিয়েছিলাম, প্রতিদিন নিজেরাই মাপতে পারেন এখন। ডিসপ্লেটা অনেক স্পষ্ট।</p>
+        <div class="test-who"><span class="test-av">রেজ</span><div><b>রেজওয়ান আ.</b><span>চাকরিজীবী</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-1">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">হাসপাতালের মেশিনের সাথে রিডিং মিলিয়ে দেখেছি, প্রায় কাছাকাছি এসেছে।</p>
+        <div class="test-who"><span class="test-av">শার</span><div><b>শারমিন ন.</b><span>নার্স</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-2">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">সহজ, দ্রুত ডেলিভারি পেয়েছি। মেমোরি ফাংশনটা রেগুলার ট্র্যাকিংয়ের জন্য দারুণ কাজে দেয়।</p>
+        <div class="test-who"><span class="test-av">জাহ</span><div><b>জাহিদ ম.</b><span>উদ্যোক্তা</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec sec-alt">
+  <div class="container" style="max-width:720px;">
+    <div class="sec-head reveal">
+      <span class="eyebrow">সাধারণ জিজ্ঞাসা</span>
+      <h2>প্রশ্নের উত্তর</h2>
+    </div>
+    <div id="faqList">
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> এটা কতটা নির্ভুল?</button>
+        <div class="faq-a"><div class="faq-a-inner">ক্লিনিক্যালি ভ্যালিডেটেড অসিলোমেট্রিক মেথড ব্যবহার করে, নির্ভুলতা ±৩ mmHg-এর মধ্যে। তবে এটি ডাক্তারের পরীক্ষার বিকল্প নয়।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> কাফের সাইজ কী?</button>
+        <div class="faq-a"><div class="faq-a-inner">স্ট্যান্ডার্ড কাফ সাধারণ প্রাপ্তবয়স্কদের বাহুতে (২২–৪২ সেমি) ফিট হয়।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ব্যাটারি নাকি চার্জযোগ্য?</button>
+        <div class="faq-a"><div class="faq-a-inner">AA ব্যাটারিতে চলে, বক্সের সাথে প্রথম সেট ব্যাটারি দেওয়া থাকে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ওয়ারেন্টি কতদিনের?</button>
+        <div class="faq-a"><div class="faq-a-inner">প্রতিটা ইউনিটের সাথে ১ বছরের ওয়ারেন্টি দেওয়া হয়।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ক্যাশ অন ডেলিভারি আছে?</button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, সারাদেশে ক্যাশ অন ডেলিভারি সুবিধা আছে।</div></div>
+      </div>
+    </div>
+    <p class="disclaimer">* এই ডিভাইসটি বাসায় স্বাস্থ্য পর্যবেক্ষণের জন্য তৈরি এবং এটি ডাক্তারের পরীক্ষা বা চিকিৎসার বিকল্প নয়। কোনো অস্বাভাবিক রিডিং পেলে বা স্বাস্থ্য সংক্রান্ত সিদ্ধান্তের আগে একজন চিকিৎসকের পরামর্শ নিন।</p>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="sec" id="buy-final" style="padding-top:0;">
+  <div class="container">
+    <div class="final-cta reveal">
+      <span class="eyebrow" style="background:rgba(255,255,255,.2);color:#fff;">⏰ স্টক সীমিত</span>
+      <h2 class="mt-24">পরিবারের স্বাস্থ্য ট্র্যাক করুন আজই</h2>
+      <p>৪,৭০০+ পরিবার ইতিমধ্যে PulseCare ব্যবহার করছে — ৩৮% ছাড় আজই শেষ।</p>
+      <div class="stock-bar">
+        <div class="stock-track"><div class="stock-fill"></div></div>
+        <div class="stock-label">স্টকের ৭৩% শেষ</div>
+      </div>
+      <a href="#buy" class="btn btn-primary btn-lg">অর্ডার করুন — ৳২,৪৯০</a>
+    </div>
+  </div>
+</section>
+
+<div class="fab-stack" id="fabStack">
+  <a href="https://wa.me/8801XXXXXXXXX" class="fab fab-wa" aria-label="হোয়াটসঅ্যাপে চ্যাট করুন">💬</a>
+  <a href="#" class="fab fab-msg" aria-label="মেসেঞ্জারে চ্যাট করুন">✉️</a>
+  <button class="fab fab-top" id="backTop" aria-label="উপরে ফিরে যান">↑</button>
+</div>
+
+<div class="sticky-cta" id="stickyCta">
+  <div class="sc-price"><b>৳২,৪৯০</b><s>৳৩,৯৯০</s></div>
+  <a href="#buy" class="btn btn-primary">অর্ডার করুন</a>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var revealEls = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){ entry.target.classList.add('in-view'); io.unobserve(entry.target); }
+      });
+    }, {threshold:0.14, rootMargin:'0px 0px -40px 0px'});
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add('in-view'); });
+  }
+
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var btn = item.querySelector('.faq-q');
+    var panel = item.querySelector('.faq-a');
+    btn.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(openItem){
+        if(openItem !== item){
+          openItem.classList.remove('open');
+          openItem.querySelector('.faq-q').setAttribute('aria-expanded','false');
+          openItem.querySelector('.faq-a').style.maxHeight = null;
+        }
+      });
+      if(isOpen){
+        item.classList.remove('open');
+        btn.setAttribute('aria-expanded','false');
+        panel.style.maxHeight = null;
+      } else {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded','true');
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+      }
+    });
+  });
+
+  var stickyCta = document.getElementById('stickyCta');
+  var desktopBar = document.getElementById('desktopBar');
+  var fabStack = document.getElementById('fabStack');
+  var heroEl = document.querySelector('.hero');
+  var heroBottom = 0;
+  function measure(){ heroBottom = heroEl.getBoundingClientRect().height + heroEl.offsetTop; }
+  measure();
+  window.addEventListener('resize', measure);
+
+  function onScroll(){
+    var y = window.scrollY || window.pageYOffset;
+    var pastHero = y > heroBottom - 80;
+    if(stickyCta) stickyCta.classList.toggle('show', pastHero);
+    if(desktopBar) desktopBar.classList.toggle('show', pastHero);
+    fabStack.querySelectorAll('.fab').forEach(function(f){ f.classList.toggle('show', y > 240); });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  var backTop = document.getElementById('backTop');
+  if(backTop){ backTop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); }); }
+
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var id = a.getAttribute('href');
+      if(id.length > 1){
+        var target = document.querySelector(id);
+        if(target){
+          e.preventDefault();
+          var offset = 90;
+          var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({top:top, behavior:'smooth'});
+        }
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,827 @@
+[
+  {
+    "filename": "bags (1).json",
+    "sizeBytes": 200922,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "Bags",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 25078,
+                "pageTitle": "UrbanCarry — প্রিমিয়াম ব্যাগ কালেকশন",
+                "pageH1": "স্টাইল আর জায়গা, দুটোই একসাথে"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "bags.json",
+    "sizeBytes": 272663,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "Bags",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 36053,
+                "pageTitle": "AeroStep — প্রিমিয়াম কমফোর্ট স্নিকার্স",
+                "pageH1": "সারাদিন হাঁটুন, একদম আরাম নিয়ে"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "bp-machine.json",
+    "sizeBytes": 164477,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "BP Machine",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 28888,
+                "pageTitle": "PulseCare — ডিজিটাল ব্লাড প্রেশার মনিটর",
+                "pageH1": "বাসায় বসেই নির্ভুল রক্তচাপ পরীক্ষা"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "digital-prodact.json",
+    "sizeBytes": 348870,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "digital prodact",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 47390,
+                "pageTitle": "LaunchKit Pro — সম্পূর্ণ ডিজিটাল বিজনেস স্টার্টার সিস্টেম",
+                "pageH1": "আপনার বিজনেসকে বদলে দিন এই পাওয়ারফুল ডিজিটাল সিস্টেম দিয়ে"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "kids-clothig.json",
+    "sizeBytes": 134049,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "kids clothig",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 5981,
+                "pageTitle": "বাচ্চাদের টি-শার্ট | অর্ডার করুন আজই",
+                "pageH1": "বাচ্চার গায়ে আরাম,মায়ের মনে শান্তি"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "mens-clothing-pk-polo.json",
+    "sizeBytes": 131649,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "mens clothing PK POLO",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 6262,
+                "pageTitle": "মেনস পোলো শার্ট | অর্ডার করুন আজই",
+                "pageH1": "প্রতিটা দিন,প্রিমিয়াম লুক"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "perfume.json",
+    "sizeBytes": 204722,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "Perfume",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 25399,
+                "pageTitle": "Velour — প্রিমিয়াম পারফিউম কালেকশন",
+                "pageH1": "এক স্প্রে, সারাদিনের উপস্থিতি"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "sarri-meyder.json",
+    "sizeBytes": 316987,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "sarri meyder",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 40371,
+                "pageTitle": "প্রতিটি অনুষ্ঠানে অভিজাত শাড়ি | প্রিমিয়াম শাড়ি কালেকশন",
+                "pageH1": "প্রতিটি অনুষ্ঠানেঅভিজাত শাড়ি"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "shoes.json",
+    "sizeBytes": 193652,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "Shoes",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 36053,
+                "pageTitle": "AeroStep — প্রিমিয়াম কমফোর্ট স্নিকার্স",
+                "pageH1": "সারাদিন হাঁটুন, একদম আরাম নিয়ে"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "watches.json",
+    "sizeBytes": 205886,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "Watches",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 25476,
+                "pageTitle": "TimeWear — প্রিমিয়াম ওয়াচ কালেকশন",
+                "pageH1": "স্টাইল আর সময়, দুটোই নিখুঁত"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "filename": "wlp.json",
+    "sizeBytes": 242211,
+    "dataType": "object",
+    "isArray": true,
+    "contentOverview": {},
+    "flows": [
+      {
+        "title": "BP Machine",
+        "flow_type": "flows",
+        "stepsCount": 3,
+        "steps": [
+          {
+            "title": "Sales Landing",
+            "type": "landing",
+            "widgets": []
+          },
+          {
+            "title": "chakout",
+            "type": "checkout",
+            "widgets": [
+              {
+                "widgetType": "html",
+                "id": "4259dac",
+                "isHtmlWidget": true,
+                "htmlLength": 31427,
+                "pageTitle": "Svelte — ন্যাচারাল ওয়েট ম্যানেজমেন্ট সাপ্লিমেন্ট",
+                "pageH1": "ছোট্ট একটা অভ্যাস, দৃশ্যমান পরিবর্তন"
+              },
+              {
+                "widgetType": "checkout-form",
+                "id": "a03de62"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "6b037eab"
+              }
+            ],
+            "sectionsCount": 3
+          },
+          {
+            "title": "Thank You (Woo)",
+            "type": "thankyou",
+            "widgets": [
+              {
+                "widgetType": "icon",
+                "id": "263fdaed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "5e1d0b7a"
+              },
+              {
+                "widgetType": "heading",
+                "id": "20ba40ed"
+              },
+              {
+                "widgetType": "heading",
+                "id": "18716410"
+              },
+              {
+                "widgetType": "order-details-form",
+                "id": "fffb705"
+              },
+              {
+                "widgetType": "text-editor",
+                "id": "246ae515"
+              }
+            ],
+            "sectionsCount": 3
+          }
+        ]
+      }
+    ]
+  }
+]

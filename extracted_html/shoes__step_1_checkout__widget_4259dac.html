@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AeroStep — প্রিমিয়াম কমফোর্ট স্নিকার্স</title>
+<meta name="description" content="সারাদিন হাঁটুন, একদম আরাম নিয়ে। AeroStep স্নিকার্স — হালকা, টেকসই, স্টাইলিশ।">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#FF6B00;
+    --primary-dark:#E35F00;
+    --primary-tint:#FFF1E6;
+    --ink:#111111;
+    --ink-soft:#4B4B52;
+    --bg:#FFFFFF;
+    --bg-alt:#FAF9F8;
+    --success:#22C55E;
+    --danger:#EF4444;
+    --accent:#2563EB;
+    --line:#ECEAE7;
+    --container:1200px;
+    --radius:18px;
+    --radius-btn:14px;
+    --shadow-sm:0 2px 10px rgba(17,17,17,.05);
+    --shadow-md:0 12px 32px rgba(17,17,17,.08);
+    --shadow-lg:0 24px 60px rgba(17,17,17,.14);
+    --shadow-primary:0 14px 30px rgba(255,107,0,.28);
+    --font-display:'Hind Siliguri','Poppins', sans-serif;
+    --font-body:'Hind Siliguri', sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:var(--font-body);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.65;overflow-x:hidden;}
+  img{max-width:100%;display:block;}
+  a{color:inherit;text-decoration:none;}
+  ul{list-style:none;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  .container{width:100%;max-width:var(--container);margin:0 auto;padding:0 24px;}
+  section{position:relative;}
+  h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:1.28;color:var(--ink);}
+  .eng{font-family:'Poppins', sans-serif;}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--primary-dark);background:var(--primary-tint);padding:7px 14px;border-radius:999px;}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:16.5px;padding:16px 30px;border-radius:var(--radius-btn);transition:transform .22s ease, box-shadow .22s ease;white-space:nowrap;}
+  .btn-primary{background:linear-gradient(180deg,#FF7A1A,var(--primary));color:#fff;box-shadow:var(--shadow-primary);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(255,107,0,.36);}
+  .btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--ink);transform:translateY(-2px);}
+  .btn-block{width:100%;}
+  .btn-lg{padding:19px 36px;font-size:19px;}
+
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);}
+  .reveal.in-view{opacity:1;transform:translateY(0);}
+  .reveal-delay-1{transition-delay:.08s;}
+  .reveal-delay-2{transition-delay:.16s;}
+  .reveal-delay-3{transition-delay:.24s;}
+  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none;}html{scroll-behavior:auto;}}
+
+  /* NAV */
+  .nav{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:19px;}
+  .brand-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#FFB25C);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800;}
+  .nav-cta{display:flex;align-items:center;gap:14px;}
+  .nav-price{display:none;}
+  @media(min-width:860px){.nav-price{display:inline-block;font-weight:700;color:var(--ink-soft);font-size:14px;}}
+
+  /* HERO */
+  .hero{padding:52px 0 60px;background:radial-gradient(680px 420px at 82% -8%, rgba(255,107,0,.10), transparent 60%),radial-gradient(520px 360px at -6% 30%, rgba(37,99,235,.06), transparent 60%),var(--bg);overflow:hidden;}
+  .hero-grid{display:grid;grid-template-columns:1fr;gap:44px;align-items:center;}
+  @media(min-width:960px){.hero-grid{grid-template-columns:.95fr 1.05fr;gap:56px;}}
+  .badge-pulse{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;font-weight:600;font-size:13.5px;padding:8px 16px;border-radius:999px;margin-bottom:22px;}
+  .badge-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulseDot 1.6s infinite;}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.35);}}
+  .hero h1{font-size:clamp(30px,4.4vw,46px);margin-bottom:16px;}
+  .hero h1 .hl{color:var(--primary);}
+  .hero-sub{font-size:18px;color:var(--ink-soft);max-width:480px;margin-bottom:22px;}
+
+  .color-swatches{display:flex;gap:10px;margin-bottom:24px;}
+  .swatch{width:34px;height:34px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 2px var(--line);cursor:pointer;transition:box-shadow .2s ease, transform .2s ease;}
+  .swatch.active{box-shadow:0 0 0 2px var(--primary);transform:scale(1.08);}
+  .size-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
+  .size-chip{width:44px;height:44px;border:1.5px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13.5px;color:var(--ink-soft);cursor:pointer;transition:all .2s ease;}
+  .size-chip.active{border-color:var(--primary);background:var(--primary-tint);color:var(--primary-dark);}
+  .size-chip:hover{border-color:var(--ink);}
+  .size-label{font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px;display:block;}
+
+  .price-box{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-md);max-width:460px;}
+  .price-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .price-old{font-size:19px;color:#9A9A9F;text-decoration:line-through;font-weight:600;}
+  .price-now{font-size:34px;font-weight:800;font-family:var(--font-display);color:var(--ink);}
+  .price-badge{background:rgba(34,197,94,.12);color:#158B44;font-weight:700;font-size:13px;padding:5px 11px;border-radius:999px;}
+  .price-note{font-size:13.5px;color:var(--ink-soft);margin-bottom:16px;}
+  .pay-icons{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .pay-icons span{font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid var(--line);color:var(--ink-soft);background:var(--bg-alt);}
+  .trust-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .trust-row span{display:flex;align-items:center;gap:6px;}
+
+  /* hero product visual */
+  .hero-visual{position:relative;display:flex;justify-content:center;align-items:center;min-height:340px;}
+  .shoe-stage{position:relative;width:100%;max-width:460px;aspect-ratio:5/4;border-radius:24px;background:radial-gradient(closest-side, rgba(255,107,0,.14), transparent 70%),linear-gradient(160deg,#FAF9F8,#F1EFEC);border:1px solid var(--line);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .shoe-emoji{font-size:120px;transform:rotate(-8deg);filter:drop-shadow(0 22px 26px rgba(17,17,17,.18));transition:transform .5s cubic-bezier(.16,1,.3,1);}
+  .shoe-stage:hover .shoe-emoji{transform:rotate(-2deg) scale(1.05);}
+  .stage-tag{position:absolute;top:18px;left:18px;background:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;box-shadow:var(--shadow-sm);}
+  .stage-tag.right{left:auto;right:18px;top:auto;bottom:18px;background:var(--ink);color:#fff;}
+
+  /* PROOF */
+  .proof{padding:36px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-alt);}
+  .proof-inner{display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:space-between;}
+  .stars{color:var(--primary);font-size:18px;letter-spacing:2px;}
+  .proof-stat{display:flex;flex-direction:column;}
+  .proof-stat b{font-family:var(--font-display);font-size:22px;}
+  .proof-stat span{font-size:13px;color:var(--ink-soft);}
+  .badge-row{display:flex;gap:22px;flex-wrap:wrap;color:var(--ink-soft);font-size:13px;font-weight:600;}
+  .badge-row span{display:flex;align-items:center;gap:6px;}
+
+  .sec{padding:84px 0;}
+  .sec-head{max-width:640px;margin:0 auto 44px;text-align:center;}
+  .sec-head h2{font-size:clamp(25px,3.4vw,36px);margin-top:14px;}
+  .sec-head p{color:var(--ink-soft);font-size:16.5px;margin-top:12px;}
+  .sec-alt{background:var(--bg-alt);}
+
+  .grid{display:grid;gap:22px;}
+  .grid-2{grid-template-columns:1fr;}
+  .grid-3{grid-template-columns:1fr;}
+  .grid-4{grid-template-columns:1fr;}
+  @media(min-width:640px){.grid-2{grid-template-columns:1fr 1fr;}.grid-4{grid-template-columns:1fr 1fr;}}
+  @media(min-width:900px){.grid-3{grid-template-columns:repeat(3,1fr);}.grid-4{grid-template-columns:repeat(4,1fr);}}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:28px;transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease;}
+  .card:hover{transform:translateY(-5px);box-shadow:var(--shadow-md);border-color:transparent;}
+  .card-ic{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px;}
+  .ic-pain{background:rgba(239,68,68,.09);}
+  .ic-good{background:var(--primary-tint);}
+  .card h3{font-size:17.5px;margin-bottom:8px;}
+  .card p{color:var(--ink-soft);font-size:14.5px;}
+
+  /* gallery */
+  .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  @media(min-width:700px){.gallery{grid-template-columns:repeat(4,1fr);}}
+  .gallery-tile{aspect-ratio:1/1;border-radius:16px;background:linear-gradient(150deg,#F4F2EF,#FFF1E6);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:var(--shadow-sm);transition:transform .3s ease;}
+  .gallery-tile:hover{transform:scale(1.03);}
+
+  /* features two-col */
+  .feat-wrap{display:grid;grid-template-columns:1fr;gap:40px;align-items:center;}
+  @media(min-width:900px){.feat-wrap{grid-template-columns:1fr 1.1fr;}}
+  .feat-art{aspect-ratio:1/1;border-radius:var(--radius);background:conic-gradient(from 200deg, var(--primary-tint), #fff 30%, rgba(37,99,235,.08) 70%, var(--primary-tint));border:1px solid var(--line);box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:center;font-size:64px;}
+  .feat-list li{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line);}
+  .feat-list li:last-child{border-bottom:none;}
+  .feat-list h4{font-size:15.5px;margin-bottom:4px;}
+  .feat-list p{font-size:14px;color:var(--ink-soft);}
+  .check-ic{width:20px;height:20px;border-radius:50%;flex:none;background:rgba(34,197,94,.12);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:12px;}
+
+  /* comparison */
+  .compare-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--line);}
+  .compare-table th,.compare-table td{padding:16px 18px;text-align:left;font-size:14.5px;border-bottom:1px solid var(--line);}
+  .compare-table th{font-family:var(--font-display);font-size:14.5px;background:var(--bg-alt);}
+  .compare-table th.win{background:var(--primary);color:#fff;}
+  .compare-table tr:last-child td{border-bottom:none;}
+  .yes{color:var(--success);font-weight:800;}
+  .no{color:var(--danger);font-weight:800;}
+  .compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* testimonials */
+  .test-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:26px;}
+  .test-stars{color:var(--primary);font-size:14px;margin-bottom:12px;}
+  .test-quote{font-size:15.5px;color:var(--ink);margin-bottom:18px;}
+  .test-who{display:flex;align-items:center;gap:12px;}
+  .test-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#6C9BFF);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;}
+  .test-who b{font-size:13.5px;display:block;}
+  .test-who span{font-size:12px;color:var(--ink-soft);}
+  .video-badge{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:8px;margin-bottom:12px;}
+
+  /* how it works */
+  .timeline{display:grid;grid-template-columns:1fr;gap:28px;position:relative;}
+  @media(min-width:800px){.timeline{grid-template-columns:repeat(3,1fr);}
+    .timeline::before{content:"";position:absolute;top:26px;left:12%;right:12%;height:2px;background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 16px);}}
+  .tl-step{position:relative;text-align:center;}
+  .tl-num{width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;margin:0 auto 16px;position:relative;z-index:2;font-size:18px;}
+  .tl-step:nth-child(2) .tl-num{background:var(--primary);}
+  .tl-step h3{font-size:16.5px;margin-bottom:6px;}
+  .tl-step p{font-size:14px;color:var(--ink-soft);max-width:230px;margin:0 auto;}
+
+  /* FAQ */
+  .faq-item{border-bottom:1px solid var(--line);}
+  .faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 4px;text-align:right;flex-direction:row-reverse;font-weight:600;font-size:15.5px;}
+  .faq-q .plus{flex:none;width:26px;height:26px;border-radius:50%;background:var(--bg-alt);display:flex;align-items:center;justify-content:center;transition:transform .3s ease, background .3s ease;font-size:16px;color:var(--ink);}
+  .faq-item.open .faq-q .plus{transform:rotate(45deg);background:var(--primary);color:#fff;}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+  .faq-a-inner{padding:0 4px 20px;color:var(--ink-soft);font-size:14.5px;max-width:640px;text-align:right;margin-left:auto;}
+
+  /* guarantee */
+  .guarantee{background:linear-gradient(160deg,#11131A,#22252E);border-radius:var(--radius);padding:56px 24px;text-align:center;color:#fff;box-shadow:var(--shadow-lg);}
+  .guarantee-badge{width:96px;height:96px;border-radius:50%;background:rgba(255,107,0,.15);border:2px solid var(--primary);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 22px;}
+  .guarantee h2{color:#fff;font-size:26px;margin-bottom:12px;}
+  .guarantee p{color:#B9B9C2;max-width:480px;margin:0 auto 22px;font-size:15.5px;}
+
+  /* final CTA */
+  .final-cta{background:linear-gradient(155deg,var(--primary),#FF8A3D);border-radius:var(--radius);padding:56px 28px;text-align:center;color:#fff;position:relative;overflow:hidden;}
+  .final-cta::after{content:"";position:absolute;inset:0;background:radial-gradient(400px 200px at 85% 0%, rgba(255,255,255,.22), transparent 70%);}
+  .final-cta h2{color:#fff;font-size:clamp(23px,3.4vw,32px);margin-bottom:12px;}
+  .final-cta p{color:rgba(255,255,255,.9);margin-bottom:26px;position:relative;}
+  .stock-bar{max-width:420px;margin:0 auto 26px;position:relative;}
+  .stock-track{height:9px;background:rgba(255,255,255,.28);border-radius:999px;overflow:hidden;}
+  .stock-fill{height:100%;width:76%;background:#fff;border-radius:999px;}
+  .stock-label{font-size:12.5px;margin-top:8px;color:rgba(255,255,255,.9);font-weight:600;}
+  .final-cta .btn-primary{background:#111;box-shadow:0 14px 30px rgba(0,0,0,.28);}
+
+  /* floating elements */
+  .fab-stack{position:fixed;right:20px;bottom:96px;display:flex;flex-direction:column;gap:12px;z-index:70;}
+  @media(min-width:860px){.fab-stack{bottom:28px;}}
+  .fab{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:var(--shadow-md);transition:transform .25s ease, opacity .25s ease;opacity:0;transform:translateY(14px) scale(.8);pointer-events:none;}
+  .fab.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+  .fab:hover{transform:translateY(-3px) scale(1.05);}
+  .fab-wa{background:#25D366;}
+  .fab-msg{background:linear-gradient(135deg,#0084FF,#00C6FF);}
+  .fab-top{background:var(--ink);font-size:17px;}
+
+  .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:65;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(17,17,17,.08);padding:12px 16px;display:flex;align-items:center;gap:14px;transform:translateY(110%);transition:transform .3s ease;}
+  .sticky-cta.show{transform:translateY(0);}
+  .sticky-cta .sc-price{flex:none;}
+  .sticky-cta .sc-price b{display:block;font-family:var(--font-display);font-size:18px;}
+  .sticky-cta .sc-price s{font-size:12px;color:#9A9A9F;}
+  .sticky-cta .btn{flex:1;padding:14px 18px;font-size:15.5px;}
+  @media(min-width:860px){.sticky-cta{display:none;}}
+
+  .desktop-sticky-bar{position:fixed;top:0;left:0;right:0;z-index:59;background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--shadow-sm);transform:translateY(-110%);transition:transform .3s ease;}
+  .desktop-sticky-bar.show{transform:translateY(0);}
+  .dsb-inner{display:flex;align-items:center;justify-content:space-between;height:70px;}
+  .dsb-left{display:flex;align-items:center;gap:14px;}
+  .dsb-left b{font-family:var(--font-display);font-size:15.5px;}
+  .dsb-left span{font-size:13px;color:var(--ink-soft);}
+  @media(max-width:859px){.desktop-sticky-bar{display:none;}}
+
+  .mt-32{margin-top:32px;}
+  a:focus-visible,button:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px;}
+</style>
+</head>
+<body>
+
+<div class="desktop-sticky-bar" id="desktopBar">
+  <div class="container dsb-inner">
+    <div class="dsb-left">
+      <span class="brand-mark eng" style="width:28px;height:28px;font-size:13px;">AS</span>
+      <div><b>AeroStep</b><span>প্রিমিয়াম কমফোর্ট স্নিকার্স</span></div>
+    </div>
+    <a href="#buy" class="btn btn-primary">অর্ডার করুন — ৳২,২৯০</a>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <div class="brand"><span class="brand-mark eng">AS</span><span class="eng">AeroStep</span></div>
+    <div class="nav-cta">
+      <span class="nav-price"><s style="color:#9A9A9F;font-weight:500;">৳৩,৯৯০</s>&nbsp; ৳২,২৯০</span>
+      <a href="#buy" class="btn btn-primary">অর্ডার করুন</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="badge-pulse"><span class="badge-dot"></span> 🔥 লঞ্চ অফার — ৪২% ছাড়</span>
+      <h1>সারাদিন হাঁটুন, <span class="hl">একদম আরাম নিয়ে</span></h1>
+      <p class="hero-sub">AeroStep স্নিকার্স — হালকা কুশন সোল, শ্বাস-প্রশ্বাসযোগ্য মেশ আপার আর টেকসই গ্রিপ। অফিস থেকে আড্ডা, সবখানে মানিয়ে যায়।</p>
+
+      <span class="size-label">কালার বেছে নিন</span>
+      <div class="color-swatches">
+        <span class="swatch active" style="background:#111;"></span>
+        <span class="swatch" style="background:#FF6B00;"></span>
+        <span class="swatch" style="background:#EFEAE3;box-shadow:0 0 0 2px var(--line);"></span>
+        <span class="swatch" style="background:#2563EB;"></span>
+      </div>
+
+      <span class="size-label">সাইজ বেছে নিন (EU)</span>
+      <div class="size-row">
+        <span class="size-chip">৩৯</span>
+        <span class="size-chip active">৪০</span>
+        <span class="size-chip">৪১</span>
+        <span class="size-chip">৪২</span>
+        <span class="size-chip">৪৩</span>
+        <span class="size-chip">৪৪</span>
+      </div>
+
+      <div class="price-box" id="buy">
+        <div class="price-row">
+          <span class="price-old">৳৩,৯৯০</span>
+          <span class="price-now">৳২,২৯০</span>
+          <span class="price-badge">৪২% সাশ্রয়</span>
+        </div>
+        <p class="price-note">সারাদেশে ডেলিভারি। ক্যাশ অন ডেলিভারি সুবিধা আছে।</p>
+        <div class="pay-icons">
+          <span>bKash</span><span>Nagad</span><span>Rocket</span><span>Card</span><span>COD</span>
+        </div>
+        <a href="#buy-final" class="btn btn-primary btn-block btn-lg">অর্ডার করুন</a>
+        <div class="trust-row">
+          <span>🔒 সিকিউর পেমেন্ট</span>
+          <span>🚚 ২৪–৭২ ঘণ্টায় ডেলিভারি</span>
+          <span>↩️ ৭ দিনে এক্সচেঞ্জ</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="shoe-stage">
+        <span class="stage-tag">👟 নতুন কালেকশন</span>
+        <span class="shoe-emoji">👟</span>
+        <span class="stage-tag right">৪.৮ ★ ২,৪০০+ রিভিউ</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- PROOF -->
+<section class="proof">
+  <div class="container proof-inner">
+    <div class="proof-stat"><span class="stars">★★★★★</span></div>
+    <div class="proof-stat"><b>৪.৮/৫</b><span>গড় রেটিং</span></div>
+    <div class="proof-stat"><b>৫,০০০+</b><span>জোড়া বিক্রি</span></div>
+    <div class="badge-row">
+      <span>🚚 ফ্রি ডেলিভারি (২০০০+)</span>
+      <span>↩️ ৭ দিনে এক্সচেঞ্জ</span>
+      <span>🛡️ অথেন্টিক প্রোডাক্ট</span>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">সমস্যা</span>
+      <h2>প্রতিদিনের জুতার এই সমস্যাগুলো চেনা লাগছে?</h2>
+      <p>বেশিরভাগ জুতা দেখতে ভালো লাগলেও সারাদিন পরার মতো আরামদায়ক হয় না।</p>
+    </div>
+    <div class="grid grid-4">
+      <div class="card reveal"><div class="card-ic ic-pain">🦶</div><h3>পায়ে ব্যথা</h3><p>কয়েক ঘণ্টা হাঁটলেই পায়ের পাতা আর গোড়ালিতে ব্যথা শুরু হয়ে যায়।</p></div>
+      <div class="card reveal reveal-delay-1"><div class="card-ic ic-pain">💧</div><h3>ঘাম আর গন্ধ</h3><p>মেশ ঠিকমতো শ্বাস না নিলে সারাদিন পা ঘেমে থাকে।</p></div>
+      <div class="card reveal reveal-delay-2"><div class="card-ic ic-pain">🧵</div><h3>তাড়াতাড়ি নষ্ট হওয়া</h3><p>কয়েক মাসেই সোল ক্ষয়ে যায়, সেলাই খুলে যায়।</p></div>
+      <div class="card reveal reveal-delay-3"><div class="card-ic ic-pain">👞</div><h3>সব পোশাকে মানায় না</h3><p>একটা জুতা অফিস, ঘোরাঘুরি সব জায়গায় ফিট বসে না।</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT'S INCLUDED / FEATURES GRID -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">AeroStep কেন আলাদা</span>
+      <h2>প্রতিটা ডিটেইল আরামের জন্য ডিজাইন করা</h2>
+      <p>বক্স খোলার প্রথম মুহূর্ত থেকেই পার্থক্যটা টের পাবেন।</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="card-ic ic-good">☁️</div><h3>ক্লাউড কুশন সোল</h3><p>প্রতিটা পদক্ষেপে সফট ল্যান্ডিং, দিনের শেষেও পা ক্লান্ত লাগবে না।</p></div>
+      <div class="card reveal reveal-delay-1"><div class="card-ic ic-good">🌬️</div><h3>ব্রিদেবল মেশ</h3><p>ব্রিদেবল আপার পা ঠান্ডা আর শুকনো রাখে সারাদিন।</p></div>
+      <div class="card reveal reveal-delay-2"><div class="card-ic ic-good">🪢</div><h3>নন-স্লিপ গ্রিপ সোল</h3><p>ভেজা বা পিচ্ছিল রাস্তাতেও ব্যালেন্স ধরে রাখে।</p></div>
+      <div class="card reveal"><div class="card-ic ic-good">🧱</div><h3>টেকসই স্টিচিং</h3><p>ডাবল-স্টিচড সোল, নিয়মিত ব্যবহারেও বছরের পর বছর টেকে।</p></div>
+      <div class="card reveal reveal-delay-1"><div class="card-ic ic-good">👟</div><h3>অল-ডে ভার্সাটাইল লুক</h3><p>অফিস, ক্যাজুয়াল আউটিং — সব লুকের সাথে মানিয়ে যায়।</p></div>
+      <div class="card reveal reveal-delay-2"><div class="card-ic ic-good">📦</div><h3>প্রিমিয়াম প্যাকেজিং</h3><p>গিফট করার মতো বক্সে, সাথে ফ্রি শু-ব্যাগ।</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">কালেকশন দেখুন</span>
+      <h2>৪টা কালারে পাওয়া যাচ্ছে</h2>
+    </div>
+    <div class="gallery">
+      <div class="gallery-tile reveal">👟</div>
+      <div class="gallery-tile reveal reveal-delay-1">👟</div>
+      <div class="gallery-tile reveal reveal-delay-2">👟</div>
+      <div class="gallery-tile reveal reveal-delay-3">👟</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES two column -->
+<section class="sec sec-alt">
+  <div class="container feat-wrap">
+    <div class="feat-art reveal">🧵</div>
+    <div class="reveal reveal-delay-1">
+      <span class="eyebrow">উপকরণ ও নির্মাণ</span>
+      <h2 class="mt-32" style="margin-bottom:22px;">আরামের সাথে আপোষ নেই</h2>
+      <ul class="feat-list">
+        <li><span class="check-ic">✓</span><div><h4>মেমোরি ফোম ইনসোল</h4><p>পায়ের শেপ অনুযায়ী বসে যায়, দিনভর সাপোর্ট দেয়।</p></div></li>
+        <li><span class="check-ic">✓</span><div><h4>লাইটওয়েট EVA সোল</h4><p>স্বাভাবিক জুতার প্রায় অর্ধেক ওজন, হাঁটতে ক্লান্তি কম লাগে।</p></div></li>
+        <li><span class="check-ic">✓</span><div><h4>প্রিমিয়াম নিটেড আপার</h4><p>নমনীয়, শ্বাস-প্রশ্বাসযোগ্য, পায়ের সাথে মানিয়ে যায়।</p></div></li>
+        <li><span class="check-ic">✓</span><div><h4>রিইনফোর্সড হিল</h4><p>গোড়ালিকে অতিরিক্ত সাপোর্ট আর স্থিতিশীলতা দেয়।</p></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">কেন AeroStep</span>
+      <h2>সাধারণ জুতার সাথে পার্থক্য</h2>
+    </div>
+    <div class="compare-scroll reveal">
+      <table class="compare-table">
+        <thead><tr><th>&nbsp;</th><th>সাধারণ জুতা</th><th class="win">AeroStep</th></tr></thead>
+        <tbody>
+          <tr><td>আরাম</td><td><span class="no">✕</span> ২–৩ ঘণ্টা পরই ব্যথা</td><td><span class="yes">✓</span> সারাদিন আরাম</td></tr>
+          <tr><td>স্থায়িত্ব</td><td><span class="no">✕</span> ৩–৪ মাসে ক্ষয়</td><td><span class="yes">✓</span> ১+ বছর টেকসই</td></tr>
+          <tr><td>শ্বাস-প্রশ্বাস</td><td><span class="no">✕</span> ঘেমে যায়</td><td><span class="yes">✓</span> ব্রিদেবল মেশ</td></tr>
+          <tr><td>ডেলিভারি ও রিটার্ন</td><td><span class="no">✕</span> জটিল প্রসেস</td><td><span class="yes">✓</span> ৭ দিনে সহজ এক্সচেঞ্জ</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">গ্রাহকদের মতামত</span>
+      <h2>যারা AeroStep পরে খুশি</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="test-card reveal">
+        <span class="video-badge">▶ ভিডিও রিভিউ</span>
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">সারাদিন দাঁড়িয়ে কাজ করি, তারপরও পায়ে কোনো ব্যথা হয় না। প্রথম কেনার পর আরও দুই জোড়া নিয়েছি।</p>
+        <div class="test-who"><span class="test-av">কাম</span><div><b>কামরুল ই.</b><span>সেলস এক্সিকিউটিভ</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-1">
+        <span class="video-badge" style="background:var(--accent);">🖼️ স্ক্রিনশট রিভিউ</span>
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">ফিটিং একদম পারফেক্ট, আর দেখতেও বেশ প্রিমিয়াম লাগে দামের তুলনায়।</p>
+        <div class="test-who"><span class="test-av">নুস</span><div><b>নুসরাত জ.</b><span>ইউনিভার্সিটি শিক্ষার্থী</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-2">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">অর্ডারের দুই দিনের মধ্যেই পেয়ে গেছি, প্যাকেজিংও দারুণ ছিল।</p>
+        <div class="test-who"><span class="test-av">ইমন</span><div><b>ইমন হ.</b><span>ফ্রিল্যান্সার</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">অর্ডার প্রসেস</span>
+      <h2>তিনটা সহজ ধাপ</h2>
+    </div>
+    <div class="timeline">
+      <div class="tl-step reveal"><div class="tl-num">১</div><h3>সাইজ ও কালার বেছে নিন</h3><p>আপনার পছন্দের কালার আর সাইজ সিলেক্ট করুন।</p></div>
+      <div class="tl-step reveal reveal-delay-1"><div class="tl-num">২</div><h3>অর্ডার কনফার্ম করুন</h3><p>বিকাশ, নগদ, কার্ড অথবা ক্যাশ অন ডেলিভারিতে পেমেন্ট করুন।</p></div>
+      <div class="tl-step reveal reveal-delay-2"><div class="tl-num">৩</div><h3>বাসায় বসে রিসিভ করুন</h3><p>২৪–৭২ ঘণ্টার মধ্যে দরজায় পৌঁছে যাবে।</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec sec-alt">
+  <div class="container" style="max-width:760px;">
+    <div class="sec-head reveal">
+      <span class="eyebrow">সাধারণ জিজ্ঞাসা</span>
+      <h2>প্রশ্নের উত্তর</h2>
+    </div>
+    <div id="faqList">
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> সাইজ না মিললে কী করব?</button>
+        <div class="faq-a"><div class="faq-a-inner">ডেলিভারির ৭ দিনের মধ্যে ফ্রি এক্সচেঞ্জ করা যাবে, শুধু জুতা ব্যবহার না করা অবস্থায় থাকতে হবে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ক্যাশ অন ডেলিভারি আছে?</button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, সারাদেশে ক্যাশ অন ডেলিভারি সুবিধা আছে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ডেলিভারি কত দিনে পাব?</button>
+        <div class="faq-a"><div class="faq-a-inner">ঢাকার ভেতরে ২৪–৪৮ ঘণ্টা, ঢাকার বাইরে ৪৮–৭২ ঘণ্টার মধ্যে পৌঁছে যায়।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> কোন কোন সাইজ পাওয়া যায়?</button>
+        <div class="faq-a"><div class="faq-a-inner">EU ৩৯ থেকে ৪৪ পর্যন্ত সব সাইজ স্টকে আছে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> প্রোডাক্ট কি অরিজিনাল?</button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, প্রতিটা জোড়া কোয়ালিটি চেক করে প্যাক করা হয়, সাথে অথেন্টিসিটি ট্যাগ থাকে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> পেমেন্ট মেথড কী কী?</button>
+        <div class="faq-a"><div class="faq-a-inner">bKash, Nagad, Rocket, কার্ড এবং ক্যাশ অন ডেলিভারি — সবগুলোই সাপোর্টেড।</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GUARANTEE -->
+<section class="sec">
+  <div class="container">
+    <div class="guarantee reveal">
+      <div class="guarantee-badge">🛡️</div>
+      <h2>৭ দিনের ইজি এক্সচেঞ্জ গ্যারান্টি</h2>
+      <p>সাইজ বা কালার মনে না ধরলে ৭ দিনের মধ্যে বিনামূল্যে এক্সচেঞ্জ করে নিন, কোনো ঝামেলা ছাড়াই।</p>
+      <span class="badge-row" style="justify-content:center;color:#B9B9C2;">
+        <span>🔒 সিকিউর পেমেন্ট</span>
+        <span>🚚 ট্র্যাকড ডেলিভারি</span>
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="sec" id="buy-final" style="padding-top:0;">
+  <div class="container">
+    <div class="final-cta reveal">
+      <span class="eyebrow" style="background:rgba(255,255,255,.2);color:#fff;">⏰ স্টক সীমিত</span>
+      <h2 class="mt-32">আপনার সাইজ শেষ হওয়ার আগেই অর্ডার করুন</h2>
+      <p>৫,০০০+ জোড়া ইতিমধ্যে বিক্রি হয়ে গেছে — আজই ৪২% ছাড়ে নিয়ে নিন।</p>
+      <div class="stock-bar">
+        <div class="stock-track"><div class="stock-fill"></div></div>
+        <div class="stock-label">এই কালারের স্টকের ৭৬% শেষ</div>
+      </div>
+      <a href="#buy" class="btn btn-primary btn-lg">অর্ডার করুন — ৳২,২৯০</a>
+    </div>
+  </div>
+</section>
+
+<div class="fab-stack" id="fabStack">
+  <a href="https://wa.me/8801XXXXXXXXX" class="fab fab-wa" aria-label="হোয়াটসঅ্যাপে চ্যাট করুন">💬</a>
+  <a href="#" class="fab fab-msg" aria-label="মেসেঞ্জারে চ্যাট করুন">✉️</a>
+  <button class="fab fab-top" id="backTop" aria-label="উপরে ফিরে যান">↑</button>
+</div>
+
+<div class="sticky-cta" id="stickyCta">
+  <div class="sc-price"><b>৳২,২৯০</b><s>৳৩,৯৯০</s></div>
+  <a href="#buy" class="btn btn-primary">অর্ডার করুন</a>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var revealEls = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){ entry.target.classList.add('in-view'); io.unobserve(entry.target); }
+      });
+    }, {threshold:0.14, rootMargin:'0px 0px -40px 0px'});
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add('in-view'); });
+  }
+
+  document.querySelectorAll('.swatch').forEach(function(sw){
+    sw.addEventListener('click', function(){
+      document.querySelectorAll('.swatch').forEach(function(s){ s.classList.remove('active'); });
+      sw.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.size-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('.size-chip').forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var btn = item.querySelector('.faq-q');
+    var panel = item.querySelector('.faq-a');
+    btn.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(openItem){
+        if(openItem !== item){
+          openItem.classList.remove('open');
+          openItem.querySelector('.faq-q').setAttribute('aria-expanded','false');
+          openItem.querySelector('.faq-a').style.maxHeight = null;
+        }
+      });
+      if(isOpen){
+        item.classList.remove('open');
+        btn.setAttribute('aria-expanded','false');
+        panel.style.maxHeight = null;
+      } else {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded','true');
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+      }
+    });
+  });
+
+  var stickyCta = document.getElementById('stickyCta');
+  var desktopBar = document.getElementById('desktopBar');
+  var fabStack = document.getElementById('fabStack');
+  var heroEl = document.querySelector('.hero');
+  var heroBottom = 0;
+  function measure(){ heroBottom = heroEl.getBoundingClientRect().height + heroEl.offsetTop; }
+  measure();
+  window.addEventListener('resize', measure);
+
+  function onScroll(){
+    var y = window.scrollY || window.pageYOffset;
+    var pastHero = y > heroBottom - 80;
+    if(stickyCta) stickyCta.classList.toggle('show', pastHero);
+    if(desktopBar) desktopBar.classList.toggle('show', pastHero);
+    fabStack.querySelectorAll('.fab').forEach(function(f){ f.classList.toggle('show', y > 240); });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  var backTop = document.getElementById('backTop');
+  if(backTop){ backTop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); }); }
+
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var id = a.getAttribute('href');
+      if(id.length > 1){
+        var target = document.querySelector(id);
+        if(target){
+          e.preventDefault();
+          var offset = 90;
+          var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({top:top, behavior:'smooth'});
+        }
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

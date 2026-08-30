@@ -1,0 +1,35 @@
+# ==============================================================================
+# Production Docker Compose for Server-Side GTM (Landing Pages Tracking)
+# 
+# Usage:
+#   docker compose -f docker-compose.sgtm.yml up -d
+#   docker compose -f docker-compose.sgtm.yml logs -f
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  sgtm_server:
+    image: gcr.io/cloud-tagging-10302018/gtm-cloud-image:stable
+    container_name: sgtm_landing_pages
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      # Obtain your CONTAINER_CONFIG string from Google Tag Manager -> Server Container -> Settings
+      CONTAINER_CONFIG: "${SGTM_CONTAINER_CONFIG:-YOUR_SGTM_CONTAINER_CONFIG_STRING}"
+      PORT: "8080"
+      RUN_AS_PREVIEW_SERVER: "true"
+      # Production optimizations
+      DEBUG_MODE: "false"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"

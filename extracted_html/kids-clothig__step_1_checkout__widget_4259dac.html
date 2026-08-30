@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TinyTrendy — বাচ্চাদের প্রিমিয়াম কটন টি-শার্ট কালেকশন</title>
+<meta name="description" content="১০০% পিওর কটন কমফোর্ট টি-শার্ট। বাচ্চার ত্বকে কোমল, দীর্ঘস্থায়ী রং এবং আরামদায়ক ফিটিং। ক্যাশ অন ডেলিভারি সারাদেশে।">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#FF5E36;--primary-dark:#D94118;--primary-tint:#FFF1ED;
+    --secondary:#0EA5E9;--accent:#F59E0B;
+    --ink:#1E293B;--ink-soft:#64748B;--bg:#FAFCFF;--bg-alt:#F1F5F9;
+    --success:#10B981;--danger:#EF4444;--line:#E2E8F0;
+    --container:1200px;--radius:20px;--radius-btn:14px;
+    --shadow-sm:0 2px 10px rgba(15,23,42,.05);--shadow-md:0 12px 30px rgba(15,23,42,.08);
+    --shadow-lg:0 20px 50px rgba(255,94,54,.16);--shadow-primary:0 14px 28px rgba(255,94,54,.28);
+    --font-display:'Baloo Da 2','Hind Siliguri', sans-serif;--font-body:'Hind Siliguri', sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:var(--font-body);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.65;overflow-x:hidden;}
+  img{max-width:100%;display:block;}
+  a{color:inherit;text-decoration:none;}
+  ul{list-style:none;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  .container{width:100%;max-width:var(--container);margin:0 auto;padding:0 24px;}
+  section{position:relative;}
+  h1,h2,h3{font-family:var(--font-display);font-weight:700;line-height:1.25;color:var(--ink);}
+  .eng{font-family:'Poppins', sans-serif;}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--primary-dark);background:var(--primary-tint);padding:7px 16px;border-radius:999px;}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:16.5px;padding:16px 30px;border-radius:var(--radius-btn);transition:transform .22s ease, box-shadow .22s ease;white-space:nowrap;}
+  .btn-primary{background:linear-gradient(180deg,#FF734E,var(--primary));color:#fff;box-shadow:var(--shadow-primary);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(255,94,54,.36);}
+  .btn-block{width:100%;}
+  .btn-lg{padding:18px 36px;font-size:19px;}
+
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1);}
+  .reveal.in-view{opacity:1;transform:translateY(0);}
+  .reveal-delay-1{transition-delay:.08s;}
+  .reveal-delay-2{transition-delay:.16s;}
+  .reveal-delay-3{transition-delay:.24s;}
+  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none;}html{scroll-behavior:auto;}}
+
+  .desktop-sticky-bar{position:fixed;top:0;left:0;right:0;z-index:59;background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--shadow-sm);transform:translateY(-110%);transition:transform .3s ease;}
+  .desktop-sticky-bar.show{transform:translateY(0);}
+  .dsb-inner{display:flex;align-items:center;justify-content:space-between;height:68px;}
+  .dsb-left{display:flex;align-items:center;gap:14px;}
+  .dsb-left b{font-family:var(--font-display);font-size:16px;}
+  .dsb-left span{font-size:12.5px;color:var(--ink-soft);}
+  @media(max-width:859px){.desktop-sticky-bar{display:none;}}
+
+  .nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:21px;}
+  .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#FFA07A);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:800;}
+  .nav-cta{display:flex;align-items:center;gap:14px;}
+  .nav-price{display:none;}
+  @media(min-width:860px){.nav-price{display:inline-block;font-weight:700;color:var(--ink-soft);font-size:14px;}}
+
+  .hero{padding:50px 0 60px;background:radial-gradient(650px 420px at 85% -5%, rgba(255,94,54,.10), transparent 65%),radial-gradient(550px 380px at -5% 35%, rgba(14,165,233,.08), transparent 60%),var(--bg);overflow:hidden;}
+  .hero-grid{display:grid;grid-template-columns:1fr;gap:40px;align-items:center;}
+  @media(min-width:960px){.hero-grid{grid-template-columns:.95fr 1.05fr;gap:56px;}}
+  .badge-pulse{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;font-weight:600;font-size:13.5px;padding:8px 16px;border-radius:999px;margin-bottom:20px;}
+  .badge-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulseDot 1.6s infinite;}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.35);}}
+  .hero h1{font-size:clamp(30px,4.5vw,46px);margin-bottom:14px;color:var(--ink);}
+  .hero h1 .hl{color:var(--primary);}
+  .hero-sub{font-size:17.5px;color:var(--ink-soft);max-width:480px;margin-bottom:24px;}
+
+  .hero-points{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:24px;max-width:450px;}
+  .hero-point{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14.5px;}
+  .check-ic{width:20px;height:20px;border-radius:50%;flex:none;background:rgba(16,185,129,.12);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
+
+  .price-box{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-md);max-width:440px;}
+  .price-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .price-old{font-size:18px;color:#94A3B8;text-decoration:line-through;font-weight:600;}
+  .price-now{font-size:34px;font-weight:800;font-family:var(--font-display);color:var(--primary);}
+  .price-badge{background:rgba(16,185,129,.12);color:#059669;font-weight:700;font-size:13px;padding:5px 12px;border-radius:999px;}
+  .price-note{font-size:13.5px;color:var(--ink-soft);margin-bottom:16px;}
+  .pay-icons{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .pay-icons span{font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid var(--line);color:var(--ink-soft);background:var(--bg-alt);}
+  .trust-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .trust-row span{display:flex;align-items:center;gap:6px;}
+
+  .hero-visual{position:relative;display:flex;justify-content:center;align-items:center;min-height:320px;}
+  .kids-stage{position:relative;width:100%;max-width:450px;aspect-ratio:5/4;border-radius:24px;background:radial-gradient(closest-side, rgba(255,94,54,.15), transparent 75%),linear-gradient(160deg,#FFF8F5,#F1F5F9);border:1px solid var(--line);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .kids-emoji{font-size:115px;transform:rotate(-4deg);filter:drop-shadow(0 20px 24px rgba(15,23,42,.15));transition:transform .5s cubic-bezier(.16,1,.3,1);}
+  .kids-stage:hover .kids-emoji{transform:rotate(0deg) scale(1.06);}
+  .stage-tag{position:absolute;top:16px;left:16px;background:#fff;font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:999px;box-shadow:var(--shadow-sm);}
+  .stage-tag.right{left:auto;right:16px;top:auto;bottom:16px;background:var(--ink);color:#fff;}
+
+  .proof{padding:32px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-alt);}
+  .proof-inner{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;}
+  .stars{color:var(--accent);font-size:17px;letter-spacing:2px;}
+  .proof-stat{display:flex;flex-direction:column;}
+  .proof-stat b{font-family:var(--font-display);font-size:22px;color:var(--ink);}
+  .proof-stat span{font-size:12.5px;color:var(--ink-soft);}
+  .badge-row{display:flex;gap:20px;flex-wrap:wrap;color:var(--ink-soft);font-size:13px;font-weight:600;}
+  .badge-row span{display:flex;align-items:center;gap:6px;}
+
+  .sec{padding:64px 0;}
+  .sec-head{max-width:620px;margin:0 auto 36px;text-align:center;}
+  .sec-head h2{font-size:clamp(24px,3.2vw,34px);margin-top:12px;}
+  .sec-head p{color:var(--ink-soft);font-size:16px;margin-top:10px;}
+  .sec-alt{background:var(--bg-alt);}
+
+  .grid{display:grid;gap:20px;}
+  .grid-3{grid-template-columns:1fr;}
+  .grid-4{grid-template-columns:1fr 1fr;}
+  @media(min-width:900px){.grid-3{grid-template-columns:repeat(3,1fr);}.grid-4{grid-template-columns:repeat(4,1fr);}}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease;}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:transparent;}
+  .card-ic{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;background:var(--primary-tint);}
+  .card h3{font-size:17px;margin-bottom:8px;}
+  .card p{color:var(--ink-soft);font-size:14px;}
+
+  .swatches-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  @media(min-width:768px){.swatches-grid{grid-template-columns:repeat(4,1fr);}}
+  .swatch-box{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow-sm);transition:all .3s ease;}
+  .swatch-box:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--primary);}
+  .swatch-visual{height:120px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:48px;margin-bottom:12px;}
+  .swatch-box h4{font-size:15.5px;margin-bottom:4px;}
+  .swatch-box .p{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--primary);}
+
+  .test-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;}
+  .test-stars{color:var(--accent);font-size:14px;margin-bottom:10px;}
+  .test-quote{font-size:15px;color:var(--ink);margin-bottom:14px;line-height:1.6;}
+  .test-who{display:flex;align-items:center;gap:12px;}
+  .test-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#FFA07A);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;}
+  .test-who b{font-size:14px;display:block;}
+  .test-who span{font-size:12px;color:var(--ink-soft);}
+
+  .faq-item{border-bottom:1px solid var(--line);}
+  .faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 4px;font-weight:600;font-size:16px;color:var(--ink);}
+  .faq-q .plus{flex:none;width:26px;height:26px;border-radius:50%;background:var(--bg-alt);display:flex;align-items:center;justify-content:center;transition:transform .3s ease, background .3s ease;font-size:16px;color:var(--ink);}
+  .faq-item.open .faq-q .plus{transform:rotate(45deg);background:var(--primary);color:#fff;}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+  .faq-a-inner{padding:0 4px 18px;color:var(--ink-soft);font-size:14.5px;max-width:680px;}
+
+  .final-cta{background:linear-gradient(155deg,var(--primary),#FF8A3D);border-radius:var(--radius);padding:50px 28px;text-align:center;color:#fff;position:relative;overflow:hidden;}
+  .final-cta::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 220px at 85% 0%, rgba(255,255,255,.24), transparent 70%);}
+  .final-cta h2{color:#fff;font-size:clamp(22px,3.2vw,32px);margin-bottom:12px;}
+  .final-cta p{color:rgba(255,255,255,.92);margin-bottom:22px;position:relative;font-size:15px;}
+  .stock-bar{max-width:420px;margin:0 auto 24px;position:relative;}
+  .stock-track{height:9px;background:rgba(255,255,255,.3);border-radius:999px;overflow:hidden;}
+  .stock-fill{height:100%;width:82%;background:#fff;border-radius:999px;}
+  .stock-label{font-size:12.5px;margin-top:8px;color:rgba(255,255,255,.92);font-weight:600;}
+  .final-cta .btn-primary{background:#1E293B;color:#fff;box-shadow:0 14px 30px rgba(0,0,0,.25);}
+
+  .fab-stack{position:fixed;right:20px;bottom:96px;display:flex;flex-direction:column;gap:12px;z-index:70;}
+  @media(min-width:860px){.fab-stack{bottom:28px;}}
+  .fab{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;box-shadow:var(--shadow-md);transition:transform .25s ease, opacity .25s ease;opacity:0;transform:translateY(14px) scale(.8);pointer-events:none;}
+  .fab.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+  .fab:hover{transform:translateY(-3px) scale(1.05);}
+  .fab-wa{background:#25D366;}
+  .fab-msg{background:linear-gradient(135deg,#0084FF,#00C6FF);}
+  .fab-top{background:var(--ink);font-size:16px;}
+
+  .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:65;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(15,23,42,.08);padding:12px 16px;display:flex;align-items:center;gap:14px;transform:translateY(110%);transition:transform .3s ease;}
+  .sticky-cta.show{transform:translateY(0);}
+  .sticky-cta .sc-price b{display:block;font-family:var(--font-display);font-size:18px;color:var(--primary);}
+  .sticky-cta .sc-price s{font-size:12px;color:#94A3B8;}
+  .sticky-cta .btn{flex:1;padding:13px 16px;font-size:15.5px;}
+  @media(min-width:860px){.sticky-cta{display:none;}}
+
+  .mt-24{margin-top:24px;}
+  a:focus-visible,button:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px;}
+</style>
+</head>
+<body>
+
+<div class="desktop-sticky-bar" id="desktopBar">
+  <div class="container dsb-inner">
+    <div class="dsb-left">
+      <span class="brand-mark eng" style="width:28px;height:28px;font-size:12px;">TT</span>
+      <div><b>TinyTrendy</b><span>বাচ্চাদের প্রিমিয়াম টি-শার্ট</span></div>
+    </div>
+    <a href="#buy" class="btn btn-primary">অর্ডার করুন — ৳৩৯০</a>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <div class="brand"><span class="brand-mark eng">TT</span><span>TinyTrendy</span></div>
+    <div class="nav-cta">
+      <span class="nav-price"><s style="color:#94A3B8;font-weight:500;">৳৫৫০</s>&nbsp; ৳৩৯০</span>
+      <a href="#buy" class="btn btn-primary">অর্ডার করুন</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="badge-pulse"><span class="badge-dot"></span> 👶 ১-১২ বছর বয়সীদের জন্য স্পেশাল অফার</span>
+      <h1>বাচ্চার গায়ে <span class="hl">আরাম</span>, মায়ের মনে <span class="hl">শান্তি</span></h1>
+      <p class="hero-sub">১০০% পিওর কটন কম্বড ফেব্রিক — ঘাম শুষে নেয়, ত্বকে র‍্যাশ ফেলে না, বারবার ধুলেও রং নষ্ট হয় না। আপনার সোনামণির সেরা সঙ্গ।</p>
+
+      <div class="hero-points">
+        <div class="hero-point"><span class="check-ic">✓</span> ১০০% প্রিমিয়াম কটন</div>
+        <div class="hero-point"><span class="check-ic">✓</span> স্কিন-ফ্রেন্ডলি সফট ফেব্রিক</div>
+        <div class="hero-point"><span class="check-ic">✓</span> ডাবল-স্টিচ মজবুত সেলাই</div>
+        <div class="hero-point"><span class="check-ic">✓</span> ৭ দিনে সহজ এক্সচেঞ্জ</div>
+      </div>
+
+      <div class="price-box" id="buy">
+        <div class="price-row">
+          <span class="price-old">৳৫৫০</span>
+          <span class="price-now">৳৩৯০</span>
+          <span class="price-badge">২৯% ছাড়</span>
+        </div>
+        <p class="price-note">সারাদেশে হোম ডেলিভারি। পণ্য হাতে পেয়ে চেক করে পেমেন্ট করার সুবিধা রয়েছে।</p>
+        <div class="pay-icons">
+          <span>bKash</span><span>Nagad</span><span>Rocket</span><span>Card</span><span>Cash on Delivery</span>
+        </div>
+        <a href="#buy-final" class="btn btn-primary btn-block btn-lg">অর্ডার করতে ক্লিক করুন</a>
+        <div class="trust-row">
+          <span>🔒 ১০০% নিরাপদ পেমেন্ট</span>
+          <span>🚚 ২৪–৭২ ঘণ্টায় দ্রুত ডেলিভারি</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="kids-stage">
+        <span class="stage-tag">🌟 নতুন কিডস কালেকশন</span>
+        <span class="kids-emoji">👕</span>
+        <span class="stage-tag right">৪.৯ ★ ২,৮৫০+ রিভিউ</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- PROOF -->
+<section class="proof">
+  <div class="container proof-inner">
+    <div class="proof-stat"><span class="stars">★★★★★</span></div>
+    <div class="proof-stat"><b>৪.৯/৫</b><span>গড় কাস্টমার রেটিং</span></div>
+    <div class="proof-stat"><b>৮,৫০০+</b><span>টি-শার্ট ডেলিভারি সম্পন্ন</span></div>
+    <div class="badge-row">
+      <span>🚚 ৩ পিস নিলে ফ্রি ডেলিভারি</span>
+      <span>↩️ ৭ দিনে রিটার্ন/এক্সচেঞ্জ</span>
+      <span>🛡️ ১০০% কটন নিশ্চয়তা</span>
+    </div>
+  </div>
+</section>
+
+<!-- COLOR SWATCHES / PRODUCTS -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">কালার ও ডিজাইন অপশন</span>
+      <h2>পছন্দের ডিজাইন বেছে নিন</h2>
+      <p>১ থেকে ১২ বছর বয়সী বাচ্চাদের জন্য আকর্ষণীয় ও উজ্জ্বল রঙের ভ্যারিয়েন্ট</p>
+    </div>
+    <div class="swatches-grid">
+      <div class="swatch-box reveal">
+        <div class="swatch-visual" style="background:linear-gradient(135deg,#E0F2FE,#BAE6FD);">🦕</div>
+        <h4>ডাইনো প্রিন্ট (স্কাই ব্লু)</h4>
+        <div class="p">৳৩৯০</div>
+      </div>
+      <div class="swatch-box reveal reveal-delay-1">
+        <div class="swatch-visual" style="background:linear-gradient(135deg,#FFE4E6,#FECDD3);">🦁</div>
+        <h4>সাফারি প্রিন্ট (কোরাল)</h4>
+        <div class="p">৳৩৯০</div>
+      </div>
+      <div class="swatch-box reveal reveal-delay-2">
+        <div class="swatch-visual" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);">🚀</div>
+        <h4>স্পেস রকেট (সান ইয়েলো)</h4>
+        <div class="p">৳৩৯০</div>
+      </div>
+      <div class="swatch-box reveal reveal-delay-3">
+        <div class="swatch-visual" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0);">🌿</div>
+        <h4>ক্লাসিক প্লেইন (গ্রাস গ্রিন)</h4>
+        <div class="p">৳৩৫০</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">কেন TinyTrendy সেরা?</span>
+      <h2>প্রতিটি পোশাকে সর্বোচ্চ যত্ন</h2>
+    </div>
+    <div class="grid grid-4">
+      <div class="card reveal">
+        <div class="card-ic">🧵</div>
+        <h3>ডাবল-স্টিচ সেলাই</h3>
+        <p>বাচ্চাদের দুরন্তপনাতেও সেলাই খোলে না, বারবার ওয়াশেও টেকসই থাকে।</p>
+      </div>
+      <div class="card reveal reveal-delay-1">
+        <div class="card-ic">🌿</div>
+        <h3>১০০% কম্বড কটন</h3>
+        <p>বায়ো-ওয়াশড ফেব্রিক যা অত্যন্ত নরম এবং বাচ্চার কোমল ত্বকে চুলকানি মুক্ত।</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <div class="card-ic">💧</div>
+        <h3>ঘাম শোষণ ক্ষমতা</h3>
+        <p>গরমেও ঘাম দ্রুত শুষে নেয়, ফলে সর্দি লাগার ভয় থাকে না।</p>
+      </div>
+      <div class="card reveal reveal-delay-3">
+        <div class="card-ic">🎨</div>
+        <h3>রং ও প্রিন্ট গ্যারান্টি</h3>
+        <p>ইকো-ফ্রেন্ডলি নন-টক্সিক কালার, যা ধোয়ার পরেও নতুনের মতো উজ্জ্বল থাকে।</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">অভিভাবকদের রিভিউ</span>
+      <h2>মায়েদের আস্থার নাম TinyTrendy</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="test-card reveal">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">"কাপড়ের কোয়ালিটি মাশাল্লাহ অনেক ভালো। বাবু পরে খুব আরাম পায়, ৩ বার ধুয়েছি এক ফোঁটাও রং ওঠেনি।"</p>
+        <div class="test-who"><span class="test-av">নাজ</span><div><b>নাজমিন আক্তার</b><span>গৃহিণী, ঢাকা</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-1">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">"ডেলিভারি খুব দ্রুত পেয়েছি। সাইজ একদম পারফেক্ট ছিল। প্যাকেজিং এবং প্রোডাক্ট দুটোই প্রিমিয়াম।"</p>
+        <div class="test-who"><span class="test-av">ফার</span><div><b>ফারহানা চৌধুরী</b><span>শিক্ষক, চট্টগ্রাম</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-2">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">"দাম অনুযায়ী ফেব্রিক সত্যিই অসাধারণ। বাবুর জন্মদিনের জন্য নিয়েছিলাম, সবাই প্রশংসা করেছে।"</p>
+        <div class="test-who"><span class="test-av">তান</span><div><b>তানিয়া সুলতানা</b><span>ব্যাংকার, সিলেট</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec">
+  <div class="container" style="max-width:740px;">
+    <div class="sec-head reveal">
+      <span class="eyebrow">সাধারণ জিজ্ঞাসা</span>
+      <h2>সচরাচর জিজ্ঞাসিত প্রশ্ন</h2>
+    </div>
+    <div id="faqList">
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span>ক্যাশ অন ডেলিভারি সুবিধা আছে কি?</span> <span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, সারাদেশে ক্যাশ অন ডেলিভারি সুবিধা রয়েছে। পণ্য হাতে পেয়ে চেক করে মূল্য পরিশোধ করতে পারবেন।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span>সাইজ না মিললে এক্সচেঞ্জ করা যাবে?</span> <span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ! ডেলিভারি পাওয়ার ৭ দিনের মধ্যে আপনি সহজেই সাইজ বা কালার এক্সচেঞ্জ করে নিতে পারবেন।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span>ডেলিভারি চার্জ কত এবং কতদিনে পাব?</span> <span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">ঢাকার ভেতরে ডেলিভারি ৬০ টাকা (২৪-৪৮ ঘণ্টা), এবং ঢাকার বাইরে ১২০ টাকা (৪৮-৭২ ঘণ্টা)। ৩টি বা তার বেশি নিলে ফ্রি ডেলিভারি!</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span>কাপড় কি ১০০% কটন?</span> <span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, আমাদের সব বাচ্চাদের টি-শার্ট ১০০% কম্বড সুতি কাপড় দিয়ে তৈরি, যা শিশুদের সংবেদনশীল ত্বকের জন্য সম্পূর্ণ নিরাপদ।</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="sec" id="buy-final" style="padding-top:0;">
+  <div class="container">
+    <div class="final-cta reveal">
+      <span class="eyebrow" style="background:rgba(255,255,255,.2);color:#fff;">⏰ সীমিত সময়ের স্টক অফার</span>
+      <h2 class="mt-24">আপনার সোনামণির জন্য এখনই অর্ডার করুন</h2>
+      <p>বিশেষ ডিসকাউন্ট অফার স্টক থাকা পর্যন্ত প্রযোজ্য — আজই অর্ডার কনফার্ম করুন!</p>
+      <div class="stock-bar">
+        <div class="stock-track"><div class="stock-fill"></div></div>
+        <div class="stock-label">এই ব্যাচের স্টকের ৮২% শেষ হয়ে গেছে</div>
+      </div>
+      <a href="#buy" class="btn btn-primary btn-lg">অর্ডার করুন — ৳৩৯০</a>
+    </div>
+  </div>
+</section>
+
+<div class="fab-stack" id="fabStack">
+  <a href="https://wa.me/8801XXXXXXXXX" class="fab fab-wa" aria-label="হোয়াটসঅ্যাপে চ্যাট করুন">💬</a>
+  <a href="#" class="fab fab-msg" aria-label="মেসেঞ্জারে চ্যাট করুন">✉️</a>
+  <button class="fab fab-top" id="backTop" aria-label="উপরে ফিরে যান">↑</button>
+</div>
+
+<div class="sticky-cta" id="stickyCta">
+  <div class="sc-price"><b>৳৩৯০</b><s>৳৫৫০</s></div>
+  <a href="#buy" class="btn btn-primary">অর্ডার করুন</a>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var revealEls = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){ entry.target.classList.add('in-view'); io.unobserve(entry.target); }
+      });
+    }, {threshold:0.12, rootMargin:'0px 0px -30px 0px'});
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add('in-view'); });
+  }
+
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var btn = item.querySelector('.faq-q');
+    var panel = item.querySelector('.faq-a');
+    btn.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(openItem){
+        if(openItem !== item){
+          openItem.classList.remove('open');
+          openItem.querySelector('.faq-q').setAttribute('aria-expanded','false');
+          openItem.querySelector('.faq-a').style.maxHeight = null;
+        }
+      });
+      if(isOpen){
+        item.classList.remove('open');
+        btn.setAttribute('aria-expanded','false');
+        panel.style.maxHeight = null;
+      } else {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded','true');
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+      }
+    });
+  });
+
+  var stickyCta = document.getElementById('stickyCta');
+  var desktopBar = document.getElementById('desktopBar');
+  var fabStack = document.getElementById('fabStack');
+  var backTop = document.getElementById('backTop');
+
+  window.addEventListener('scroll', function(){
+    var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    if(scrollY > 380){
+      if(stickyCta) stickyCta.classList.add('show');
+      if(desktopBar) desktopBar.classList.add('show');
+      if(fabStack){
+        var fabs = fabStack.querySelectorAll('.fab');
+        fabs.forEach(function(f){ f.classList.add('show'); });
+      }
+    } else {
+      if(stickyCta) stickyCta.classList.remove('show');
+      if(desktopBar) desktopBar.classList.remove('show');
+      if(fabStack){
+        var fabs = fabStack.querySelectorAll('.fab');
+        fabs.forEach(function(f){ f.classList.remove('show'); });
+      }
+    }
+  }, {passive:true});
+
+  if(backTop){
+    backTop.addEventListener('click', function(){
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  }
+})();
+</script>
+</body>
+</html>

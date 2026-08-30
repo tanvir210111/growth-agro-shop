@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Velour — প্রিমিয়াম পারফিউম কালেকশন</title>
+<meta name="description" content="দীর্ঘস্থায়ী সুবাস, প্রিমিয়াম ফিল। Velour — লাক্সারি ফ্র্যাগ্র্যান্স, প্রতিটা মুহূর্তের জন্য।">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#8B1E3F;--primary-dark:#6E1732;--primary-tint:#FBEAEE;
+    --ink:#1A1614;--ink-soft:#5C5450;--bg:#FFFDF9;--bg-alt:#F7F1E8;
+    --success:#22C55E;--danger:#EF4444;--accent:#C9A227;--line:#EDE4D6;
+    --container:1200px;--radius:18px;--radius-btn:14px;
+    --shadow-sm:0 2px 10px rgba(26,22,20,.06);--shadow-md:0 12px 32px rgba(26,22,20,.10);
+    --shadow-lg:0 24px 60px rgba(26,22,20,.16);--shadow-primary:0 14px 30px rgba(139,30,63,.26);
+    --font-display:'Hind Siliguri','Poppins', sans-serif;--font-body:'Hind Siliguri', sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:var(--font-body);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.65;overflow-x:hidden;}
+  img{max-width:100%;display:block;}
+  a{color:inherit;text-decoration:none;}
+  ul{list-style:none;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  .container{width:100%;max-width:var(--container);margin:0 auto;padding:0 24px;}
+  section{position:relative;}
+  h1,h2,h3{font-family:var(--font-display);font-weight:700;line-height:1.28;color:var(--ink);}
+  .eng{font-family:'Poppins', sans-serif;}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--primary-dark);background:var(--primary-tint);padding:7px 14px;border-radius:999px;}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:16.5px;padding:16px 30px;border-radius:var(--radius-btn);transition:transform .22s ease, box-shadow .22s ease;white-space:nowrap;}
+  .btn-primary{background:linear-gradient(180deg,#FF7A1A,var(--primary));color:#fff;box-shadow:var(--shadow-primary);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(255,107,0,.36);}
+  .btn-block{width:100%;}
+  .btn-lg{padding:19px 36px;font-size:19px;}
+
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1);}
+  .reveal.in-view{opacity:1;transform:translateY(0);}
+  .reveal-delay-1{transition-delay:.08s;}
+  .reveal-delay-2{transition-delay:.16s;}
+  .reveal-delay-3{transition-delay:.24s;}
+  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none;}html{scroll-behavior:auto;}}
+
+  .nav{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:19px;}
+  .brand-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#FFB25C);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800;}
+  .nav-cta{display:flex;align-items:center;gap:14px;}
+  .nav-price{display:none;}
+  @media(min-width:860px){.nav-price{display:inline-block;font-weight:700;color:var(--ink-soft);font-size:14px;}}
+
+  .hero{padding:52px 0 58px;background:radial-gradient(680px 420px at 82% -8%, rgba(255,107,0,.10), transparent 60%),radial-gradient(520px 360px at -6% 30%, rgba(37,99,235,.06), transparent 60%),var(--bg);overflow:hidden;}
+  .hero-grid{display:grid;grid-template-columns:1fr;gap:40px;align-items:center;}
+  @media(min-width:960px){.hero-grid{grid-template-columns:.95fr 1.05fr;gap:56px;}}
+  .badge-pulse{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;font-weight:600;font-size:13.5px;padding:8px 16px;border-radius:999px;margin-bottom:20px;}
+  .badge-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulseDot 1.6s infinite;}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.35);}}
+  .hero h1{font-size:clamp(29px,4.2vw,44px);margin-bottom:14px;}
+  .hero h1 .hl{color:var(--primary);}
+  .hero-sub{font-size:17.5px;color:var(--ink-soft);max-width:470px;margin-bottom:22px;}
+
+  .hero-points{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:24px;max-width:440px;}
+  .hero-point{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px;}
+  .check-ic{width:19px;height:19px;border-radius:50%;flex:none;background:rgba(34,197,94,.12);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:11px;}
+
+  .price-box{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow-md);max-width:440px;}
+  .price-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .price-old{font-size:18px;color:#9A9A9F;text-decoration:line-through;font-weight:600;}
+  .price-now{font-size:32px;font-weight:800;font-family:var(--font-display);color:var(--ink);}
+  .price-badge{background:rgba(34,197,94,.12);color:#158B44;font-weight:700;font-size:13px;padding:5px 11px;border-radius:999px;}
+  .price-note{font-size:13px;color:var(--ink-soft);margin-bottom:14px;}
+  .pay-icons{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .pay-icons span{font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid var(--line);color:var(--ink-soft);background:var(--bg-alt);}
+  .trust-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .trust-row span{display:flex;align-items:center;gap:6px;}
+
+  .hero-visual{position:relative;display:flex;justify-content:center;align-items:center;min-height:300px;}
+  .bag-stage{position:relative;width:100%;max-width:440px;aspect-ratio:5/4;border-radius:24px;background:radial-gradient(closest-side, rgba(255,107,0,.14), transparent 70%),linear-gradient(160deg,#FAF9F8,#F1EFEC);border:1px solid var(--line);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .bag-emoji{font-size:110px;transform:rotate(-6deg);filter:drop-shadow(0 20px 24px rgba(17,17,17,.18));transition:transform .5s cubic-bezier(.16,1,.3,1);}
+  .bag-stage:hover .bag-emoji{transform:rotate(-1deg) scale(1.05);}
+  .stage-tag{position:absolute;top:16px;left:16px;background:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;box-shadow:var(--shadow-sm);}
+  .stage-tag.right{left:auto;right:16px;top:auto;bottom:16px;background:var(--ink);color:#fff;}
+
+  .proof{padding:32px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-alt);}
+  .proof-inner{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;}
+  .stars{color:var(--accent);font-size:17px;letter-spacing:2px;}
+  .proof-stat{display:flex;flex-direction:column;}
+  .proof-stat b{font-family:var(--font-display);font-size:20px;}
+  .proof-stat span{font-size:12.5px;color:var(--ink-soft);}
+  .badge-row{display:flex;gap:20px;flex-wrap:wrap;color:var(--ink-soft);font-size:12.5px;font-weight:600;}
+  .badge-row span{display:flex;align-items:center;gap:6px;}
+
+  .sec{padding:64px 0;}
+  .sec-head{max-width:600px;margin:0 auto 36px;text-align:center;}
+  .sec-head h2{font-size:clamp(23px,3vw,32px);margin-top:12px;}
+  .sec-head p{color:var(--ink-soft);font-size:15.5px;margin-top:10px;}
+  .sec-alt{background:var(--bg-alt);}
+
+  .grid{display:grid;gap:18px;}
+  .grid-3{grid-template-columns:1fr;}
+  .grid-4{grid-template-columns:1fr 1fr;}
+  @media(min-width:900px){.grid-3{grid-template-columns:repeat(3,1fr);}.grid-4{grid-template-columns:repeat(4,1fr);}}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease;}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:transparent;}
+  .card-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px;background:var(--primary-tint);}
+  .card h3{font-size:16px;margin-bottom:6px;}
+  .card p{color:var(--ink-soft);font-size:13.5px;}
+
+  .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+  @media(min-width:700px){.gallery{grid-template-columns:repeat(4,1fr);}}
+  .gallery-tile{aspect-ratio:1/1;border-radius:16px;background:linear-gradient(150deg,#F4F2EF,#FFF1E6);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:var(--shadow-sm);transition:transform .3s ease;}
+  .gallery-tile:hover{transform:scale(1.03);}
+
+  .test-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
+  .test-stars{color:var(--primary);font-size:13px;margin-bottom:10px;}
+  .test-quote{font-size:14.5px;color:var(--ink);margin-bottom:14px;}
+  .test-who{display:flex;align-items:center;gap:10px;}
+  .test-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#E4C56B);color:#3A2E10;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+  .test-who b{font-size:13px;display:block;}
+  .test-who span{font-size:11.5px;color:var(--ink-soft);}
+
+  .faq-item{border-bottom:1px solid var(--line);}
+  .faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 4px;text-align:right;flex-direction:row-reverse;font-weight:600;font-size:15px;}
+  .faq-q .plus{flex:none;width:24px;height:24px;border-radius:50%;background:var(--bg-alt);display:flex;align-items:center;justify-content:center;transition:transform .3s ease, background .3s ease;font-size:15px;color:var(--ink);}
+  .faq-item.open .faq-q .plus{transform:rotate(45deg);background:var(--primary);color:#fff;}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+  .faq-a-inner{padding:0 4px 18px;color:var(--ink-soft);font-size:14px;max-width:640px;text-align:right;margin-left:auto;}
+
+  .final-cta{background:linear-gradient(155deg,var(--primary),#FF8A3D);border-radius:var(--radius);padding:48px 26px;text-align:center;color:#fff;position:relative;overflow:hidden;}
+  .final-cta::after{content:"";position:absolute;inset:0;background:radial-gradient(400px 200px at 85% 0%, rgba(255,255,255,.22), transparent 70%);}
+  .final-cta h2{color:#fff;font-size:clamp(21px,3vw,29px);margin-bottom:10px;}
+  .final-cta p{color:rgba(255,255,255,.9);margin-bottom:20px;position:relative;font-size:14.5px;}
+  .stock-bar{max-width:400px;margin:0 auto 22px;position:relative;}
+  .stock-track{height:8px;background:rgba(255,255,255,.28);border-radius:999px;overflow:hidden;}
+  .stock-fill{height:100%;width:78%;background:#fff;border-radius:999px;}
+  .stock-label{font-size:12px;margin-top:8px;color:rgba(255,255,255,.9);font-weight:600;}
+  .final-cta .btn-primary{background:#111;box-shadow:0 14px 30px rgba(0,0,0,.28);}
+
+  .fab-stack{position:fixed;right:20px;bottom:96px;display:flex;flex-direction:column;gap:12px;z-index:70;}
+  @media(min-width:860px){.fab-stack{bottom:28px;}}
+  .fab{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;box-shadow:var(--shadow-md);transition:transform .25s ease, opacity .25s ease;opacity:0;transform:translateY(14px) scale(.8);pointer-events:none;}
+  .fab.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+  .fab:hover{transform:translateY(-3px) scale(1.05);}
+  .fab-wa{background:#25D366;}
+  .fab-msg{background:linear-gradient(135deg,#0084FF,#00C6FF);}
+  .fab-top{background:var(--ink);font-size:16px;}
+
+  .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:65;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(17,17,17,.08);padding:12px 16px;display:flex;align-items:center;gap:14px;transform:translateY(110%);transition:transform .3s ease;}
+  .sticky-cta.show{transform:translateY(0);}
+  .sticky-cta .sc-price b{display:block;font-family:var(--font-display);font-size:17px;}
+  .sticky-cta .sc-price s{font-size:12px;color:#9A9A9F;}
+  .sticky-cta .btn{flex:1;padding:13px 16px;font-size:15px;}
+  @media(min-width:860px){.sticky-cta{display:none;}}
+
+  .desktop-sticky-bar{position:fixed;top:0;left:0;right:0;z-index:59;background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--shadow-sm);transform:translateY(-110%);transition:transform .3s ease;}
+  .desktop-sticky-bar.show{transform:translateY(0);}
+  .dsb-inner{display:flex;align-items:center;justify-content:space-between;height:68px;}
+  .dsb-left{display:flex;align-items:center;gap:14px;}
+  .dsb-left b{font-family:var(--font-display);font-size:15px;}
+  .dsb-left span{font-size:12.5px;color:var(--ink-soft);}
+  @media(max-width:859px){.desktop-sticky-bar{display:none;}}
+
+  .mt-24{margin-top:24px;}
+  a:focus-visible,button:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px;}
+</style>
+</head>
+<body>
+
+<div class="desktop-sticky-bar" id="desktopBar">
+  <div class="container dsb-inner">
+    <div class="dsb-left">
+      <span class="brand-mark eng" style="width:26px;height:26px;font-size:12px;">VL</span>
+      <div><b>Velour</b><span>প্রিমিয়াম পারফিউম কালেকশন</span></div>
+    </div>
+    <a href="#buy" class="btn btn-primary">অর্ডার করুন — ৳১,৯৯০</a>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <div class="brand"><span class="brand-mark eng">VL</span><span class="eng">Velour</span></div>
+    <div class="nav-cta">
+      <span class="nav-price"><s style="color:#9A9A9F;font-weight:500;">৳৩,২৯০</s>&nbsp; ৳১,৯৯০</span>
+      <a href="#buy" class="btn btn-primary">অর্ডার করুন</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="badge-pulse"><span class="badge-dot"></span> 🔥 লঞ্চ অফার — ৩৯% ছাড়</span>
+      <h1>এক স্প্রে, <span class="hl">সারাদিনের উপস্থিতি</span></h1>
+      <p class="hero-sub">Velour পারফিউম — লং-লাস্টিং ফ্র্যাগ্র্যান্স, প্রিমিয়াম ইনগ্রেডিয়েন্ট আর এলিগ্যান্ট বোতল। অফিস, ডেট, স্পেশাল অকেশন — সবখানে মানিয়ে যায়।</p>
+
+      <div class="hero-points">
+        <div class="hero-point"><span class="check-ic">✓</span> ৮+ ঘণ্টা স্থায়ী</div>
+        <div class="hero-point"><span class="check-ic">✓</span> ৫০ মিলি বোতল</div>
+        <div class="hero-point"><span class="check-ic">✓</span> লং-লাস্টিং ফরমুলা</div>
+        <div class="hero-point"><span class="check-ic">✓</span> ৭ দিনে এক্সচেঞ্জ</div>
+      </div>
+
+      <div class="price-box" id="buy">
+        <div class="price-row">
+          <span class="price-old">৳৩,২৯০</span>
+          <span class="price-now">৳১,৯৯০</span>
+          <span class="price-badge">৩৯% সাশ্রয়</span>
+        </div>
+        <p class="price-note">সারাদেশে ডেলিভারি। ক্যাশ অন ডেলিভারি সুবিধা আছে।</p>
+        <div class="pay-icons">
+          <span>bKash</span><span>Nagad</span><span>Rocket</span><span>Card</span><span>COD</span>
+        </div>
+        <a href="#buy-final" class="btn btn-primary btn-block btn-lg">অর্ডার করুন</a>
+        <div class="trust-row">
+          <span>🔒 সিকিউর পেমেন্ট</span>
+          <span>🚚 ২৪–৭২ ঘণ্টায় ডেলিভারি</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="bag-stage">
+        <span class="stage-tag">🌸 নতুন কালেকশন</span>
+        <span class="bag-emoji">🧴</span>
+        <span class="stage-tag right">৪.৯ ★ ৩,১০০+ রিভিউ</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- PROOF -->
+<section class="proof">
+  <div class="container proof-inner">
+    <div class="proof-stat"><span class="stars">★★★★★</span></div>
+    <div class="proof-stat"><b>৪.৯/৫</b><span>গড় রেটিং</span></div>
+    <div class="proof-stat"><b>৬,০০০+</b><span>বিক্রি হয়েছে</span></div>
+    <div class="badge-row">
+      <span>🚚 ফ্রি ডেলিভারি (২০০০+)</span>
+      <span>↩️ ৭ দিনে এক্সচেঞ্জ</span>
+      <span>🛡️ ১০০% অথেন্টিক</span>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES (condensed) -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">কেন Velour</span>
+      <h2>প্রতিটা স্প্রে একটা অভিজ্ঞতা</h2>
+    </div>
+    <div class="grid grid-4">
+      <div class="card reveal"><div class="card-ic">⏳</div><h3>৮+ ঘণ্টা স্থায়ী</h3><p>সকালে লাগালে রাত পর্যন্ত সুবাস থাকে।</p></div>
+      <div class="card reveal reveal-delay-1"><div class="card-ic">🌿</div><h3>প্রিমিয়াম নোটস</h3><p>টপ, হার্ট আর বেস নোটের নিখুঁত ব্যালেন্স।</p></div>
+      <div class="card reveal reveal-delay-2"><div class="card-ic">🧴</div><h3>এলিগ্যান্ট বোতল</h3><p>ড্রেসিং টেবিলে রাখার মতো প্রিমিয়াম ডিজাইন।</p></div>
+      <div class="card reveal reveal-delay-3"><div class="card-ic">✨</div><h3>স্কিন-ফ্রেন্ডলি ফরমুলা</h3><p>সংবেদনশীল ত্বকেও আরামদায়ক।</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">কালেকশন</span>
+      <h2>৪টা সিগনেচার ফ্র্যাগ্র্যান্সে পাওয়া যাচ্ছে</h2>
+    </div>
+    <div class="gallery">
+      <div class="gallery-tile reveal">🧴</div>
+      <div class="gallery-tile reveal reveal-delay-1">🧴</div>
+      <div class="gallery-tile reveal reveal-delay-2">🧴</div>
+      <div class="gallery-tile reveal reveal-delay-3">🧴</div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS (condensed) -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">গ্রাহকদের মতামত</span>
+      <h2>যারা Velour ব্যবহার করছেন</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="test-card reveal">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">সারাদিন অফিসে থেকেও বিকেলের দিকে সুবাসটা একইরকম থাকে, এত সস্তায় আশা করিনি।</p>
+        <div class="test-who"><span class="test-av">সাব</span><div><b>সাবরিনা হ.</b><span>চাকরিজীবী</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-1">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">বোতলটা এতটাই সুন্দর যে টেবিলে সাজিয়ে রাখতেও ভালো লাগে।</p>
+        <div class="test-who"><span class="test-av">ফাহ</span><div><b>ফাহিম ক.</b><span>শিক্ষার্থী</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-2">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">উপহার হিসেবে দিয়েছিলাম, প্যাকেজিং দেখে মনে হয়নি এত কম দামে কিনেছি।</p>
+        <div class="test-who"><span class="test-av">রুম</span><div><b>রুমানা ত.</b><span>উদ্যোক্তা</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ (condensed) -->
+<section class="sec sec-alt">
+  <div class="container" style="max-width:720px;">
+    <div class="sec-head reveal">
+      <span class="eyebrow">সাধারণ জিজ্ঞাসা</span>
+      <h2>প্রশ্নের উত্তর</h2>
+    </div>
+    <div id="faqList">
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ক্যাশ অন ডেলিভারি আছে?</button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, সারাদেশে ক্যাশ অন ডেলিভারি সুবিধা আছে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ডেলিভারি কত দিনে পাব?</button>
+        <div class="faq-a"><div class="faq-a-inner">ঢাকায় ২৪–৪৮ ঘণ্টা, ঢাকার বাইরে ৪৮–৭২ ঘণ্টার মধ্যে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> পছন্দ না হলে ফেরত দেয়া যাবে?</button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, ৭ দিনের মধ্যে বিনামূল্যে এক্সচেঞ্জ করা যাবে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> সুবাস কতক্ষণ স্থায়ী থাকে?</button>
+        <div class="faq-a"><div class="faq-a-inner">সঠিকভাবে লাগালে ৮ ঘণ্টার বেশি সময় স্থায়ী থাকে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> এটা কি অথেন্টিক প্রোডাক্ট?</button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, প্রতিটা বোতল কোয়ালিটি চেক করে সিল করা অবস্থায় পাঠানো হয়।</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="sec" id="buy-final" style="padding-top:0;">
+  <div class="container">
+    <div class="final-cta reveal">
+      <span class="eyebrow" style="background:rgba(255,255,255,.2);color:#fff;">⏰ স্টক সীমিত</span>
+      <h2 class="mt-24">নিজের Velour আজই অর্ডার করুন</h2>
+      <p>৬,০০০+ বোতল ইতিমধ্যে বিক্রি হয়ে গেছে — ৩৯% ছাড় আজই শেষ।</p>
+      <div class="stock-bar">
+        <div class="stock-track"><div class="stock-fill"></div></div>
+        <div class="stock-label">এই ফ্র্যাগ্র্যান্সের স্টকের ৭৮% শেষ</div>
+      </div>
+      <a href="#buy" class="btn btn-primary btn-lg">অর্ডার করুন — ৳১,৯৯০</a>
+    </div>
+  </div>
+</section>
+
+<div class="fab-stack" id="fabStack">
+  <a href="https://wa.me/8801XXXXXXXXX" class="fab fab-wa" aria-label="হোয়াটসঅ্যাপে চ্যাট করুন">💬</a>
+  <a href="#" class="fab fab-msg" aria-label="মেসেঞ্জারে চ্যাট করুন">✉️</a>
+  <button class="fab fab-top" id="backTop" aria-label="উপরে ফিরে যান">↑</button>
+</div>
+
+<div class="sticky-cta" id="stickyCta">
+  <div class="sc-price"><b>৳১,৯৯০</b><s>৳৩,২৯০</s></div>
+  <a href="#buy" class="btn btn-primary">অর্ডার করুন</a>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var revealEls = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){ entry.target.classList.add('in-view'); io.unobserve(entry.target); }
+      });
+    }, {threshold:0.14, rootMargin:'0px 0px -40px 0px'});
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add('in-view'); });
+  }
+
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var btn = item.querySelector('.faq-q');
+    var panel = item.querySelector('.faq-a');
+    btn.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(openItem){
+        if(openItem !== item){
+          openItem.classList.remove('open');
+          openItem.querySelector('.faq-q').setAttribute('aria-expanded','false');
+          openItem.querySelector('.faq-a').style.maxHeight = null;
+        }
+      });
+      if(isOpen){
+        item.classList.remove('open');
+        btn.setAttribute('aria-expanded','false');
+        panel.style.maxHeight = null;
+      } else {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded','true');
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+      }
+    });
+  });
+
+  var stickyCta = document.getElementById('stickyCta');
+  var desktopBar = document.getElementById('desktopBar');
+  var fabStack = document.getElementById('fabStack');
+  var heroEl = document.querySelector('.hero');
+  var heroBottom = 0;
+  function measure(){ heroBottom = heroEl.getBoundingClientRect().height + heroEl.offsetTop; }
+  measure();
+  window.addEventListener('resize', measure);
+
+  function onScroll(){
+    var y = window.scrollY || window.pageYOffset;
+    var pastHero = y > heroBottom - 80;
+    if(stickyCta) stickyCta.classList.toggle('show', pastHero);
+    if(desktopBar) desktopBar.classList.toggle('show', pastHero);
+    fabStack.querySelectorAll('.fab').forEach(function(f){ f.classList.toggle('show', y > 240); });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  var backTop = document.getElementById('backTop');
+  if(backTop){ backTop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); }); }
+
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var id = a.getAttribute('href');
+      if(id.length > 1){
+        var target = document.querySelector(id);
+        if(target){
+          e.preventDefault();
+          var offset = 90;
+          var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({top:top, behavior:'smooth'});
+        }
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

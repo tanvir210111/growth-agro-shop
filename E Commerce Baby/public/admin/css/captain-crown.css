@@ -1,0 +1,459 @@
+/* ==========================================================================
+   Captain Crown Style Admin Panel Exact Replica - High Contrast 3D Shadows
+   ========================================================================== */
+
+:root {
+    --cc-header-bg: #ffffff;
+    --cc-sidebar-bg: #ffffff;
+    --cc-sidebar-active: #178ca4;
+    --cc-sidebar-submenu: #f4f6f9;
+    --cc-main-bg: #eef2f6; /* Contrasting soft gray background so white cards POP with shadow */
+    --cc-border-blue: #007bff;
+    --cc-border-green: #20c997;
+    --cc-border-red: #dc3545;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    background-color: var(--cc-main-bg) !important;
+    color: #333333;
+    font-size: 13px;
+    overflow-x: hidden;
+}
+
+.cc-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background-color: #eef2f6;
+}
+
+/* Top Navbar */
+.cc-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: #ffffff;
+    border-bottom: 1px solid #dce2e6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 1020;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cc-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 210px;
+}
+
+.cc-logo-area img {
+    height: 34px;
+    object-fit: contain;
+}
+
+.cc-logo-area span {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.cc-hamburger-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #333333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+}
+
+.cc-user-profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #333333;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #f1f5f9;
+}
+
+.cc-user-profile-btn img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Sidebar */
+.cc-sidebar {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    bottom: 0;
+    width: 220px;
+    background: #ffffff;
+    border-right: 1px solid #dce2e6;
+    overflow-y: auto;
+    z-index: 1010;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.cc-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cc-sidebar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.cc-nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Sidebar Items */
+.cc-nav-item.dashboard-item a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 18px;
+    color: #007bff;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid #f1f5f9;
+    border-left: 4px solid #007bff;
+    background: #eef7ff;
+}
+
+.cc-menu-group {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Collapsed Header */
+.cc-menu-header {
+    background: #ffffff;
+    color: #333333;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 13px;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.cc-menu-header:hover {
+    background: #f8fafc;
+    color: #007bff;
+}
+
+.cc-menu-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cc-menu-title i {
+    font-size: 14px;
+    width: 16px;
+    color: #4b5563;
+}
+
+.cc-menu-arrow {
+    font-size: 10px;
+    color: #9ca3af;
+    transition: transform 0.2s ease;
+}
+
+/* Expanded/Open Header */
+.cc-menu-group.open .cc-menu-header {
+    background: #178ca4 !important; /* Captain Crown Cyan Blue Header */
+    color: #ffffff !important;
+}
+
+.cc-menu-group.open .cc-menu-header .cc-menu-title i,
+.cc-menu-group.open .cc-menu-header .cc-menu-arrow {
+    color: #ffffff !important;
+}
+
+.cc-menu-group.open .cc-menu-arrow {
+    transform: rotate(90deg);
+}
+
+/* Submenu */
+.cc-submenu {
+    list-style: none;
+    background: #f1f5f9;
+    padding: 6px 0;
+    display: none;
+}
+
+.cc-menu-group.open .cc-submenu {
+    display: block;
+}
+
+.cc-submenu li a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 18px 8px 28px;
+    color: #333333;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 500;
+    transition: all 0.15s;
+}
+
+.cc-submenu li a i {
+    font-size: 11px;
+    width: 14px;
+    text-align: center;
+    color: #111827;
+}
+
+.cc-submenu li a:hover,
+.cc-submenu li.active a {
+    color: #178ca4;
+    font-weight: 700;
+    background: #e2e8f0;
+    padding-left: 32px;
+}
+
+/* Main Content Area */
+.cc-main-content {
+    margin-top: 50px;
+    margin-left: 220px;
+    padding: 24px 28px;
+    flex: 1;
+    min-height: calc(100vh - 50px);
+    background-color: #eef2f6 !important;
+}
+
+/* ==========================================================================
+   PROMINENT 3D STAT CARDS WITH HEAVY SHADOWS (MATCHING EXACT SCREENSHOT)
+   ========================================================================== */
+
+.cc-stats-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-bottom: 35px;
+}
+
+.cc-stat-card {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    /* High contrast, prominent drop-shadow exactly matching the screenshot */
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06) !important;
+    padding: 18px 22px 14px !important;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-top: 3.5px solid #007bff !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 115px;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cc-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.16), 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Top Border Colors */
+.cc-stat-card.border-blue { border-top-color: #007bff !important; }
+.cc-stat-card.border-green { border-top-color: #20c997 !important; }
+.cc-stat-card.border-red { border-top-color: #dc3545 !important; }
+
+.cc-stat-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.cc-stat-data {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.cc-stat-count {
+    font-size: 22px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.cc-stat-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.cc-stat-amount {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 4px;
+}
+
+.cc-stat-icon img,
+.cc-stat-icon svg {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.cc-stat-more {
+    font-size: 12px;
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 12px;
+}
+
+.cc-stat-more:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   ACCOUNTS 3D BOXES WITH SHADOWS
+   ========================================================================== */
+
+.cc-accounts-title {
+    font-size: 26px;
+    font-weight: 300;
+    color: #7f8c8d;
+    margin: 20px 0 16px;
+}
+
+.cc-accounts-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-bottom: 35px;
+}
+
+.cc-account-box {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid rgba(0,0,0,0.04);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cc-account-box:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.16), 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+.cc-account-body {
+    padding: 18px 22px;
+}
+
+.cc-account-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 13px;
+    color: #374151;
+}
+
+.cc-account-row.total-row {
+    font-weight: 700;
+    border-top: 1px dashed #cbd5e1;
+    margin-top: 8px;
+    padding-top: 8px;
+    color: #0f172a;
+}
+
+.cc-account-footer-btn {
+    background: #1e2238; /* Captain Crown Dark Navy Footer */
+    color: #ffffff;
+    text-align: center;
+    padding: 11px;
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Generic Table Cards */
+.cc-card {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0,0,0,0.04);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06) !important;
+    margin-bottom: 25px;
+}
+
+.cc-card-header {
+    padding: 16px 22px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cc-card-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.cc-card-body {
+    padding: 22px;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+    .cc-stats-container,
+    .cc-accounts-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .cc-sidebar {
+        transform: translateX(-100%);
+    }
+    .cc-sidebar.open {
+        transform: translateX(0);
+    }
+    .cc-main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+    .cc-stats-container,
+    .cc-accounts-container {
+        grid-template-columns: 1fr;
+    }
+}

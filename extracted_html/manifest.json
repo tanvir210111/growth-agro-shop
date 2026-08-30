@@ -1,0 +1,134 @@
+[
+  {
+    "jsonFile": "bags (1).json",
+    "flowIndex": 0,
+    "flowTitle": "Bags",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "bags (1)__step_1_checkout__widget_4259dac.html",
+    "length": 25078
+  },
+  {
+    "jsonFile": "bags.json",
+    "flowIndex": 0,
+    "flowTitle": "Bags",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "bags__step_1_checkout__widget_4259dac.html",
+    "length": 25078
+  },
+  {
+    "jsonFile": "bp-machine.json",
+    "flowIndex": 0,
+    "flowTitle": "BP Machine",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "bp-machine__step_1_checkout__widget_4259dac.html",
+    "length": 28888
+  },
+  {
+    "jsonFile": "digital-prodact.json",
+    "flowIndex": 0,
+    "flowTitle": "digital prodact",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "digital-prodact__step_1_checkout__widget_4259dac.html",
+    "length": 47390
+  },
+  {
+    "jsonFile": "kids-clothig.json",
+    "flowIndex": 0,
+    "flowTitle": "kids clothig",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "kids-clothig__step_1_checkout__widget_4259dac.html",
+    "length": 26370
+  },
+  {
+    "jsonFile": "mens-clothing-pk-polo.json",
+    "flowIndex": 0,
+    "flowTitle": "mens clothing PK POLO",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "mens-clothing-pk-polo__step_1_checkout__widget_4259dac.html",
+    "length": 26399
+  },
+  {
+    "jsonFile": "perfume.json",
+    "flowIndex": 0,
+    "flowTitle": "Perfume",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "perfume__step_1_checkout__widget_4259dac.html",
+    "length": 25399
+  },
+  {
+    "jsonFile": "sarri-meyder.json",
+    "flowIndex": 0,
+    "flowTitle": "sarri meyder",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "sarri-meyder__step_1_checkout__widget_4259dac.html",
+    "length": 40371
+  },
+  {
+    "jsonFile": "shoes.json",
+    "flowIndex": 0,
+    "flowTitle": "Shoes",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "shoes__step_1_checkout__widget_4259dac.html",
+    "length": 36053
+  },
+  {
+    "jsonFile": "watches.json",
+    "flowIndex": 0,
+    "flowTitle": "Watches",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "watches__step_1_checkout__widget_4259dac.html",
+    "length": 25476
+  },
+  {
+    "jsonFile": "wlp.json",
+    "flowIndex": 0,
+    "flowTitle": "BP Machine",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "wlp__step_1_checkout__widget_4259dac.html",
+    "length": 31427
+  },
+  {
+    "jsonFile": "chicken-booster.json",
+    "flowIndex": 0,
+    "flowTitle": "Chicken Booster",
+    "stepIndex": 1,
+    "stepTitle": "chakout",
+    "stepType": "checkout",
+    "widgetId": "4259dac",
+    "htmlFile": "chicken-booster__step_1_checkout__widget_4259dac.html",
+    "length": 61126
+  }
+]

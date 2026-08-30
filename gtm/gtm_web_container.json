@@ -1,0 +1,236 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2026-08-30 05:32:00",
+  "containerVersion": {
+    "path": "accounts/123456/containers/654321/versions/0",
+    "accountId": "123456",
+    "containerId": "654321",
+    "containerVersionId": "0",
+    "container": {
+      "name": "Chicken Booster Web Container",
+      "publicId": "GTM-XXXXXXX",
+      "usageContext": ["WEB"]
+    },
+    "tag": [
+      {
+        "name": "Server GTM - Transport Configuration (Landing Pages Only)",
+        "type": "googtag",
+        "parameter": [
+          { "key": "tagId", "value": "{{GA4 Measurement ID}}" },
+          {
+            "key": "configSettingsTable",
+            "value": [
+              {
+                "map": [
+                  { "key": "name", "value": "server_container_url" },
+                  { "key": "value", "value": "{{Server GTM URL}}" }
+                ]
+              },
+              {
+                "map": [
+                  { "key": "name", "value": "send_page_view" },
+                  { "key": "value", "value": "true" }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": ["trigger_landing_pages_only"]
+      },
+      {
+        "name": "Meta Pixel - Base Code & PageView",
+        "type": "html",
+        "parameter": [
+          {
+            "key": "html",
+            "value": "<script>\n!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '{{Meta Pixel ID}}');\nfbq('track', 'PageView', {}, { eventID: '{{dlv - event_id}}' });\n</script>"
+          }
+        ],
+        "firingTriggerId": ["trigger_page_view"]
+      },
+      {
+        "name": "Meta Pixel - ViewContent",
+        "type": "html",
+        "parameter": [
+          {
+            "key": "html",
+            "value": "<script>\nfbq('track', 'ViewContent', {\n  content_ids: ['chicken-booster'],\n  content_name: 'Chicken Booster',\n  content_type: 'product',\n  value: Number('{{dlv - ecommerce.value}}') || 990,\n  currency: '{{dlv - ecommerce.currency}}' || 'BDT'\n}, { eventID: '{{dlv - event_id}}' });\n</script>"
+          }
+        ],
+        "firingTriggerId": ["trigger_view_content"]
+      },
+      {
+        "name": "Meta Pixel - InitiateCheckout",
+        "type": "html",
+        "parameter": [
+          {
+            "key": "html",
+            "value": "<script>\nfbq('track', 'InitiateCheckout', {\n  content_ids: ['chicken-booster'],\n  content_name: 'Chicken Booster',\n  content_type: 'product',\n  value: Number('{{dlv - ecommerce.value}}') || 1970,\n  currency: '{{dlv - ecommerce.currency}}' || 'BDT'\n}, { eventID: '{{dlv - event_id}}' });\n</script>"
+          }
+        ],
+        "firingTriggerId": ["trigger_initiate_checkout"]
+      },
+      {
+        "name": "Meta Pixel - Purchase",
+        "type": "html",
+        "parameter": [
+          {
+            "key": "html",
+            "value": "<script>\nfbq('track', 'Purchase', {\n  content_ids: ['chicken-booster'],\n  content_name: 'Chicken Booster',\n  content_type: 'product',\n  value: Number('{{dlv - ecommerce.value}}'),\n  currency: '{{dlv - ecommerce.currency}}' || 'BDT',\n  num_items: 1\n}, { eventID: '{{dlv - event_id}}' });\n</script>"
+          }
+        ],
+        "firingTriggerId": ["trigger_purchase"]
+      }
+    ],
+    "trigger": [
+      {
+        "triggerId": "trigger_landing_pages_only",
+        "name": "Landing Pages Only (/products/*)",
+        "type": "PAGEVIEW",
+        "customEventFilter": [
+          {
+            "type": "STARTS_WITH",
+            "parameter": [
+              { "key": "arg0", "value": "{{Page Path}}" },
+              { "key": "arg1", "value": "/products/" }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "trigger_page_view",
+        "name": "Custom Event - page_view",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "key": "arg0", "value": "{{_event}}" },
+              { "key": "arg1", "value": "page_view" }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "trigger_view_content",
+        "name": "Custom Event - view_content",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "key": "arg0", "value": "{{_event}}" },
+              { "key": "arg1", "value": "view_content" }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "trigger_initiate_checkout",
+        "name": "Custom Event - initiate_checkout",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "key": "arg0", "value": "{{_event}}" },
+              { "key": "arg1", "value": "initiate_checkout" }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "trigger_purchase",
+        "name": "Custom Event - purchase",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "key": "arg0", "value": "{{_event}}" },
+              { "key": "arg1", "value": "purchase" }
+            ]
+          }
+        ]
+      }
+    ],
+    "variable": [
+      {
+        "name": "Server GTM URL",
+        "type": "c",
+        "parameter": [
+          { "key": "value", "value": "https://track.YOUR_DOMAIN/" }
+        ]
+      },
+      {
+        "name": "GA4 Measurement ID",
+        "type": "c",
+        "parameter": [
+          { "key": "value", "value": "G-XXXXXXXXXX" }
+        ]
+      },
+      {
+        "name": "Meta Pixel ID",
+        "type": "c",
+        "parameter": [
+          { "key": "value", "value": "YOUR_PIXEL_ID" }
+        ]
+      },
+      {
+        "name": "Page Path",
+        "type": "u",
+        "parameter": [
+          { "key": "component", "value": "PATH" }
+        ]
+      },
+      {
+        "name": "dlv - event_id",
+        "type": "v",
+        "parameter": [
+          { "key": "name", "value": "event_id" },
+          { "key": "dataLayerVersion", "value": 2 }
+        ]
+      },
+      {
+        "name": "dlv - event_time",
+        "type": "v",
+        "parameter": [
+          { "key": "name", "value": "event_time" },
+          { "key": "dataLayerVersion", "value": 2 }
+        ]
+      },
+      {
+        "name": "dlv - ecommerce.value",
+        "type": "v",
+        "parameter": [
+          { "key": "name", "value": "ecommerce.value" },
+          { "key": "dataLayerVersion", "value": 2 }
+        ]
+      },
+      {
+        "name": "dlv - ecommerce.currency",
+        "type": "v",
+        "parameter": [
+          { "key": "name", "value": "ecommerce.currency" },
+          { "key": "dataLayerVersion", "value": 2 }
+        ]
+      },
+      {
+        "name": "dlv - transaction_id",
+        "type": "v",
+        "parameter": [
+          { "key": "name", "value": "transaction_id" },
+          { "key": "dataLayerVersion", "value": 2 }
+        ]
+      },
+      {
+        "name": "dlv - order_number",
+        "type": "v",
+        "parameter": [
+          { "key": "name", "value": "order_number" },
+          { "key": "dataLayerVersion", "value": 2 }
+        ]
+      }
+    ]
+  }
+}

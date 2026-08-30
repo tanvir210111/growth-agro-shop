@@ -1,0 +1,26 @@
+{
+  "name": "chicken-booster-landing-page",
+  "version": "1.0.0",
+  "description": "Chicken Booster Landing Page, Admin Panel, and Order Processing System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "sync": "node sync_chicken_booster.js",
+    "test": "node test_phase6.js",
+    "test:all": "node test_phase1.js && node test_phase2.js && node test_phase3.js && node test_phase4.js && node test_phase5.js && node test_phase6.js && node audit_all.js",
+    "db:backup": "node scripts/backup_db.js"
+  },
+  "keywords": [
+    "landing-page",
+    "e-commerce",
+    "admin-panel",
+    "gtm",
+    "meta-pixel"
+  ],
+  "author": "Media Scope IT",
+  "license": "ISC",
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

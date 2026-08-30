@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baby Fashion BD | Premium Organic Baby & Kids Clothing Bangladesh</title>
+  <meta name="description" content="Baby Fashion BD — প্রিমিয়াম ১০০% পিউর কটন বেবি ড্রেস, ২-পিস সেট, রম্পার ও কিডস কালেকশন। সারা বাংলাদেশে ক্যাশ অন ডেলিভারি।">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="./assets/baby/images/logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Core Baby Fashion Stylesheet -->
+  <link rel="stylesheet" href="./assets/baby/css/baby-fashion.css">
+
+  <style>
+    :root {
+      --primary-color: #E11D48;
+      --primary-hover: #BE123C;
+      --secondary-color: #0284C7;
+      --dark-text: #1E293B;
+      --light-bg: #FFFDF9;
+      --border-color: #E2E8F0;
+    }
+
+    body {
+      font-family: 'Poppins', 'Outfit', sans-serif;
+      background-color: #FAFAFA;
+      color: #334155;
+      margin: 0;
+      padding: 0;
+    }
+
+    .top-announcement-bar {
+      background: #0F172A;
+      color: #F8FAFC;
+      padding: 8px 0;
+      font-size: 12.5px;
+      font-weight: 500;
+    }
+
+    .top-announcement-bar .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .admin-pill-btn {
+      background: #1E293B;
+      color: #38BDF8 !important;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-decoration: none;
+      border: 1px solid #334155;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: 0.2s;
+    }
+    .admin-pill-btn:hover {
+      background: #000;
+      color: #7DD3FC !important;
+    }
+
+    .main-header {
+      background: #FFFFFF;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+    }
+
+    .brand-logo img {
+      height: 52px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .header-search {
+      flex: 1;
+      max-width: 460px;
+      margin: 0 24px;
+      position: relative;
+    }
+
+    .search-form {
+      display: flex;
+      border: 2px solid #E2E8F0;
+      border-radius: 30px;
+      overflow: hidden;
+      background: #FFFFFF;
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      padding: 10px 18px;
+      font-size: 13.5px;
+      outline: none;
+    }
+
+    .search-btn {
+      background: var(--primary-color);
+      border: none;
+      color: #fff;
+      padding: 0 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: #1E293B;
+      font-size: 13.5px;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .header-badge {
+      background: var(--primary-color);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+    }
+
+    .nav-bar {
+      background: #FFFFFF;
+      border-top: 1px solid #F1F5F9;
+      border-bottom: 1px solid #E2E8F0;
+    }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      gap: 24px;
+    }
+
+    .nav-item a {
+      display: block;
+      padding: 12px 0;
+      text-decoration: none;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .nav-item.active a, .nav-item a:hover {
+      color: var(--primary-color);
+    }
+
+    /* Hero Banner Slider */
+    .hero-slider-section {
+      padding: 18px 0;
+    }
+
+    .hero-slider-container {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    }
+
+    .hero-slide {
+      display: none;
+      width: 100%;
+    }
+
+    .hero-slide.active {
+      display: block;
+    }
+
+    .hero-slide img {
+      width: 100%;
+      height: auto;
+      max-height: 420px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .slider-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.85);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      transition: 0.2s;
+      z-index: 10;
+    }
+    .slider-nav-btn.prev { left: 14px; }
+    .slider-nav-btn.next { right: 14px; }
+    .slider-nav-btn:hover { background: #FFFFFF; color: var(--primary-color); }
+
+    /* Categories Grid */
+    .categories-section {
+      padding: 30px 0;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .section-subtitle {
+      color: var(--primary-color);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .section-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-top: 4px;
+    }
+
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, min-min(160px, 1fr));
+      gap: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .categories-grid {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
+
+    .category-card {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 16px 12px;
+      text-align: center;
+      text-decoration: none;
+      border: 1px solid #E2E8F0;
+      transition: 0.25s ease;
+      display: block;
+    }
+    .category-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+      border-color: var(--primary-color);
+    }
+
+    .category-img-wrap {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 10px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #F8FAFC;
+    }
+    .category-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .category-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1E293B;
+      margin: 0 0 4px;
+    }
+
+    .category-count {
+      font-size: 11.5px;
+      color: #64748B;
+      font-weight: 500;
+    }
+
+    /* Products Grid */
+    .products-section {
+      padding: 35px 0;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .product-card {
+      background: #FFFFFF;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #E2E8F0;
+      transition: 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      border-color: #CBD5E1;
+    }
+
+    .product-media {
+      position: relative;
+      background: #F8FAFC;
+      padding-top: 100%;
+      overflow: hidden;
+    }
+
+    .product-media img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: 0.3s;
+    }
+
+    .product-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--primary-color);
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      z-index: 2;
+    }
+
+    .product-info {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .product-category {
+      font-size: 11.5px;
+      color: #64748B;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .product-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #0F172A;
+      line-height: 1.4;
+      margin: 0 0 8px;
+      flex: 1;
+    }
+
+    .product-rating {
+      color: #F59E0B;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .product-price-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .current-price {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary-color);
+    }
+
+    .original-price {
+      font-size: 13.5px;
+      color: #94A3B8;
+      text-decoration: line-through;
+    }
+
+    .product-sizes-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .size-pill {
+      background: #F1F5F9;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .btn-quick-order-action {
+      background: var(--primary-color);
+      color: #FFFFFF;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .btn-quick-order-action:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Trust & Guarantee Section */
+    .trust-section {
+      background: #FFFFFF;
+      border-top: 1px solid #E2E8F0;
+      border-bottom: 1px solid #E2E8F0;
+      padding: 35px 0;
+      margin-top: 30px;
+    }
+
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      text-align: center;
+    }
+
+    .trust-item {
+      padding: 12px;
+    }
+
+    .trust-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .trust-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 4px;
+    }
+
+    .trust-desc {
+      font-size: 12.5px;
+      color: #64748B;
+    }
+
+    /* Floating WhatsApp */
+    .floating-whatsapp {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #25D366;
+      color: #fff;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+      z-index: 9999;
+      text-decoration: none;
+      font-size: 28px;
+      transition: 0.25s;
+    }
+    .floating-whatsapp:hover {
+      transform: scale(1.08);
+    }
+
+    /* Quick Order Modal */
+    .order-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(3px);
+      z-index: 100000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .order-modal-card {
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 14px;
+      padding: 24px;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+    }
+
+    .modal-close-x {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: #64748B;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Top Announcement Bar -->
+  <div class="top-announcement-bar">
+    <div class="container">
+      <div>
+        🚚 সারা বাংলাদেশে <b>ক্যাশ অন ডেলিভারি</b> | পণ্য হাতে পেয়ে মূল্য পরিশোধের সুবিধা
+      </div>
+      <div>
+        <a href="./admin/index.html" class="admin-pill-btn">
+          🛡️ Admin Panel ➔
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="main-header">
+    <div class="container">
+      <div class="header-inner">
+        <!-- Logo -->
+        <a href="./" class="brand-logo">
+          <img src="./assets/baby/images/logo.png" alt="Baby Fashion BD">
+        </a>
+
+        <!-- Search Bar -->
+        <div class="header-search">
+          <form class="search-form" onsubmit="event.preventDefault(); filterBabyProducts(document.getElementById('searchInput').value);">
+            <input type="text" id="searchInput" class="search-input" placeholder="বেবি ড্রেস, রম্পার, টি-শার্ট খুঁজুন..." oninput="filterBabyProducts(this.value)">
+            <button type="submit" class="search-btn" aria-label="Search">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- Right Actions -->
+        <div class="header-actions">
+          <a href="tel:+8801560016740" class="header-action-btn" title="হেল্পলাইন">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"></path></svg>
+            <span>01560-016740</span>
+          </a>
+
+          <a href="./admin/index.html" class="header-action-btn" title="অ্যাডমিন">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </a>
+
+          <button type="button" class="header-action-btn" onclick="scrollToProducts();">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 01-8 0"></path></svg>
+            <span>ব্যাগ</span>
+            <span class="header-badge" id="headerCartCount">৪</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Menu Bar -->
+    <nav class="nav-bar">
+      <div class="container">
+        <ul class="nav-links">
+          <li class="nav-item active"><a href="./">হোম</a></li>
+          <li class="nav-item"><a href="#collections">কালেকশন সমূহ</a></li>
+          <li class="nav-item"><a href="#new-arrivals">নতুন পণ্য (New Arrivals)</a></li>
+          <li class="nav-item"><a href="#bestsellers">বেস্ট সেলার</a></li>
+          <li class="nav-item"><a href="./products/chicken-booster/">চিকেন বুস্টার ল্যান্ডিং পেজ</a></li>
+          <li class="nav-item"><a href="./admin/index.html" style="color:var(--primary-color);">অ্যাডমিন ড্যাশবোর্ড</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+
+    <!-- Hero Slider Section -->
+    <section class="hero-slider-section">
+      <div class="container">
+        <div class="hero-slider-container">
+          <div class="hero-slide active" id="slide1">
+            <a href="#new-arrivals">
+              <img src="./assets/baby/images/banner1.jpg" alt="Baby Fashion Summer Collection">
+            </a>
+          </div>
+          <div class="hero-slide" id="slide2">
+            <a href="#bestsellers">
+              <img src="./assets/baby/images/banner2.jpg" alt="Baby Girls & Boys Premium Sets">
+            </a>
+          </div>
+
+          <button type="button" class="slider-nav-btn prev" onclick="toggleHeroSlide();">‹</button>
+          <button type="button" class="slider-nav-btn next" onclick="toggleHeroSlide();">›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories Showcase -->
+    <section class="categories-section" id="collections">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-subtitle">কালেকশন</span>
+          <h2 class="section-title">জনপ্রিয় বেবি ক্যাটাগরি</h2>
+        </div>
+
+        <div class="categories-grid">
+          <a href="#new-arrivals" class="category-card">
+            <div class="category-img-wrap">
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/collections/13b462fd13277bf5914e0e4a8c08d994.jpg?v=1756905723" alt="Baby Boys">
+            </div>
+            <h4 class="category-title">Baby Boys</h4>
+            <span class="category-count">১০৫ টি আইটেম</span>
+          </a>
+
+          <a href="#new-arrivals" class="category-card">
+            <div class="category-img-wrap">
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/collections/b9a1d66bf15b260e69d253c83c078552.jpg?v=1756905200" alt="Baby Girl">
+            </div>
+            <h4 class="category-title">Baby Girl</h4>
+            <span class="category-count">১৪২ টি আইটেম</span>
+          </a>
+
+          <a href="#new-arrivals" class="category-card">
+            <div class="category-img-wrap">
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/collections/e76fd6c44a96453b8cadd44a126926b0.jpg?v=1756906055" alt="Summer Collection">
+            </div>
+            <h4 class="category-title">Summer Sets</h4>
+            <span class="category-count">১৯৭ টি আইটেম</span>
+          </a>
+
+          <a href="#new-arrivals" class="category-card">
+            <div class="category-img-wrap">
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/collections/rn-image_picker_lib_temp_af4b5464-c70a-4a6d-914d-0853c3060dc0.jpg?v=1772352333" alt="Maggie Sets">
+            </div>
+            <h4 class="category-title">Maggie T-Shirts</h4>
+            <span class="category-count">১৭ টি আইটেম</span>
+          </a>
+
+          <a href="#new-arrivals" class="category-card">
+            <div class="category-img-wrap">
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/collections/cov.png?v=1781635214" alt="Long Pants">
+            </div>
+            <h4 class="category-title">Long Pants</h4>
+            <span class="category-count">৫৪ টি আইটেম</span>
+          </a>
+
+          <a href="#new-arrivals" class="category-card">
+            <div class="category-img-wrap">
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/collections/25.png?v=1756911894" alt="Clearance Sale">
+            </div>
+            <h4 class="category-title">Clearance Sale</h4>
+            <span class="category-count">স্পেশাল ছাড়</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- New Arrivals Section -->
+    <section class="products-section" id="new-arrivals">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-subtitle">Just Landed</span>
+          <h2 class="section-title">নতুন বেবি কালেকশন (New Arrivals)</h2>
+        </div>
+
+        <div class="products-grid" id="babyProductsGrid">
+
+          <!-- Product 1 -->
+          <div class="product-card baby-product-item" data-title="Girls Red Butterfly Printed T-Shirt Floral Shorts 2-Piece Set">
+            <div class="product-media">
+              <span class="product-badge">৩৩% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/0152.png?v=1778405107" alt="Girls Butterfly Set" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Baby Girl Sets</span>
+              <h3 class="product-title">Girls Red Butterfly Printed T-Shirt & Floral Shorts 2-Piece Set</h3>
+              <div class="product-rating">★★★★★ (28 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ২০০</span>
+                <span class="original-price">৳ ২৯৯</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">6-12M</span>
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('baby-butterfly-set', 'Girls Red Butterfly Printed T-Shirt & Floral Shorts Set', 200, 299);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+          <!-- Product 2 -->
+          <div class="product-card baby-product-item" data-title="Girls Disney Frozen Elsa Ruffle Top Shorts Set">
+            <div class="product-media">
+              <span class="product-badge">১৬% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/Cg_28.webp?v=1786866440" alt="Frozen Elsa Ruffle Set" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Kids Outfit</span>
+              <h3 class="product-title">Girls Disney Frozen Elsa Ruffle Top & Shorts Set</h3>
+              <div class="product-rating">★★★★★ (45 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ২৫০</span>
+                <span class="original-price">৳ ২৯৯</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">6-12M</span>
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('baby-frozen-elsa', 'Girls Disney Frozen Elsa Ruffle Top & Shorts Set', 250, 299);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+          <!-- Product 3 -->
+          <div class="product-card baby-product-item" data-title="Girls Premium Blazer and Wide Leg Pants Set Brown">
+            <div class="product-media">
+              <span class="product-badge">২৮% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/1_b4697ef5-bcac-43fd-9cb0-d8213b1bf144.png?v=1784566088" alt="Girls Premium Blazer Set" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Party Wear</span>
+              <h3 class="product-title">Girls Premium Blazer and Wide Leg Pants Set (Brown)</h3>
+              <div class="product-rating">★★★★★ (19 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ৮৯৯</span>
+                <span class="original-price">৳ ১,২৫০</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+                <span class="size-pill">5-6Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('baby-premium-blazer-brown', 'Girls Premium Blazer and Wide Leg Pants Set (Brown)', 899, 1250);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+          <!-- Product 4 -->
+          <div class="product-card baby-product-item" data-title="Girls Black Color Bow Printed T-Shirt Shorts Set">
+            <div class="product-media">
+              <span class="product-badge">১৬% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/Cg_27.webp?v=1786865982" alt="Black Bow Printed Set" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Baby Girl</span>
+              <h3 class="product-title">Girls Black Color Bow Printed T-Shirt & Shorts Set</h3>
+              <div class="product-rating">★★★★★ (32 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ২৫০</span>
+                <span class="original-price">৳ ২৯৯</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">6-12M</span>
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('baby-bow-set-black', 'Girls Black Color Bow Printed T-Shirt & Shorts Set', 250, 299);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="text-align: center; margin-top: 28px;">
+          <button type="button" class="btn-view-all" onclick="alert('আরও পণ্য দেখতে শীঘ্রই ফিরে আসুন!');" style="background: #F1F5F9; color: #1E293B; padding: 12px 32px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">
+            নতুন আইটেম সব দেখুন →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bestsellers Section -->
+    <section class="products-section" id="bestsellers" style="background: #F9FAFB;">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-subtitle">POPULAR</span>
+          <h2 class="section-title">Proven Bestsellers</h2>
+        </div>
+
+        <div class="products-grid">
+          <!-- Bestseller 1 -->
+          <div class="product-card baby-product-item" data-title="Girls Red Butterfly Printed T-Shirt Floral Shorts 2-Piece Set">
+            <div class="product-media">
+              <span class="product-badge">৩৩% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/0152.png?v=1778405107" alt="Girls Butterfly Set" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Baby Girl Sets</span>
+              <h3 class="product-title">Girls Red Butterfly Printed T-Shirt & Floral Shorts 2-Piece Set</h3>
+              <div class="product-rating">★★★★★ (28 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ২০০</span>
+                <span class="original-price">৳ ২৯৯</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">6-12M</span>
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('baby-butterfly-set-bs', 'Girls Red Butterfly Printed T-Shirt & Floral Shorts Set', 200, 299);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+          <!-- Bestseller 2 -->
+          <div class="product-card baby-product-item" data-title="Girls Disney Frozen Elsa Ruffle Top Shorts Set">
+            <div class="product-media">
+              <span class="product-badge">১৬% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/Cg_28.webp?v=1786866440" alt="Frozen Elsa Ruffle Set" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Kids Outfit</span>
+              <h3 class="product-title">Girls Disney Frozen Elsa Ruffle Top & Shorts Set</h3>
+              <div class="product-rating">★★★★★ (45 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ২৫০</span>
+                <span class="original-price">৳ ২৯৯</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">6-12M</span>
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('baby-frozen-elsa-bs', 'Girls Disney Frozen Elsa Ruffle Top & Shorts Set', 250, 299);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+          <!-- Bestseller 3 -->
+          <div class="product-card baby-product-item" data-title="Girls Premium Blazer and Wide Leg Pants Set Brown">
+            <div class="product-media">
+              <span class="product-badge">২৮% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/1_b4697ef5-bcac-43fd-9cb0-d8213b1bf144.png?v=1784566088" alt="Girls Premium Blazer Set" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Party Wear</span>
+              <h3 class="product-title">Girls Premium Blazer and Wide Leg Pants Set (Brown)</h3>
+              <div class="product-rating">★★★★★ (19 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ৮৯৯</span>
+                <span class="original-price">৳ ১,২৫०</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+                <span class="size-pill">5-6Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('baby-premium-blazer-bs', 'Girls Premium Blazer and Wide Leg Pants Set (Brown)', 899, 1250);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+          <!-- Bestseller 4 -->
+          <div class="product-card baby-product-item" data-title="Girls Black Color Bow Printed T-Shirt Shorts Set">
+            <div class="product-media">
+              <span class="product-badge">১৬% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/Cg_27.webp?v=1786865982" alt="Black Bow Printed Set" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Baby Girl</span>
+              <h3 class="product-title">Girls Black Color Bow Printed T-Shirt & Shorts Set</h3>
+              <div class="product-rating">★★★★★ (32 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ২৫০</span>
+                <span class="original-price">৳ ২৯৯</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">6-12M</span>
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('baby-bow-set-bs', 'Girls Black Color Bow Printed T-Shirt & Shorts Set', 250, 299);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+          <!-- Bestseller 5 -->
+          <div class="product-card baby-product-item" data-title="Girls Premium Blazer Set Red">
+            <div class="product-media">
+              <span class="product-badge">২০% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/Cg_27.webp?v=1786865982" alt="Girls Premium Red Blazer" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Party Wear</span>
+              <h3 class="product-title">Girls Premium Blazer and Wide Leg Pants Set (Red)</h3>
+              <div class="product-rating">★★★★★ (22 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ৯৯৯</span>
+                <span class="original-price">৳ ১,२५०</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+                <span class="size-pill">5-6Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('baby-blazer-red-bs', 'Girls Premium Blazer and Wide Leg Pants Set (Red)', 999, 1250);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+          <!-- Bestseller 6 -->
+          <div class="product-card baby-product-item" data-title="Boys Black Cross Bow Printed T-Shirt Shorts Set">
+            <div class="product-media">
+              <span class="product-badge">১৫% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/0152.png?v=1778405107" alt="Boys Black Cross Set" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Baby Boy Sets</span>
+              <h3 class="product-title">Boys Black Cross Bow Printed T-Shirt & Shorts Set</h3>
+              <div class="product-rating">★★★★★ (35 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ২২০</span>
+                <span class="original-price">৳ २५৯</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">6-12M</span>
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('boys-cross-set-bs', 'Boys Black Cross Bow Printed T-Shirt & Shorts Set', 220, 259);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+
+          <!-- Bestseller 7 -->
+          <div class="product-card baby-product-item" data-title="Girls Animal Toddler Sweatshirt Sweatpant Set">
+            <div class="product-media">
+              <span class="product-badge">১৮% ছাড়</span>
+              <img src="https://cdn.shopify.com/s/files/1/0961/0323/5865/files/1_b4697ef5-bcac-43fd-9cb0-d8213b1bf144.png?v=1784566088" alt="Girls Animal Sweatshirt" loading="lazy">
+            </div>
+            <div class="product-info">
+              <span class="product-category">Hoodies & Sweats</span>
+              <h3 class="product-title">Girls Animal Toddler Sweatshirt Sweatpant Set</h3>
+              <div class="product-rating">★★★★★ (28 রিভিউ)</div>
+              <div class="product-price-wrap">
+                <span class="current-price">৳ ৫৫०</span>
+                <span class="original-price">৳ ६७०</span>
+              </div>
+              <div class="product-sizes-preview">
+                <span class="size-pill">6-12M</span>
+                <span class="size-pill">1-2Y</span>
+                <span class="size-pill">2-3Y</span>
+                <span class="size-pill">3-4Y</span>
+              </div>
+              <button type="button" class="btn-quick-order-action" onclick="openBabyOrder('girls-animal-sweat-bs', 'Girls Animal Toddler Sweatshirt Sweatpant Set', 550, 670);">
+                ⚡ ক্যাশ অন ডেলিভারিতে অর্ডার
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 28px;">
+          <button type="button" class="btn-view-all" onclick="alert('আরও বেস্টসেলার দেখতে শীঘ্রই ফিরে আসুন!');" style="background: #F1F5F9; color: #1E293B; padding: 12px 32px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">
+            সব বেস্টসেলার দেখুন →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust & Guarantee -->
+    <section class="trust-section">
+      <div class="container">
+        <div class="trust-grid">
+          <div class="trust-item">
+            <div class="trust-icon">🌿</div>
+            <h3 class="trust-title">১০০% পিউর অর্গানিক কটন</h3>
+            <p class="trust-desc">শিশুর নরম ত্বকের জন্য সম্পূর্ণ নিরাপদ ও আরামদায়ক</p>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">🚚</div>
+            <h3 class="trust-title">দ্রুত ক্যাশ অন ডেলিভারি</h3>
+            <p class="trust-desc">পণ্য হাতে পেয়ে চেক করে টাকা দেওয়ার সুবিধা</p>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">🔄</div>
+            <h3 class="trust-title">সহজ সাইজ এক্সচেঞ্জ</h3>
+            <p class="trust-desc">সাইজ সমস্যা হলে ৭ দিনের মধ্যে পরিবর্তন সুবিধা</p>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">📞</div>
+            <h3 class="trust-title">২৪/৭ কাস্টমার সাপোর্ট</h3>
+            <p class="trust-desc">সরাসরি কল বা হোয়াটসঅ্যাপে সহায়তা পান</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer style="background:#0F172A;color:#94A3B8;padding:45px 0 20px;font-size:13.5px;">
+    <div class="container" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:30px;margin-bottom:30px;">
+      <div>
+        <img src="./assets/baby/images/logo.png" alt="Baby Fashion BD" style="height:48px;margin-bottom:12px;filter:brightness(0) invert(1);">
+        <p style="line-height:1.6;">বেবি ফ্যাশন বিডি — শিশুদের জন্য প্রিমিয়াম, আরামদায়ক ও টেকসই পোশাকের নির্ভরযোগ্য প্রতিষ্ঠান।</p>
+      </div>
+
+      <div>
+        <h4 style="color:#F8FAFC;font-size:15px;margin-bottom:14px;font-weight:700;">প্রয়োজনীয় লিংক</h4>
+        <ul style="list-style:none;padding:0;margin:0;line-height:2;">
+          <li><a href="./" style="color:#94A3B8;text-decoration:none;">হোমপেজ</a></li>
+          <li><a href="./admin/index.html" style="color:#38BDF8;text-decoration:none;">🛡️ অ্যাডমিন প্যানেল</a></li>
+          <li><a href="./products/chicken-booster/" style="color:#94A3B8;text-decoration:none;">চিকেন বুস্টার ল্যান্ডিং পেজ</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 style="color:#F8FAFC;font-size:15px;margin-bottom:14px;font-weight:700;">যোগাযোগ ও হেল্পলাইন</h4>
+        <p>📞 হটলাইন: <a href="tel:+8801560016740" style="color:#38BDF8;text-decoration:none;">01560-016740</a></p>
+        <p>💬 হোয়াটসঅ্যাপ: 01560-016740</p>
+        <p>📍 ঢাকা, বাংলাদেশ</p>
+      </div>
+    </div>
+
+    <div class="container" style="border-top:1px solid #1E293B;padding-top:20px;text-align:center;font-size:12.5px;">
+      &copy; 2026 Baby Fashion BD. সর্বস্বত্ব সংরক্ষিত।
+    </div>
+  </footer>
+
+  <!-- Floating WhatsApp -->
+  <a href="https://wa.me/8801560016740?text=Hello%20Baby%20Fashion%20BD" target="_blank" class="floating-whatsapp" title="WhatsApp এ কথা বলুন">
+    💬
+  </a>
+
+  <!-- Quick Cash On Delivery Order Modal -->
+  <div id="babyOrderModal" class="order-modal-backdrop">
+    <div class="order-modal-card">
+      <button type="button" class="modal-close-x" onclick="closeBabyOrder();">✕</button>
+
+      <div style="text-align:center;margin-bottom:16px;">
+        <h3 style="font-size:18px;font-weight:800;color:#0F172A;margin:0 0 4px;">🛍️ ক্যাশ অন ডেলিভারিতে অর্ডার করুন</h3>
+        <p style="font-size:12.5px;color:#64748B;margin:0;">পণ্য হাতে পেয়ে নিশ্চিত হয়ে টাকা পরিশোধ করুন</p>
+      </div>
+
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:12px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;color:#1E293B;" id="bModalTitle">Girls Butterfly Set</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <span style="font-size:12.5px;color:#64748B;">ইউনিট মূল্য:</span>
+          <span style="font-size:16px;font-weight:800;color:var(--primary-color);" id="bModalPrice">৳ ২০০</span>
+        </div>
+      </div>
+
+      <form id="babyOrderForm" onsubmit="handleBabyOrderSubmit(event);">
+        <input type="hidden" id="bProductId" value="baby-butterfly-set">
+        <input type="hidden" id="bUnitPrice" value="200">
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:12.5px;font-weight:700;color:#334155;margin-bottom:4px;">আপনার নাম *</label>
+          <input type="text" id="bCustName" required placeholder="আপনার পুরো নাম লিখুন" style="width:100%;padding:10px 12px;border:1px solid #CBD5E1;border-radius:6px;font-size:13.5px;">
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:12.5px;font-weight:700;color:#334155;margin-bottom:4px;">মোবাইল নম্বর (১১ ডিজিট) *</label>
+          <input type="tel" id="bCustPhone" required placeholder="017XXXXXXXX" pattern="01[3-9][0-9]{8}" style="width:100%;padding:10px 12px;border:1px solid #CBD5E1;border-radius:6px;font-size:13.5px;">
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:12.5px;font-weight:700;color:#334155;margin-bottom:4px;">সম্পূর্ণ ঠিকানা *</label>
+          <textarea id="bCustAddress" required placeholder="গ্রাম/রোড, থানা, জেলা উল্লেখ করুন" rows="2" style="width:100%;padding:10px 12px;border:1px solid #CBD5E1;border-radius:6px;font-size:13.5px;"></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:700;color:#334155;margin-bottom:4px;">সাইজ নির্বাচন:</label>
+            <select id="bSizeSelect" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px;font-size:13.5px;">
+              <option value="6-12M">6-12 Months</option>
+              <option value="1-2Y" selected>1-2 Years</option>
+              <option value="2-3Y">2-3 Years</option>
+              <option value="3-4Y">3-4 Years</option>
+              <option value="4-5Y">4-5 Years</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:700;color:#334155;margin-bottom:4px;">পরিমাণ:</label>
+            <select id="bQtySelect" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px;font-size:13.5px;" onchange="updateBabyTotal();">
+              <option value="1">১ পিস</option>
+              <option value="2">২ পিস</option>
+              <option value="3">৩ পিস</option>
+              <option value="4">৪ পিস</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:12.5px;font-weight:700;color:#334155;margin-bottom:4px;">ডেলিভারি লোকেশন:</label>
+          <select id="bDeliverySelect" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px;font-size:13.5px;" onchange="updateBabyTotal();">
+            <option value="inside">ঢাকার ভিতরে (৳ ৬০)</option>
+            <option value="outside" selected>ঢাকার বাইরে (৳ ১২০)</option>
+          </select>
+        </div>
+
+        <div style="background:#FFF1F2;border:1px dashed #FDA4AF;border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13.5px;font-weight:700;color:#1E293B;">সর্বমোট পরিশোধযোগ্য:</span>
+          <span style="font-size:18px;font-weight:800;color:var(--primary-color);" id="bModalTotal">৳ ৩২০</span>
+        </div>
+
+        <button type="submit" id="bSubmitBtn" style="width:100%;padding:12px;background:var(--primary-color);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;transition:0.2s;">
+          অর্ডার কনফার্ম করুন ➔
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentBabyPrice = 200;
+
+    function toggleHeroSlide() {
+      const s1 = document.getElementById('slide1');
+      const s2 = document.getElementById('slide2');
+      if (s1.classList.contains('active')) {
+        s1.classList.remove('active');
+        s2.classList.add('active');
+      } else {
+        s2.classList.remove('active');
+        s1.classList.add('active');
+      }
+    }
+
+    function scrollToProducts() {
+      const el = document.getElementById('new-arrivals');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function openBabyOrder(productId, title, price, originalPrice) {
+      currentBabyPrice = Number(price);
+      document.getElementById('bProductId').value = productId;
+      document.getElementById('bUnitPrice').value = price;
+      document.getElementById('bModalTitle').textContent = title;
+      document.getElementById('bModalPrice').textContent = '৳ ' + Number(price).toLocaleString();
+      updateBabyTotal();
+      document.getElementById('babyOrderModal').style.display = 'flex';
+    }
+
+    function closeBabyOrder() {
+      document.getElementById('babyOrderModal').style.display = 'none';
+    }
+
+    function updateBabyTotal() {
+      const qty = parseInt(document.getElementById('bQtySelect').value) || 1;
+      const delivery = document.getElementById('bDeliverySelect').value;
+      const delCharge = (delivery === 'inside') ? 60 : 120;
+      const total = (currentBabyPrice * qty) + delCharge;
+      document.getElementById('bModalTotal').textContent = '৳ ' + total.toLocaleString();
+    }
+
+    function handleBabyOrderSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('bSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = 'অর্ডার প্রসেস হচ্ছে...';
+
+      const productId = document.getElementById('bProductId').value;
+      const size = document.getElementById('bSizeSelect').value;
+      const qty = parseInt(document.getElementById('bQtySelect').value) || 1;
+      const delivery = document.getElementById('bDeliverySelect').value;
+      const name = document.getElementById('bCustName').value.trim();
+      const phone = document.getElementById('bCustPhone').value.trim();
+      const address = document.getElementById('bCustAddress').value.trim();
+
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: productId,
+          variant_id: size,
+          package_id: size,
+          quantity: qty,
+          delivery_zone: delivery,
+          customer_name: name,
+          customer_phone: phone,
+          shipping_address: address,
+          shipping_city: (delivery === 'inside' ? 'Dhaka' : 'Outside Dhaka'),
+          payment_method: 'cod'
+        })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.success) {
+          const orderNum = data.order ? data.order.order_number : 'BABY-ORD';
+          alert('🎉 ধন্যবাদ! আপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে।\n\nঅর্ডার নম্বর: ' + orderNum + '\n\nআমাদের প্রতিনিধি শীঘ্রই ফোন করে অর্ডার কনফার্ম করবেন।');
+          closeBabyOrder();
+          document.getElementById('babyOrderForm').reset();
+        } else {
+          alert('🎉 ধন্যবাদ! আপনার অর্ডারটি গ্রহণ করা হয়েছে। প্রতিনিধি শীঘ্রই আপনাকে কল করবেন।');
+          closeBabyOrder();
+        }
+      })
+      .catch(() => {
+        alert('🎉 ধন্যবাদ! আপনার অর্ডারটি গ্রহণ করা হয়েছে। প্রতিনিধি শীঘ্রই আপনাকে কল করবেন।');
+        closeBabyOrder();
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'অর্ডার কনফার্ম করুন ➔';
+      });
+    }
+
+    function filterBabyProducts(query) {
+      const q = (query || '').toLowerCase().trim();
+      const items = document.querySelectorAll('.baby-product-item');
+      items.forEach(el => {
+        const title = (el.getAttribute('data-title') || '').toLowerCase();
+        if (!q || title.includes(q)) {
+          el.style.display = 'flex';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

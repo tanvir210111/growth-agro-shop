@@ -1,0 +1,316 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2026-08-30 05:35:00",
+  "containerVersion": {
+    "path": "accounts/123456/containers/789012/versions/0",
+    "accountId": "123456",
+    "containerId": "789012",
+    "containerVersionId": "0",
+    "container": {
+      "name": "Chicken Booster Server Container (Meta CAPI)",
+      "publicId": "GTM-SERVER-XXXXXXX",
+      "usageContext": ["SERVER"]
+    },
+    "client": [
+      {
+        "name": "GA4 / Web GTM Client",
+        "type": "ga4_client",
+        "parameter": [
+          { "key": "priority", "value": "10" },
+          { "key": "activation_criteria", "value": "any" },
+          { "key": "claim_requests", "value": "true" },
+          { "key": "path", "value": "/g/collect" }
+        ]
+      }
+    ],
+    "tag": [
+      {
+        "name": "Meta CAPI - PageView",
+        "type": "facebook_conversions_api",
+        "parameter": [
+          { "key": "pixelId", "value": "{{Meta Pixel ID}}" },
+          { "key": "apiAccessToken", "value": "{{Meta Access Token}}" },
+          { "key": "eventName", "value": "PageView" },
+          { "key": "eventId", "value": "{{Event ID}}" },
+          { "key": "eventTime", "value": "{{Event Time}}" },
+          { "key": "actionSource", "value": "website" },
+          { "key": "clientIpAddress", "value": "{{Client IP}}" },
+          { "key": "clientUserAgent", "value": "{{User Agent}}" },
+          { "key": "fbp", "value": "{{Cookie - _fbp}}" },
+          { "key": "fbc", "value": "{{Cookie - _fbc}}" }
+        ],
+        "firingTriggerId": ["trigger_sgtm_page_view"]
+      },
+      {
+        "name": "Meta CAPI - ViewContent",
+        "type": "facebook_conversions_api",
+        "parameter": [
+          { "key": "pixelId", "value": "{{Meta Pixel ID}}" },
+          { "key": "apiAccessToken", "value": "{{Meta Access Token}}" },
+          { "key": "eventName", "value": "ViewContent" },
+          { "key": "eventId", "value": "{{Event ID}}" },
+          { "key": "eventTime", "value": "{{Event Time}}" },
+          { "key": "actionSource", "value": "website" },
+          { "key": "clientIpAddress", "value": "{{Client IP}}" },
+          { "key": "clientUserAgent", "value": "{{User Agent}}" },
+          { "key": "fbp", "value": "{{Cookie - _fbp}}" },
+          { "key": "fbc", "value": "{{Cookie - _fbc}}" },
+          { "key": "value", "value": "{{Event Value}}" },
+          { "key": "currency", "value": "{{Event Currency}}" },
+          { "key": "contentIds", "value": "['chicken-booster']" },
+          { "key": "contentType", "value": "product" }
+        ],
+        "firingTriggerId": ["trigger_sgtm_view_content"]
+      },
+      {
+        "name": "Meta CAPI - InitiateCheckout",
+        "type": "facebook_conversions_api",
+        "parameter": [
+          { "key": "pixelId", "value": "{{Meta Pixel ID}}" },
+          { "key": "apiAccessToken", "value": "{{Meta Access Token}}" },
+          { "key": "eventName", "value": "InitiateCheckout" },
+          { "key": "eventId", "value": "{{Event ID}}" },
+          { "key": "eventTime", "value": "{{Event Time}}" },
+          { "key": "actionSource", "value": "website" },
+          { "key": "clientIpAddress", "value": "{{Client IP}}" },
+          { "key": "clientUserAgent", "value": "{{User Agent}}" },
+          { "key": "fbp", "value": "{{Cookie - _fbp}}" },
+          { "key": "fbc", "value": "{{Cookie - _fbc}}" },
+          { "key": "value", "value": "{{Event Value}}" },
+          { "key": "currency", "value": "{{Event Currency}}" },
+          { "key": "contentIds", "value": "['chicken-booster']" },
+          { "key": "contentType", "value": "product" }
+        ],
+        "firingTriggerId": ["trigger_sgtm_initiate_checkout"]
+      },
+      {
+        "name": "Meta CAPI - Purchase",
+        "type": "facebook_conversions_api",
+        "parameter": [
+          { "key": "pixelId", "value": "{{Meta Pixel ID}}" },
+          { "key": "apiAccessToken", "value": "{{Meta Access Token}}" },
+          { "key": "eventName", "value": "Purchase" },
+          { "key": "eventId", "value": "{{Event ID}}" },
+          { "key": "eventTime", "value": "{{Event Time}}" },
+          { "key": "actionSource", "value": "website" },
+          { "key": "clientIpAddress", "value": "{{Client IP}}" },
+          { "key": "clientUserAgent", "value": "{{User Agent}}" },
+          { "key": "fbp", "value": "{{Cookie - _fbp}}" },
+          { "key": "fbc", "value": "{{Cookie - _fbc}}" },
+          { "key": "value", "value": "{{Event Value}}" },
+          { "key": "currency", "value": "{{Event Currency}}" },
+          { "key": "contentIds", "value": "['chicken-booster']" },
+          { "key": "contentType", "value": "product" },
+          { "key": "orderId", "value": "{{Transaction ID}}" },
+          { "key": "numItems", "value": "1" }
+        ],
+        "firingTriggerId": ["trigger_sgtm_purchase"]
+      }
+    ],
+    "trigger": [
+      {
+        "triggerId": "trigger_all_landing_events",
+        "name": "All Landing Page Events (/products/*)",
+        "type": "CUSTOM",
+        "customEventFilter": [
+          {
+            "type": "REGEX",
+            "parameter": [
+              { "key": "arg0", "value": "{{Event Name}}" },
+              { "key": "arg1", "value": "page_view|view_content|initiate_checkout|purchase" }
+            ]
+          },
+          {
+            "type": "STARTS_WITH",
+            "parameter": [
+              { "key": "arg0", "value": "{{Page Path}}" },
+              { "key": "arg1", "value": "/products/" }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "trigger_sgtm_page_view",
+        "name": "Custom Event - page_view",
+        "type": "CUSTOM",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "key": "arg0", "value": "{{Event Name}}" },
+              { "key": "arg1", "value": "page_view" }
+            ]
+          },
+          {
+            "type": "STARTS_WITH",
+            "parameter": [
+              { "key": "arg0", "value": "{{Page Path}}" },
+              { "key": "arg1", "value": "/products/" }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "trigger_sgtm_view_content",
+        "name": "Custom Event - view_content",
+        "type": "CUSTOM",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "key": "arg0", "value": "{{Event Name}}" },
+              { "key": "arg1", "value": "view_content" }
+            ]
+          },
+          {
+            "type": "STARTS_WITH",
+            "parameter": [
+              { "key": "arg0", "value": "{{Page Path}}" },
+              { "key": "arg1", "value": "/products/" }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "trigger_sgtm_initiate_checkout",
+        "name": "Custom Event - initiate_checkout",
+        "type": "CUSTOM",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "key": "arg0", "value": "{{Event Name}}" },
+              { "key": "arg1", "value": "initiate_checkout" }
+            ]
+          },
+          {
+            "type": "STARTS_WITH",
+            "parameter": [
+              { "key": "arg0", "value": "{{Page Path}}" },
+              { "key": "arg1", "value": "/products/" }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "trigger_sgtm_purchase",
+        "name": "Custom Event - purchase",
+        "type": "CUSTOM",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "key": "arg0", "value": "{{Event Name}}" },
+              { "key": "arg1", "value": "purchase" }
+            ]
+          },
+          {
+            "type": "STARTS_WITH",
+            "parameter": [
+              { "key": "arg0", "value": "{{Page Path}}" },
+              { "key": "arg1", "value": "/products/" }
+            ]
+          }
+        ]
+      }
+    ],
+    "variable": [
+      {
+        "name": "Meta Pixel ID",
+        "type": "c",
+        "parameter": [
+          { "key": "value", "value": "YOUR_PIXEL_ID" }
+        ]
+      },
+      {
+        "name": "Meta Access Token",
+        "type": "c",
+        "parameter": [
+          { "key": "value", "value": "YOUR_META_ACCESS_TOKEN" }
+        ]
+      },
+      {
+        "name": "Event Name",
+        "type": "e"
+      },
+      {
+        "name": "Page Path",
+        "type": "ed",
+        "parameter": [
+          { "key": "keyPath", "value": "page_path" }
+        ]
+      },
+      {
+        "name": "Event ID",
+        "type": "ed",
+        "parameter": [
+          { "key": "keyPath", "value": "event_id" }
+        ]
+      },
+      {
+        "name": "Event Time",
+        "type": "ed",
+        "parameter": [
+          { "key": "keyPath", "value": "event_time" }
+        ]
+      },
+      {
+        "name": "Transaction ID",
+        "type": "ed",
+        "parameter": [
+          { "key": "keyPath", "value": "transaction_id" }
+        ]
+      },
+      {
+        "name": "Order Number",
+        "type": "ed",
+        "parameter": [
+          { "key": "keyPath", "value": "order_number" }
+        ]
+      },
+      {
+        "name": "Event Value",
+        "type": "ed",
+        "parameter": [
+          { "key": "keyPath", "value": "value" }
+        ]
+      },
+      {
+        "name": "Event Currency",
+        "type": "ed",
+        "parameter": [
+          { "key": "keyPath", "value": "currency" }
+        ]
+      },
+      {
+        "name": "Items",
+        "type": "ed",
+        "parameter": [
+          { "key": "keyPath", "value": "items" }
+        ]
+      },
+      {
+        "name": "Client IP",
+        "type": "ip"
+      },
+      {
+        "name": "User Agent",
+        "type": "ua"
+      },
+      {
+        "name": "Cookie - _fbp",
+        "type": "k",
+        "parameter": [
+          { "key": "name", "value": "_fbp" }
+        ]
+      },
+      {
+        "name": "Cookie - _fbc",
+        "type": "k",
+        "parameter": [
+          { "key": "name", "value": "_fbc" }
+        ]
+      }
+    ]
+  }
+}

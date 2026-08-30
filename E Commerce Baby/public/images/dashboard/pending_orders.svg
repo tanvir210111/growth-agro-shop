@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="48" height="48">
+  <path d="M12 24 L32 14 L52 24 L32 34 Z" fill="#d97706"/>
+  <path d="M12 24 L32 34 L32 54 L12 44 Z" fill="#b45309"/>
+  <path d="M52 24 L32 34 L32 54 L52 44 Z" fill="#f59e0b"/>
+  <circle cx="48" cy="46" r="12" fill="#0284c7" stroke="#ffffff" stroke-width="2"/>
+  <polyline points="48,40 48,46 53,46" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

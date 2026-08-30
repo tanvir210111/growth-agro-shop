@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LaunchKit Pro — সম্পূর্ণ ডিজিটাল বিজনেস স্টার্টার সিস্টেম</title>
+<meta name="description" content="আপনার বিজনেস দ্রুত শুরু ও বড় করার জন্য দরকারি সব টেমপ্লেট, গাইড এবং টুলস — এক জায়গায়।">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#FF6B00;
+    --primary-dark:#E35F00;
+    --primary-tint:#FFF1E6;
+    --ink:#111111;
+    --ink-soft:#4B4B52;
+    --bg:#FFFFFF;
+    --bg-alt:#FAF9F8;
+    --success:#22C55E;
+    --danger:#EF4444;
+    --accent:#2563EB;
+    --line:#ECEAE7;
+    --container:1200px;
+    --radius:18px;
+    --radius-btn:14px;
+    --shadow-sm:0 2px 10px rgba(17,17,17,.05);
+    --shadow-md:0 12px 32px rgba(17,17,17,.08);
+    --shadow-lg:0 24px 60px rgba(17,17,17,.14);
+    --shadow-primary:0 14px 30px rgba(255,107,0,.28);
+    --font-display:'Hind Siliguri','Poppins', sans-serif;
+    --font-body:'Hind Siliguri', sans-serif;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.65;
+    overflow-x:hidden;
+  }
+  img{max-width:100%;display:block;}
+  a{color:inherit;text-decoration:none;}
+  ul{list-style:none;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  .container{width:100%;max-width:var(--container);margin:0 auto;padding:0 24px;}
+  section{position:relative;}
+
+  h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:1.28;letter-spacing:0;color:var(--ink);}
+  .eng{font-family:'Poppins', sans-serif;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:13px;font-weight:600;letter-spacing:.02em;
+    color:var(--primary-dark);
+    background:var(--primary-tint);
+    padding:7px 14px;border-radius:999px;
+  }
+
+  /* Buttons */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    font-weight:700;font-size:16.5px;
+    padding:16px 30px;border-radius:var(--radius-btn);
+    transition:transform .22s ease, box-shadow .22s ease, background .22s ease;
+    white-space:nowrap;
+  }
+  .btn-primary{
+    background:linear-gradient(180deg,#FF7A1A,var(--primary));
+    color:#fff;
+    box-shadow:var(--shadow-primary);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(255,107,0,.36);}
+  .btn-primary:active{transform:translateY(0);}
+  .btn-ghost{
+    background:#fff;color:var(--ink);border:1.5px solid var(--line);
+  }
+  .btn-ghost:hover{border-color:var(--ink);transform:translateY(-2px);}
+  .btn-block{width:100%;}
+  .btn-lg{padding:19px 36px;font-size:19px;}
+
+  /* Reveal animation */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);}
+  .reveal.in-view{opacity:1;transform:translateY(0);}
+  .reveal-delay-1{transition-delay:.08s;}
+  .reveal-delay-2{transition-delay:.16s;}
+  .reveal-delay-3{transition-delay:.24s;}
+  .reveal-delay-4{transition-delay:.32s;}
+
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1;transform:none;transition:none;}
+    html{scroll-behavior:auto;}
+  }
+
+  /* ============ NAV ============ */
+  .nav{
+    position:sticky;top:0;z-index:60;
+    background:rgba(255,255,255,.82);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:19px;}
+  .brand-mark{
+    width:32px;height:32px;border-radius:9px;
+    background:linear-gradient(135deg,var(--primary),#FFB25C);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800;
+  }
+  .nav-cta{display:flex;align-items:center;gap:14px;}
+  .nav-price{display:none;}
+  @media(min-width:860px){.nav-price{display:inline-block;font-weight:700;color:var(--ink-soft);font-size:14px;}}
+
+  /* ============ HERO ============ */
+  .hero{
+    padding:56px 0 64px;
+    background:
+      radial-gradient(680px 420px at 82% -8%, rgba(255,107,0,.10), transparent 60%),
+      radial-gradient(520px 360px at -6% 30%, rgba(37,99,235,.06), transparent 60%),
+      var(--bg);
+    overflow:hidden;
+  }
+  .hero-grid{display:grid;grid-template-columns:1fr;gap:44px;align-items:center;}
+  @media(min-width:960px){.hero-grid{grid-template-columns:1.05fr .95fr;gap:56px;}}
+
+  .badge-pulse{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--ink);color:#fff;font-weight:600;font-size:13.5px;
+    padding:8px 16px;border-radius:999px;margin-bottom:22px;
+  }
+  .badge-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulseDot 1.6s infinite;}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.35);}}
+
+  .hero h1{font-size:clamp(30px,4.6vw,48px);margin-bottom:18px;}
+  .hero h1 .hl{color:var(--primary);position:relative;}
+  .hero-sub{font-size:18px;color:var(--ink-soft);max-width:530px;margin-bottom:26px;}
+
+  .hero-points{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:32px;max-width:480px;}
+  .hero-point{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14.5px;}
+  .check-ic{
+    width:20px;height:20px;border-radius:50%;flex:none;
+    background:rgba(34,197,94,.12);color:var(--success);
+    display:flex;align-items:center;justify-content:center;font-size:12px;
+  }
+
+  .price-box{
+    background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);
+    padding:24px;box-shadow:var(--shadow-md);max-width:460px;
+  }
+  .price-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .price-old{font-size:19px;color:#9A9A9F;text-decoration:line-through;font-weight:600;}
+  .price-now{font-size:36px;font-weight:800;font-family:var(--font-display);color:var(--ink);}
+  .price-badge{
+    background:rgba(34,197,94,.12);color:#158B44;font-weight:700;font-size:13px;
+    padding:5px 11px;border-radius:999px;
+  }
+  .price-note{font-size:13.5px;color:var(--ink-soft);margin-bottom:16px;}
+
+  .pay-icons{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .pay-icons span{
+    font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;
+    border:1px solid var(--line);color:var(--ink-soft);background:var(--bg-alt);
+  }
+
+  .countdown{display:flex;gap:10px;margin-bottom:18px;}
+  .cd-unit{flex:1;background:var(--bg-alt);border-radius:12px;padding:10px 6px;text-align:center;}
+  .cd-num{font-family:var(--font-display);font-weight:800;font-size:22px;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .cd-label{font-size:11px;color:var(--ink-soft);}
+
+  .trust-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .trust-row span{display:flex;align-items:center;gap:6px;}
+
+  /* hero mockup — stacked deck signature */
+  .hero-visual{position:relative;display:flex;justify-content:center;align-items:center;min-height:360px;}
+  .deck{position:relative;width:100%;max-width:400px;aspect-ratio:4/5;}
+  .deck-card{
+    position:absolute;inset:0;border-radius:20px;
+    box-shadow:var(--shadow-lg);
+    display:flex;flex-direction:column;justify-content:space-between;padding:26px;
+    transition:transform .5s cubic-bezier(.16,1,.3,1);
+  }
+  .deck-card:nth-child(1){background:linear-gradient(155deg,#FFFFFF,#FFF6EE);transform:rotate(-9deg) translate(-16px,10px);z-index:1;border:1px solid var(--line);}
+  .deck-card:nth-child(2){background:linear-gradient(155deg,#11131A,#22252E);transform:rotate(5deg) translate(14px,2px);z-index:2;color:#fff;}
+  .deck-card:nth-child(3){background:linear-gradient(160deg,var(--primary),#FF8A3D);transform:rotate(-1deg);z-index:3;color:#fff;}
+  .hero-visual:hover .deck-card:nth-child(1){transform:rotate(-13deg) translate(-26px,16px);}
+  .hero-visual:hover .deck-card:nth-child(2){transform:rotate(8deg) translate(22px,4px);}
+  .hero-visual:hover .deck-card:nth-child(3){transform:rotate(-2deg) translate(0,-6px);}
+  .deck-tag{font-size:11.5px;font-weight:700;opacity:.85;}
+  .deck-title{font-family:var(--font-display);font-weight:800;font-size:20px;margin-top:6px;}
+  .deck-glyph{font-size:34px;}
+
+  /* ============ SOCIAL PROOF ============ */
+  .proof{padding:40px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-alt);}
+  .proof-inner{display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:space-between;}
+  .stars{color:var(--primary);font-size:18px;letter-spacing:2px;}
+  .proof-stat{display:flex;flex-direction:column;}
+  .proof-stat b{font-family:var(--font-display);font-size:22px;}
+  .proof-stat span{font-size:13px;color:var(--ink-soft);}
+  .avatars{display:flex;}
+  .avatars span{
+    width:38px;height:38px;border-radius:50%;border:2.5px solid #fff;
+    background:linear-gradient(135deg,var(--accent),#6C9BFF);
+    color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;
+    margin-left:-10px;box-shadow:var(--shadow-sm);
+  }
+  .avatars span:first-child{margin-left:0;}
+  .badge-row{display:flex;gap:22px;flex-wrap:wrap;color:var(--ink-soft);font-size:13px;font-weight:600;}
+  .badge-row span{display:flex;align-items:center;gap:6px;}
+
+  /* ============ SECTION HEADERS ============ */
+  .sec{padding:88px 0;}
+  .sec-head{max-width:640px;margin:0 auto 48px;text-align:center;}
+  .sec-head h2{font-size:clamp(25px,3.4vw,36px);margin-top:14px;}
+  .sec-head p{color:var(--ink-soft);font-size:16.5px;margin-top:12px;}
+  .sec-alt{background:var(--bg-alt);}
+
+  /* ============ CARDS GRID ============ */
+  .grid{display:grid;gap:22px;}
+  .grid-2{grid-template-columns:1fr;}
+  .grid-3{grid-template-columns:1fr;}
+  .grid-4{grid-template-columns:1fr;}
+  @media(min-width:640px){.grid-2{grid-template-columns:1fr 1fr;}.grid-4{grid-template-columns:1fr 1fr;}}
+  @media(min-width:900px){.grid-3{grid-template-columns:repeat(3,1fr);}.grid-4{grid-template-columns:repeat(4,1fr);}}
+
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    padding:28px;transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+  }
+  .card:hover{transform:translateY(-5px);box-shadow:var(--shadow-md);border-color:transparent;}
+  .card-ic{
+    width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+    font-size:22px;margin-bottom:16px;
+  }
+  .ic-pain{background:rgba(239,68,68,.09);}
+  .ic-good{background:var(--primary-tint);}
+  .ic-blue{background:rgba(37,99,235,.09);}
+  .card h3{font-size:17.5px;margin-bottom:8px;}
+  .card p{color:var(--ink-soft);font-size:14.5px;}
+
+  .pain-card{border-color:var(--line);}
+  .pain-card .card-ic{color:var(--danger);}
+
+  /* ============ SOLUTION ============ */
+  .solution-wrap{display:grid;grid-template-columns:1fr;gap:40px;align-items:center;}
+  @media(min-width:900px){.solution-wrap{grid-template-columns:1fr 1fr;}}
+  .solution-art{
+    background:linear-gradient(160deg,#11131A,#262a35);border-radius:var(--radius);
+    padding:40px;color:#fff;min-height:340px;display:flex;flex-direction:column;justify-content:center;gap:18px;
+    box-shadow:var(--shadow-lg);
+  }
+  .solution-row{display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(255,255,255,.06);border-radius:12px;font-size:15px;}
+  .solution-row .ok{color:var(--success);font-weight:800;}
+  .solution-copy h2{margin-bottom:16px;}
+  .solution-copy p{color:var(--ink-soft);margin-bottom:24px;font-size:16px;}
+
+  /* ============ PREVIEW / device mockups ============ */
+  .device-wrap{display:grid;grid-template-columns:1fr;gap:24px;align-items:end;}
+  @media(min-width:900px){.device-wrap{grid-template-columns:2fr 1fr;}}
+  .device{
+    background:linear-gradient(160deg,#F4F2EF,#fff);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow-md);overflow:hidden;
+  }
+  .device-bar{height:34px;background:#EFEDEA;display:flex;align-items:center;gap:6px;padding:0 14px;}
+  .device-bar i{width:9px;height:9px;border-radius:50%;background:#D9D6D1;}
+  .device-screen{aspect-ratio:16/10;background:
+    linear-gradient(135deg, rgba(255,107,0,.14), rgba(37,99,235,.10)),
+    repeating-linear-gradient(45deg, rgba(17,17,17,.03) 0 2px, transparent 2px 26px);
+  }
+  .device-mobile .device-screen{aspect-ratio:9/16;}
+
+  /* ============ FEATURES two-col ============ */
+  .feat-wrap{display:grid;grid-template-columns:1fr;gap:40px;align-items:center;}
+  @media(min-width:900px){.feat-wrap{grid-template-columns:1fr 1.1fr;}}
+  .feat-art{
+    aspect-ratio:1/1;border-radius:var(--radius);
+    background:conic-gradient(from 200deg, var(--primary-tint), #fff 30%, rgba(37,99,235,.08) 70%, var(--primary-tint));
+    border:1px solid var(--line);box-shadow:var(--shadow-md);
+    display:flex;align-items:center;justify-content:center;font-size:64px;
+  }
+  .feat-list li{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line);}
+  .feat-list li:last-child{border-bottom:none;}
+  .feat-list h4{font-size:15.5px;margin-bottom:4px;}
+  .feat-list p{font-size:14px;color:var(--ink-soft);}
+
+  /* ============ BONUSES ============ */
+  .bonus-card{
+    background:linear-gradient(160deg,#fff,var(--primary-tint));
+    border:1.5px dashed #FFC896;border-radius:var(--radius);
+    padding:26px;position:relative;overflow:hidden;
+  }
+  .bonus-value{position:absolute;top:18px;right:18px;background:var(--ink);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;}
+  .bonus-card .card-ic{background:#fff;}
+
+  /* ============ COMPARISON ============ */
+  .compare-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--line);}
+  .compare-table th,.compare-table td{padding:16px 18px;text-align:left;font-size:14.5px;border-bottom:1px solid var(--line);}
+  .compare-table th{font-family:var(--font-display);font-size:14.5px;background:var(--bg-alt);}
+  .compare-table th.win{background:var(--primary);color:#fff;}
+  .compare-table tr:last-child td{border-bottom:none;}
+  .yes{color:var(--success);font-weight:800;}
+  .no{color:var(--danger);font-weight:800;}
+  .compare-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* ============ TESTIMONIALS ============ */
+  .test-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:26px;}
+  .test-stars{color:var(--primary);font-size:14px;margin-bottom:12px;}
+  .test-quote{font-size:15.5px;color:var(--ink);margin-bottom:18px;}
+  .test-who{display:flex;align-items:center;gap:12px;}
+  .test-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#6C9BFF);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;}
+  .test-who b{font-size:13.5px;display:block;}
+  .test-who span{font-size:12px;color:var(--ink-soft);}
+  .video-badge{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:8px;margin-bottom:12px;}
+
+  /* ============ HOW IT WORKS timeline ============ */
+  .timeline{display:grid;grid-template-columns:1fr;gap:28px;position:relative;}
+  @media(min-width:800px){.timeline{grid-template-columns:repeat(3,1fr);}
+    .timeline::before{content:"";position:absolute;top:26px;left:12%;right:12%;height:2px;background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 16px);}
+  }
+  .tl-step{position:relative;text-align:center;}
+  .tl-num{
+    width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;
+    margin:0 auto 16px;position:relative;z-index:2;font-size:18px;
+  }
+  .tl-step:nth-child(2) .tl-num{background:var(--primary);}
+  .tl-step h3{font-size:16.5px;margin-bottom:6px;}
+  .tl-step p{font-size:14px;color:var(--ink-soft);max-width:230px;margin:0 auto;}
+
+  /* ============ FAQ ============ */
+  .faq-item{border-bottom:1px solid var(--line);}
+  .faq-q{
+    width:100%;display:flex;justify-content:space-between;align-items:center;gap:16px;
+    padding:20px 4px;text-align:right;flex-direction:row-reverse;font-weight:600;font-size:15.5px;
+  }
+  .faq-q .plus{flex:none;width:26px;height:26px;border-radius:50%;background:var(--bg-alt);display:flex;align-items:center;justify-content:center;transition:transform .3s ease, background .3s ease;font-size:16px;color:var(--ink);}
+  .faq-item.open .faq-q .plus{transform:rotate(45deg);background:var(--primary);color:#fff;}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+  .faq-a-inner{padding:0 4px 20px;color:var(--ink-soft);font-size:14.5px;max-width:640px;text-align:right;margin-right:0;margin-left:auto;}
+
+  /* ============ GUARANTEE ============ */
+  .guarantee{
+    background:linear-gradient(160deg,#11131A,#22252E);border-radius:var(--radius);
+    padding:56px 24px;text-align:center;color:#fff;box-shadow:var(--shadow-lg);
+  }
+  .guarantee-badge{
+    width:96px;height:96px;border-radius:50%;background:rgba(255,107,0,.15);border:2px solid var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 22px;
+  }
+  .guarantee h2{color:#fff;font-size:26px;margin-bottom:12px;}
+  .guarantee p{color:#B9B9C2;max-width:480px;margin:0 auto 22px;font-size:15.5px;}
+
+  /* ============ FINAL CTA ============ */
+  .final-cta{
+    background:linear-gradient(155deg,var(--primary),#FF8A3D);
+    border-radius:var(--radius);padding:56px 28px;text-align:center;color:#fff;position:relative;overflow:hidden;
+  }
+  .final-cta::after{content:"";position:absolute;inset:0;background:radial-gradient(400px 200px at 85% 0%, rgba(255,255,255,.22), transparent 70%);}
+  .final-cta h2{color:#fff;font-size:clamp(23px,3.4vw,32px);margin-bottom:12px;}
+  .final-cta p{color:rgba(255,255,255,.9);margin-bottom:26px;position:relative;}
+  .stock-bar{max-width:420px;margin:0 auto 26px;position:relative;}
+  .stock-track{height:9px;background:rgba(255,255,255,.28);border-radius:999px;overflow:hidden;}
+  .stock-fill{height:100%;width:82%;background:#fff;border-radius:999px;}
+  .stock-label{font-size:12.5px;margin-top:8px;color:rgba(255,255,255,.9);font-weight:600;}
+  .final-cta .btn-primary{background:#111;box-shadow:0 14px 30px rgba(0,0,0,.28);}
+  .final-cta .countdown{max-width:360px;margin:0 auto 22px;position:relative;}
+  .final-cta .cd-unit{background:rgba(255,255,255,.14);}
+  .final-cta .cd-num,.final-cta .cd-label{color:#fff;}
+
+  /* ============ FLOATING ELEMENTS ============ */
+  .fab-stack{position:fixed;right:20px;bottom:96px;display:flex;flex-direction:column;gap:12px;z-index:70;}
+  @media(min-width:860px){.fab-stack{bottom:28px;}}
+  .fab{
+    width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:22px;color:#fff;box-shadow:var(--shadow-md);transition:transform .25s ease, opacity .25s ease;
+    opacity:0;transform:translateY(14px) scale(.8);pointer-events:none;
+  }
+  .fab.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+  .fab:hover{transform:translateY(-3px) scale(1.05);}
+  .fab-wa{background:#25D366;}
+  .fab-msg{background:linear-gradient(135deg,#0084FF,#00C6FF);}
+  .fab-top{background:var(--ink);font-size:17px;}
+
+  .sticky-cta{
+    position:fixed;left:0;right:0;bottom:0;z-index:65;
+    background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(17,17,17,.08);
+    padding:12px 16px;display:flex;align-items:center;gap:14px;
+    transform:translateY(110%);transition:transform .3s ease;
+  }
+  .sticky-cta.show{transform:translateY(0);}
+  .sticky-cta .sc-price{flex:none;}
+  .sticky-cta .sc-price b{display:block;font-family:var(--font-display);font-size:18px;}
+  .sticky-cta .sc-price s{font-size:12px;color:#9A9A9F;}
+  .sticky-cta .btn{flex:1;padding:14px 18px;font-size:15.5px;}
+  @media(min-width:860px){.sticky-cta{display:none;}}
+
+  .desktop-sticky-bar{
+    position:fixed;top:0;left:0;right:0;z-index:59;
+    background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--shadow-sm);
+    transform:translateY(-110%);transition:transform .3s ease;
+  }
+  .desktop-sticky-bar.show{transform:translateY(0);}
+  .dsb-inner{display:flex;align-items:center;justify-content:space-between;height:70px;}
+  .dsb-left{display:flex;align-items:center;gap:14px;}
+  .dsb-left b{font-family:var(--font-display);font-size:15.5px;}
+  .dsb-left span{font-size:13px;color:var(--ink-soft);}
+  @media(max-width:859px){.desktop-sticky-bar{display:none;}}
+
+  /* utility */
+  .center{text-align:center;}
+  .mt-32{margin-top:32px;}
+  .muted{color:var(--ink-soft);}
+  a:focus-visible,button:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px;}
+</style>
+</head>
+<body>
+
+<!-- Desktop sticky buy bar (appears after scroll) -->
+<div class="desktop-sticky-bar" id="desktopBar">
+  <div class="container dsb-inner">
+    <div class="dsb-left">
+      <span class="brand-mark eng" style="width:28px;height:28px;font-size:13px;">LK</span>
+      <div>
+        <b>LaunchKit Pro</b>
+        <span>ডিজিটাল বিজনেস স্টার্টার সিস্টেম</span>
+      </div>
+    </div>
+    <a href="#buy" class="btn btn-primary">এখনই কিনুন — ৳১,৪৯০</a>
+  </div>
+</div>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <div class="brand">
+      <span class="brand-mark eng">LK</span>
+      <span class="eng">LaunchKit&nbsp;Pro</span>
+    </div>
+    <div class="nav-cta">
+      <span class="nav-price"><s style="color:#9A9A9F;font-weight:500;">৳৪,৯৯০</s>&nbsp; ৳১,৪৯০</span>
+      <a href="#buy" class="btn btn-primary">এখনই কিনুন</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ SECTION 1 — HERO ============ -->
+<header class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="badge-pulse"><span class="badge-dot"></span> 🔥 লিমিটেড টাইম অফার — ৭০% ছাড়</span>
+      <h1>আপনার বিজনেসকে বদলে দিন <span class="hl">এই পাওয়ারফুল ডিজিটাল সিস্টেম দিয়ে</span></h1>
+      <p class="hero-sub">সময় বাঁচাতে, বিক্রি বাড়াতে আর দ্রুত বড় হতে যা যা লাগবে — সবকিছু একসাথে। যারা প্রথম থেকে শুরু না করে সরাসরি লঞ্চ করতে চান, তাদের জন্য বানানো।</p>
+
+      <div class="hero-points">
+        <div class="hero-point"><span class="check-ic">✓</span> সাথে সাথে ডাউনলোড</div>
+        <div class="hero-point"><span class="check-ic">✓</span> লাইফটাইম অ্যাক্সেস</div>
+        <div class="hero-point"><span class="check-ic">✓</span> ফ্রি ফিউচার আপডেট</div>
+        <div class="hero-point"><span class="check-ic">✓</span> বিগিনার ফ্রেন্ডলি</div>
+      </div>
+
+      <div class="price-box" id="buy">
+        <div class="price-row">
+          <span class="price-old">৳৪,৯৯০</span>
+          <span class="price-now">৳১,৪৯০</span>
+          <span class="price-badge">৭০% সাশ্রয়</span>
+        </div>
+        <p class="price-note">একবারই পেমেন্ট। কোনো সাবস্ক্রিপশন বা লুকানো চার্জ নেই।</p>
+
+        <div class="pay-icons">
+          <span>bKash</span><span>Nagad</span><span>Rocket</span><span>Card</span><span>SSLCommerz</span>
+        </div>
+
+        <div class="countdown" id="countdown" aria-label="অফার শেষ হওয়ার কাউন্টডাউন">
+          <div class="cd-unit"><div class="cd-num" id="cdH">০৮</div><div class="cd-label">ঘণ্টা</div></div>
+          <div class="cd-unit"><div class="cd-num" id="cdM">৪২</div><div class="cd-label">মিনিট</div></div>
+          <div class="cd-unit"><div class="cd-num" id="cdS">১৫</div><div class="cd-label">সেকেন্ড</div></div>
+        </div>
+
+        <a href="#buy-final" class="btn btn-primary btn-block btn-lg">এখনই কিনুন</a>
+
+        <div class="trust-row">
+          <span>🔒 SSL সিকিউর পেমেন্ট</span>
+          <span>⚡ সাথে সাথে অ্যাক্সেস</span>
+          <span>🎧 ৭ দিন সাপোর্ট</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="deck">
+        <div class="deck-card">
+          <div>
+            <div class="deck-tag">টেমপ্লেট</div>
+            <div class="deck-title eng">32 সেলস পেজ</div>
+          </div>
+          <div class="deck-glyph">🗂️</div>
+        </div>
+        <div class="deck-card">
+          <div>
+            <div class="deck-tag">ভিডিও কোর্স</div>
+            <div class="deck-title">৬ ঘণ্টার ট্রেনিং</div>
+          </div>
+          <div class="deck-glyph">🎬</div>
+        </div>
+        <div class="deck-card">
+          <div>
+            <div class="deck-tag eng">Toolkit</div>
+            <div class="deck-title eng">LaunchKit Pro</div>
+          </div>
+          <div class="deck-glyph">🚀</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ SECTION 2 — SOCIAL PROOF ============ -->
+<section class="proof">
+  <div class="container proof-inner">
+    <div class="proof-stat">
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="proof-stat"><b>৪.৯/৫</b><span>গড় রেটিং</span></div>
+    <div class="proof-stat"><b>১০,০০০+</b><span>সন্তুষ্ট গ্রাহক</span></div>
+    <div class="avatars" aria-hidden="true">
+      <span>রা</span><span>সা</span><span>মি</span><span>তা</span><span>+</span>
+    </div>
+    <div class="badge-row">
+      <span>🔒 ভেরিফায়েড পেমেন্ট</span>
+      <span>🏆 টপ রেটেড ২০২৬</span>
+      <span>🛡️ মানি-ব্যাক গ্যারান্টি</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 3 — PROBLEM ============ -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">সমস্যা</span>
+      <h2>চেনা লাগছে না?</h2>
+      <p>বেশিরভাগ উদ্যোক্তা পরিশ্রমের অভাবে পিছিয়ে পড়েন না। প্রতিবার নতুন করে চাকা বানাতে গিয়ে, একা একা, সময় হারিয়ে ফেলেন।</p>
+    </div>
+    <div class="grid grid-4">
+      <div class="card pain-card reveal">
+        <div class="card-ic ic-pain">⏳</div>
+        <h3>সেটআপেই সময় শেষ</h3>
+        <p>কাস্টমারের সাথে কথা বলার চেয়ে বেশি সময় যায় ডকুমেন্ট ফরম্যাট করতে।</p>
+      </div>
+      <div class="card pain-card reveal reveal-delay-1">
+        <div class="card-ic ic-pain">🧩</div>
+        <h3>এলোমেলো পরামর্শ</h3>
+        <p>প্রতিটা ইউটিউব ভিডিও আগেরটার সাথে বিপরীত, আর কোনোটাই আপনার বিজনেসের জন্য ফিট না।</p>
+      </div>
+      <div class="card pain-card reveal reveal-delay-2">
+        <div class="card-ic ic-pain">💸</div>
+        <h3>ফ্রিল্যান্সারের খরচ</h3>
+        <p>প্রতিটা টেমপ্লেট আর পেজের জন্য বাইরে থেকে বানাতে গেলে বাজেট শেষ, তাও লঞ্চের আগেই।</p>
+      </div>
+      <div class="card pain-card reveal reveal-delay-3">
+        <div class="card-ic ic-pain">📉</div>
+        <h3>মোমেন্টাম হারানো</h3>
+        <p>সব কিছু "রেডি" হতে হতে যে উৎসাহ নিয়ে শুরু করেছিলেন, সেটাই আর থাকে না।</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 4 — SOLUTION ============ -->
+<section class="sec sec-alt">
+  <div class="container solution-wrap">
+    <div class="solution-copy reveal">
+      <span class="eyebrow">সমাধান</span>
+      <h2 class="mt-32">একটাই সিস্টেম, সব কিছু আগে থেকেই রেডি</h2>
+      <p>LaunchKit Pro আন্দাজে চলা বাদ দিয়ে একটা রেডিমেড সিস্টেম দেয় — টেমপ্লেট, ট্রেনিং আর টুলস সব আগে থেকেই বানানো, শুধু আপনার বিজনেস বসিয়ে লাইভ করুন।</p>
+      <a href="#buy-final" class="btn btn-primary">ভেতরে কী আছে দেখুন</a>
+    </div>
+    <div class="solution-art reveal reveal-delay-1">
+      <div class="solution-row"><span class="ok">✓</span> এক ঘণ্টার মধ্যে অফার পেজ রেডি করুন</div>
+      <div class="solution-row"><span class="ok">✓</span> প্রমাণিত ধাপে ধাপে সিস্টেম ফলো করুন</div>
+      <div class="solution-row"><span class="ok">✓</span> ট্রায়াল-অ্যান্ড-এরর সম্পূর্ণ এড়িয়ে যান</div>
+      <div class="solution-row"><span class="ok">✓</span> আন্দাজে না, আত্মবিশ্বাস নিয়ে লঞ্চ করুন</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 5 — WHAT'S INCLUDED ============ -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">প্যাকেজে যা যা আছে</span>
+      <h2>যা দরকার সবই আছে, বাড়তি কিছু নেই</h2>
+      <p>ছয়টা অংশ, প্রথম দিন থেকেই একসাথে কাজ করার জন্য বানানো।</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal">
+        <div class="card-ic ic-good">🎬</div>
+        <h3>ভিডিও কোর্স</h3>
+        <p>৬ ঘণ্টার ধাপে ধাপে ট্রেনিং, ছোট ছোট প্র্যাকটিক্যাল লেসনে ভাগ করা।</p>
+      </div>
+      <div class="card reveal reveal-delay-1">
+        <div class="card-ic ic-good">🗂️</div>
+        <h3>টেমপ্লেট</h3>
+        <p>পেজ, অফার আর আউটরিচের জন্য ৩২টা রেডি-টু-এডিট টেমপ্লেট।</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <div class="card-ic ic-good">🎁</div>
+        <h3>বোনাস ফাইল</h3>
+        <p>ট্র্যাকে থাকতে সোয়াইপ ফাইল, চেকলিস্ট আর প্ল্যানার।</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-ic ic-good">📁</div>
+        <h3>সোর্স ফাইল</h3>
+        <p>সম্পূর্ণ এডিটেবল সোর্স ফাইল — Figma, Canva আর ডকুমেন্ট ফরম্যাটে।</p>
+      </div>
+      <div class="card reveal reveal-delay-1">
+        <div class="card-ic ic-good">👥</div>
+        <h3>কমিউনিটি অ্যাক্সেস</h3>
+        <p>ফিডব্যাক আর সাফল্য শেয়ার করা উদ্যোক্তাদের একটা প্রাইভেট গ্রুপ।</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <div class="card-ic ic-good">🔄</div>
+        <h3>ফ্রি আপডেট</h3>
+        <p>কিটের প্রতিটা ভবিষ্যৎ আপডেট, লাইফটাইমের জন্য, কোনো বাড়তি খরচ ছাড়াই।</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 6 — PRODUCT PREVIEW ============ -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">ভেতরে একবার দেখে নিন</span>
+      <h2>যেখানেই দেখুন, দেখতে সুন্দর লাগবে</h2>
+      <p>প্রতিটা টেমপ্লেট ডেস্কটপ থেকে মোবাইল পর্যন্ত ঠিকঠাক মানিয়ে যায়।</p>
+    </div>
+    <div class="device-wrap">
+      <div class="device reveal">
+        <div class="device-bar"><i></i><i></i><i></i></div>
+        <div class="device-screen"></div>
+      </div>
+      <div class="device device-mobile reveal reveal-delay-1" style="max-width:220px;margin:0 auto;">
+        <div class="device-bar"><i></i><i></i><i></i></div>
+        <div class="device-screen"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 7 — FEATURES ============ -->
+<section class="sec">
+  <div class="container feat-wrap">
+    <div class="feat-art reveal">🧭</div>
+    <div class="reveal reveal-delay-1">
+      <span class="eyebrow">ফিচার</span>
+      <h2 class="mt-32" style="margin-bottom:22px;">ডিজাইনারদের জন্য না, উদ্যোক্তাদের জন্য বানানো</h2>
+      <ul class="feat-list">
+        <li><span class="check-ic">✓</span><div><h4>ডিজাইন স্কিল লাগবে না</h4><p>প্রতিটা টেমপ্লেট আগে থেকেই স্টাইল করা — শুধু টেক্সট আর ছবি বদলে দিন।</p></div></li>
+        <li><span class="check-ic">✓</span><div><h4>যেকোনো প্ল্যাটফর্মে কাজ করে</h4><p>আপনি এখন যেসব টুল ব্যবহার করেন তাতেই ঠিকঠাক এক্সপোর্ট হয়, কোনো লক-ইন নেই।</p></div></li>
+        <li><span class="check-ic">✓</span><div><h4>ধাপে ধাপে গাইডেন্স</h4><p>প্রতিটা মডিউল ঠিক বলে দেয় পরের ধাপে কী করতে হবে।</p></div></li>
+        <li><span class="check-ic">✓</span><div><h4>লাইফটাইম অ্যাক্সেস</h4><p>একবার পেমেন্ট করে কিটের সব আপডেট চিরকালের জন্য রাখুন।</p></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 8 — BONUSES ============ -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">বোনাস</span>
+      <h2>৳১৫,৬০০ মূল্যের বোনাস, একদম ফ্রি</h2>
+      <p>আজই কিনলে এগুলো আপনার অর্ডারের সাথে ফ্রি পাবেন।</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="bonus-card reveal">
+        <span class="bonus-value">মূল্য ৳৩,৫০০</span>
+        <div class="card-ic ic-good">🎟️</div>
+        <h3>লঞ্চ চেকলিস্ট</h3>
+        <p>লাইভ যাওয়ার আগে রিভিউ করার জন্য ঠিক ২১টা পয়েন্টের লিস্ট।</p>
+      </div>
+      <div class="bonus-card reveal reveal-delay-1">
+        <span class="bonus-value">মূল্য ৳৬,৯০০</span>
+        <div class="card-ic ic-good">💬</div>
+        <h3>আউটরিচ স্ক্রিপ্ট</h3>
+        <p>কোল্ড আউটরিচ আর ফলো-আপের জন্য ২০টা মেসেজ স্ক্রিপ্ট।</p>
+      </div>
+      <div class="bonus-card reveal reveal-delay-2">
+        <span class="bonus-value">মূল্য ৳৫,২০০</span>
+        <div class="card-ic ic-good">📊</div>
+        <h3>প্রাইসিং ক্যালকুলেটর</h3>
+        <p>আত্মবিশ্বাসের সাথে অফার প্রাইস করার জন্য রেডিমেড শিট।</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 9 — COMPARISON ============ -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">কেন LaunchKit Pro</span>
+      <h2>পার্থক্যটা স্পষ্ট</h2>
+    </div>
+    <div class="compare-scroll reveal">
+      <table class="compare-table">
+        <thead>
+          <tr><th>&nbsp;</th><th>LaunchKit ছাড়া</th><th class="win">LaunchKit Pro সহ</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>লঞ্চ করতে সময়</td><td><span class="no">✕</span> ৪–৬ সপ্তাহ</td><td><span class="yes">✓</span> ১–২ দিন</td></tr>
+          <tr><td>ডিজাইন খরচ</td><td><span class="no">✕</span> ৳২০,০০০+</td><td><span class="yes">✓</span> ইনক্লুডেড</td></tr>
+          <tr><td>গাইডেন্স</td><td><span class="no">✕</span> এলোমেলো ভিডিও</td><td><span class="yes">✓</span> স্ট্রাকচার্ড কোর্স</td></tr>
+          <tr><td>এডিটেবল সোর্স ফাইল</td><td><span class="no">✕</span> কালেভদ্রে</td><td><span class="yes">✓</span> সবসময়</td></tr>
+          <tr><td>ভবিষ্যৎ আপডেট</td><td><span class="no">✕</span> আবার পেমেন্ট</td><td><span class="yes">✓</span> লাইফটাইম ফ্রি</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 10 — TESTIMONIALS ============ -->
+<section class="sec sec-alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">গ্রাহকদের মতামত</span>
+      <h2>যারা দ্রুত লঞ্চ করে ফেলেছেন</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="test-card reveal">
+        <span class="video-badge">▶ ভিডিও রিভিউ</span>
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">ছয় সপ্তাহের লঞ্চ টাইমলাইন একটা উইকেন্ডে নামিয়ে এনেছি। প্রতিটা পেজ নিয়ে আর সন্দেহ করতে হয়নি।</p>
+        <div class="test-who"><span class="test-av">রফি</span><div><b>রফিউল আ.</b><span>ফাউন্ডার, পোশাক ব্র্যান্ড</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-1">
+        <span class="video-badge" style="background:var(--accent);">🖼️ স্ক্রিনশট রিভিউ</span>
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">শুধু টেমপ্লেটগুলোই কিটের দাম উসুল করে দিয়েছে। বাকি সব যেন বোনাস।</p>
+        <div class="test-who"><span class="test-av">সাদি</span><div><b>সাদিয়া ন.</b><span>কোর্স ক্রিয়েটর</span></div></div>
+      </div>
+      <div class="test-card reveal reveal-delay-2">
+        <div class="test-stars">★★★★★</div>
+        <p class="test-quote">প্রতিটা প্রশ্নের উত্তর একদিনের মধ্যেই পেয়েছি। এক-দফা পেমেন্টের প্রোডাক্টে এমন সাপোর্ট আশাই করিনি।</p>
+        <div class="test-who"><span class="test-av">তন্ব</span><div><b>তানভীর হ.</b><span>এজেন্সি মালিক</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 11 — HOW IT WORKS ============ -->
+<section class="sec">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">যেভাবে কাজ করে</span>
+      <h2>লঞ্চ করতে তিনটা ধাপ</h2>
+    </div>
+    <div class="timeline">
+      <div class="tl-step reveal"><div class="tl-num">১</div><h3>কিনুন</h3><p>সিকিউর চেকআউট, এক মিনিটেরও কম সময়ে।</p></div>
+      <div class="tl-step reveal reveal-delay-1"><div class="tl-num">২</div><h3>ডাউনলোড করুন</h3><p>প্রতিটা ফাইল আর মডিউল সাথে সাথে অ্যাক্সেস করুন।</p></div>
+      <div class="tl-step reveal reveal-delay-2"><div class="tl-num">৩</div><h3>ব্যবহার শুরু করুন</h3><p>কোর্স ফলো করে এই সপ্তাহেই লঞ্চ করুন।</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 12 — FAQ ============ -->
+<section class="sec sec-alt">
+  <div class="container" style="max-width:760px;">
+    <div class="sec-head reveal">
+      <span class="eyebrow">সাধারণ জিজ্ঞাসা</span>
+      <h2>প্রশ্নের উত্তর</h2>
+    </div>
+    <div id="faqList">
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> কেনার পর ঠিক কী কী পাব?</button>
+        <div class="faq-a"><div class="faq-a-inner">ভিডিও কোর্স, সবগুলো ৩২টা টেমপ্লেট, বোনাস ফাইল, সোর্স ফাইল, কমিউনিটি ইনভাইট আর প্রতিটা ভবিষ্যৎ আপডেটের সাথে সাথে অ্যাক্সেস।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> এটা কি কোনো সাবস্ক্রিপশন?</button>
+        <div class="faq-a"><div class="faq-a-inner">না। এটা একবার পেমেন্টের বিনিময়ে লাইফটাইম অ্যাক্সেস — কোনো বারবার চার্জ নেই।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ডিজাইন বা টেকনিক্যাল স্কিল লাগবে কি?</button>
+        <div class="faq-a"><div class="faq-a-inner">একদমই না। প্রতিটা টেমপ্লেট আগে থেকেই বানানো — শুধু টেক্সট এডিট করুন আর ছবি বদলান, কোনো ডিজাইন এক্সপেরিয়েন্স লাগবে না।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> এটা কোন কোন টুলে কাজ করে?</button>
+        <div class="faq-a"><div class="faq-a-inner">সোর্স ফাইল আপনার পরিচিত ডিজাইন আর ডকুমেন্ট টুলে ঠিকঠাক এক্সপোর্ট হয়, তাই কোনো লক-ইন নেই।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ডেলিভারি কত দ্রুত পাব?</button>
+        <div class="faq-a"><div class="faq-a-inner">পেমেন্টের সাথে সাথেই। কয়েক সেকেন্ডের মধ্যে ডাউনলোড লিংক আর অ্যাক্সেস ডিটেইলস পেয়ে যাবেন।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> কোনো গ্যারান্টি আছে?</button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ — ৭ দিনের মানি-ব্যাক গ্যারান্টি। পছন্দ না হলে কোনো প্রশ্ন ছাড়াই রিফান্ড রিকোয়েস্ট করতে পারবেন।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> ফিউচার আপডেট কি ফ্রি পাব?</button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, LaunchKit Pro-র প্রতিটা ভবিষ্যৎ ভার্সন যতদিন এটা থাকবে ততদিন কোনো বাড়তি খরচ ছাড়াই পাবেন।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> একাধিক বিজনেসের জন্য ব্যবহার করতে পারব?</button>
+        <div class="faq-a"><div class="faq-a-inner">হ্যাঁ, আপনার লাইসেন্স যেকোনো সংখ্যক পার্সোনাল আর ক্লায়েন্ট প্রজেক্টে কভার করে।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> কোথাও আটকে গেলে কী করব?</button>
+        <div class="faq-a"><div class="faq-a-inner">৭ দিনের সরাসরি সাপোর্ট পাবেন, সাথে কমিউনিটি থেকে সবসময় পিয়ার হেল্প।</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false"><span class="plus">+</span> কীভাবে পেমেন্ট করব?</button>
+        <div class="faq-a"><div class="faq-a-inner">bKash, Nagad, Rocket, কার্ড এবং SSLCommerz-এর মাধ্যমে একটা SSL-সিকিউর চেকআউটে পেমেন্ট করতে পারবেন।</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 13 — MONEY BACK GUARANTEE ============ -->
+<section class="sec">
+  <div class="container">
+    <div class="guarantee reveal">
+      <div class="guarantee-badge">🛡️</div>
+      <h2>৭ দিনের মানি-ব্যাক গ্যারান্টি</h2>
+      <p>LaunchKit Pro একদম রিস্ক-ফ্রি ট্রাই করুন। ৭ দিনের মধ্যে মনে না ধরলে, কোনো ফর্ম বা ঝামেলা ছাড়াই পুরো টাকা ফেরত পাবেন।</p>
+      <span class="badge-row" style="justify-content:center;color:#B9B9C2;">
+        <span>🔒 সিকিউর পারচেজ</span>
+        <span>💳 এনক্রিপ্টেড চেকআউট</span>
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 14 — FINAL CTA ============ -->
+<section class="sec" id="buy-final" style="padding-top:0;">
+  <div class="container">
+    <div class="final-cta reveal">
+      <span class="eyebrow" style="background:rgba(255,255,255,.2);color:#fff;">⏰ অফার শেষ হয়ে আসছে</span>
+      <h2 class="mt-32">এই সুযোগ হাতছাড়া করবেন না</h2>
+      <p>১০,০০০+ উদ্যোক্তা ইতিমধ্যে LaunchKit Pro দিয়ে লঞ্চ করে ফেলেছেন — আজই ৭০% ছাড়ে।</p>
+
+      <div class="stock-bar">
+        <div class="stock-track"><div class="stock-fill"></div></div>
+        <div class="stock-label">আজকের ডিসকাউন্ট স্পটের ৮২% বুকড</div>
+      </div>
+
+      <div class="countdown" id="countdown2" aria-hidden="true">
+        <div class="cd-unit"><div class="cd-num" id="cdH2">০৮</div><div class="cd-label">ঘণ্টা</div></div>
+        <div class="cd-unit"><div class="cd-num" id="cdM2">৪২</div><div class="cd-label">মিনিট</div></div>
+        <div class="cd-unit"><div class="cd-num" id="cdS2">১৫</div><div class="cd-label">সেকেন্ড</div></div>
+      </div>
+
+      <a href="#buy" class="btn btn-primary btn-lg">এখনই কিনুন — ৳১,৪৯০</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FLOATING ELEMENTS ============ -->
+<div class="fab-stack" id="fabStack">
+  <a href="https://wa.me/8801XXXXXXXXX" class="fab fab-wa" aria-label="হোয়াটসঅ্যাপে চ্যাট করুন">💬</a>
+  <a href="#" class="fab fab-msg" aria-label="মেসেঞ্জারে চ্যাট করুন">✉️</a>
+  <button class="fab fab-top" id="backTop" aria-label="উপরে ফিরে যান">↑</button>
+</div>
+
+<!-- Mobile sticky CTA -->
+<div class="sticky-cta" id="stickyCta">
+  <div class="sc-price"><b>৳১,৪৯০</b><s>৳৪,৯৯০</s></div>
+  <a href="#buy" class="btn btn-primary">এখনই কিনুন</a>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+  function toBn(n){
+    return String(n).split('').map(function(d){ return bnDigits[+d] !== undefined ? bnDigits[+d] : d; }).join('');
+  }
+  function pad(n){ return n < 10 ? '0'+n : ''+n; }
+
+  /* ---------- Countdown timer ---------- */
+  function startCountdown(prefixIds, seconds){
+    var end = Date.now() + seconds*1000;
+    function tick(){
+      var remain = Math.max(0, end - Date.now());
+      var h = Math.floor(remain/3600000);
+      var m = Math.floor((remain%3600000)/60000);
+      var s = Math.floor((remain%60000)/1000);
+      prefixIds.forEach(function(ids){
+        var eh=document.getElementById(ids[0]), em=document.getElementById(ids[1]), es=document.getElementById(ids[2]);
+        if(eh) eh.textContent = toBn(pad(h));
+        if(em) em.textContent = toBn(pad(m));
+        if(es) es.textContent = toBn(pad(s));
+      });
+      if(remain > 0){ requestAnimationFrame(function(){ setTimeout(tick, 250); }); }
+    }
+    tick();
+  }
+  startCountdown([['cdH','cdM','cdS'],['cdH2','cdM2','cdS2']], 8*3600 + 42*60 + 15);
+
+  /* ---------- Scroll reveal ---------- */
+  var revealEls = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.14, rootMargin:'0px 0px -40px 0px'});
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add('in-view'); });
+  }
+
+  /* ---------- FAQ accordion ---------- */
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var btn = item.querySelector('.faq-q');
+    var panel = item.querySelector('.faq-a');
+    btn.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(openItem){
+        if(openItem !== item){
+          openItem.classList.remove('open');
+          openItem.querySelector('.faq-q').setAttribute('aria-expanded','false');
+          openItem.querySelector('.faq-a').style.maxHeight = null;
+        }
+      });
+      if(isOpen){
+        item.classList.remove('open');
+        btn.setAttribute('aria-expanded','false');
+        panel.style.maxHeight = null;
+      } else {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded','true');
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+      }
+    });
+  });
+
+  /* ---------- Sticky elements on scroll ---------- */
+  var stickyCta = document.getElementById('stickyCta');
+  var desktopBar = document.getElementById('desktopBar');
+  var fabStack = document.getElementById('fabStack');
+  var heroEl = document.querySelector('.hero');
+  var heroBottom = 0;
+  function measure(){ heroBottom = heroEl.getBoundingClientRect().height + heroEl.offsetTop; }
+  measure();
+  window.addEventListener('resize', measure);
+
+  function onScroll(){
+    var y = window.scrollY || window.pageYOffset;
+    var pastHero = y > heroBottom - 80;
+    if(stickyCta) stickyCta.classList.toggle('show', pastHero);
+    if(desktopBar) desktopBar.classList.toggle('show', pastHero);
+    fabStack.querySelectorAll('.fab').forEach(function(f){ f.classList.toggle('show', y > 240); });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  /* ---------- Back to top ---------- */
+  var backTop = document.getElementById('backTop');
+  if(backTop){
+    backTop.addEventListener('click', function(){
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  }
+
+  /* ---------- Smooth scroll for in-page links ---------- */
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var id = a.getAttribute('href');
+      if(id.length > 1){
+        var target = document.querySelector(id);
+        if(target){
+          e.preventDefault();
+          var offset = 90;
+          var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({top:top, behavior:'smooth'});
+        }
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

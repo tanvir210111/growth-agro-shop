@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>প্রতিটি অনুষ্ঠানে অভিজাত শাড়ি | প্রিমিয়াম শাড়ি কালেকশন</title>
+<meta name="description" content="জামদানি, টাঙ্গাইল তাঁত, রাজশাহী সিল্কসহ প্রিমিয়াম শাড়ি কালেকশন। ১০০% মান পরীক্ষিত, ক্যাশ অন ডেলিভারি, সারাদেশে ডেলিভারি। এখনই অর্ডার করুন।">
+<meta name="theme-color" content="#FBF6EE">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF6EE;
+    --cream-2:#F3E9D8;
+    --ink:#2B241D;
+    --muted:#8A7F6F;
+    --gold:#C9A24B;
+    --gold-dark:#A9822F;
+    --gold-soft:#E8D5A8;
+    --maroon:#7A1F2B;
+    --maroon-dark:#5E1620;
+    --paper:#FFFFFF;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'Hind Siliguri', sans-serif; background:var(--cream); color:var(--ink); -webkit-font-smoothing:antialiased;}
+  img{max-width:100%; display:block;}
+  a{color:inherit; text-decoration:none;}
+  .container{max-width:1180px; margin:0 auto; padding:0 20px;}
+  h1,h2,h3,.display{font-family:'Tiro Bangla', serif; font-weight:400; line-height:1.25;}
+
+  .reveal{opacity:0; transform:translateY(22px); transition:opacity .7s ease, transform .7s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+  @media (prefers-reduced-motion: reduce){ .reveal{opacity:1; transform:none; transition:none;} }
+
+  .zari{height:14px; background-image:radial-gradient(circle at 7px 7px, var(--gold) 2px, transparent 2.4px); background-size:14px 14px; background-position:center; opacity:.5;}
+  .zari-line{height:1px; max-width:700px; margin:0 auto; background:linear-gradient(90deg, transparent, var(--gold) 15%, var(--gold) 85%, transparent);}
+
+  header{position:sticky; top:0; z-index:40; background:rgba(251,246,238,.95); backdrop-filter:blur(6px); border-bottom:1px solid rgba(201,162,75,.2);}
+  .header-inner{display:flex; align-items:center; justify-content:space-between; padding:14px 0;}
+  .brand{font-size:23px; letter-spacing:.3px;}
+  .brand em{font-style:normal; color:var(--gold-dark);}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; font-family:'Hind Siliguri'; font-weight:600; border-radius:2px; text-align:center; cursor:pointer; border:none;}
+  .btn-primary{background:var(--maroon); color:var(--cream); padding:12px 24px; font-size:14px;}
+  .btn-primary:hover{background:var(--maroon-dark);}
+  .head-cta{display:none;}
+
+  .hero{position:relative; overflow:hidden; background:linear-gradient(160deg, var(--cream-2), var(--cream) 60%);}
+  .hero-blob{position:absolute; top:-90px; right:-90px; width:340px; height:340px; border-radius:50%; background:rgba(201,162,75,.12); filter:blur(50px);}
+  .hero-grid{position:relative; display:grid; gap:38px; padding:40px 0 52px;}
+  .eyebrow{color:var(--gold-dark); font-size:12px; letter-spacing:2px; font-weight:500; margin-bottom:14px;}
+  .hero h1{font-size:34px; margin-bottom:18px;}
+  .hero h1 b{color:var(--maroon); font-weight:400;}
+  .hero-sub{color:var(--muted); font-size:15.5px; margin-bottom:26px; max-width:420px; line-height:1.6;}
+  .shimmer{background:linear-gradient(110deg, var(--maroon) 40%, #9c2a3a 50%, var(--maroon) 60%); background-size:200% 100%; animation:shimmer 3.2s infinite linear; color:var(--cream); font-size:16px; padding:16px 34px; box-shadow:0 12px 26px -8px rgba(122,31,43,.35);}
+  @keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+  @media (prefers-reduced-motion: reduce){.shimmer{animation:none;}}
+  .hero-stats{display:flex; align-items:center; gap:22px; margin-top:36px; font-size:12px; color:var(--muted);}
+  .hero-stats .div{width:1px; height:16px; background:rgba(201,162,75,.3);}
+
+  .hero-image{position:relative;}
+  .hero-frame{position:absolute; inset:-12px; border:1px solid rgba(201,162,75,.5); border-radius:2px;}
+  .hero-img-wrap{position:relative; aspect-ratio:4/5; border-radius:2px; overflow:hidden; box-shadow:0 30px 60px -20px rgba(43,36,29,.25);}
+  .hero-img-wrap img{width:100%; height:100%; object-fit:cover;}
+  .price-badge{position:absolute; left:-18px; bottom:-18px; background:var(--paper); border:1px solid rgba(201,162,75,.4); border-radius:2px; box-shadow:0 12px 26px rgba(0,0,0,.1); padding:12px 20px;}
+  .price-badge .now{font-size:22px; color:var(--maroon); line-height:1;}
+  .price-badge .label{font-size:11px; color:var(--muted); margin-top:4px;}
+
+  .trust-bar{background:var(--ink); color:var(--cream);}
+  .trust-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px 16px; padding:22px 0;}
+  .trust-item{display:flex; align-items:center; gap:12px; font-size:13px;}
+  .trust-item svg{color:var(--gold-soft); flex:none;}
+
+  section{padding:56px 0;}
+  .section-head{text-align:center; max-width:520px; margin:0 auto 44px;}
+  .section-head .tag{color:var(--gold-dark); font-size:12px; letter-spacing:2px; font-weight:500; margin-bottom:10px;}
+  .section-head h2{font-size:27px;}
+  .section-head.light .tag{color:var(--gold-soft);}
+  .section-head.light h2{color:var(--cream);}
+
+  .products-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+  .product-card{display:block;}
+  .product-img-wrap{position:relative; aspect-ratio:3/4; border-radius:2px; overflow:hidden; background:var(--cream-2);}
+  .product-img-wrap img{width:100%; height:100%; object-fit:cover; transition:transform .5s ease;}
+  .product-card:hover .product-img-wrap img{transform:scale(1.07);}
+  .discount-badge{position:absolute; top:10px; left:10px; background:var(--maroon); color:var(--cream); font-size:11px; font-weight:500; padding:4px 10px; border-radius:2px;}
+  .product-name{font-family:'Hind Siliguri'; font-weight:500; font-size:13.5px; margin:12px 0 6px;}
+  .price-row{display:flex; align-items:center; gap:8px; margin-bottom:12px;}
+  .price-row .now{color:var(--maroon); font-size:17px; font-weight:400; font-family:'Tiro Bangla',serif;}
+  .price-row .old{color:var(--muted); font-size:12px; text-decoration:line-through;}
+  .btn-outline{display:block; text-align:center; border:1px solid rgba(43,36,29,.15); font-size:13px; padding:10px; border-radius:2px; transition:border-color .15s ease, color .15s ease;}
+  .btn-outline:hover{border-color:var(--maroon); color:var(--maroon);}
+
+  .why-band{background:rgba(243,233,216,.6);}
+  .why-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:26px 20px;}
+  .why-item{text-align:center;}
+  .why-icon{width:56px; height:56px; margin:0 auto 14px; border-radius:50%; background:var(--paper); border:1px solid rgba(201,162,75,.4); display:flex; align-items:center; justify-content:center; color:var(--gold-dark);}
+  .why-item h3{font-family:'Hind Siliguri'; font-size:14.5px; font-weight:500; margin-bottom:4px;}
+  .why-item p{font-size:12.5px; color:var(--muted);}
+
+  .gallery-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
+  .gallery-item{aspect-ratio:1/1; border-radius:2px; overflow:hidden;}
+  .gallery-item img{width:100%; height:100%; object-fit:cover; transition:transform .5s ease;}
+  .gallery-item:hover img{transform:scale(1.08);}
+
+  .reviews-section{background:var(--ink);}
+  .reviews-scroll{display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; scroll-snap-type:x mandatory; scrollbar-width:none;}
+  .reviews-scroll::-webkit-scrollbar{display:none;}
+  .review-card{scroll-snap-align:start; flex:0 0 78%; background:rgba(255,255,255,.05); border:1px solid rgba(201,162,75,.15); border-radius:2px; padding:20px;}
+  .review-top{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+  .review-top img{width:40px; height:40px; border-radius:50%; object-fit:cover;}
+  .review-top .name{color:var(--cream); font-size:13.5px; font-weight:500;}
+  .review-top .stars{color:var(--gold-soft); font-size:12px; margin-top:2px;}
+  .review-card p{color:rgba(251,246,238,.8); font-size:13.5px; line-height:1.6;}
+
+  .accordion{border-top:1px solid rgba(201,162,75,.2);}
+  .accordion details{border-bottom:1px solid rgba(201,162,75,.2); padding:16px 0;}
+  .accordion summary{display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:500; font-size:14px; list-style:none;}
+  .accordion summary::-webkit-details-marker{display:none;}
+  .accordion summary .chev{transition:transform .2s ease; color:var(--gold-dark); flex:none; margin-left:12px;}
+  .accordion details[open] summary .chev{transform:rotate(180deg);}
+  .accordion details p{color:var(--muted); font-size:13.5px; margin-top:10px; line-height:1.65;}
+
+  .offer-section{background:linear-gradient(150deg, var(--maroon), var(--maroon-dark)); text-align:center;}
+  .offer-badge{display:inline-block; background:var(--gold); color:var(--maroon-dark); font-size:11px; font-weight:600; padding:6px 16px; border-radius:20px; margin-bottom:16px;}
+  .offer-section h2{color:var(--cream); font-size:27px; margin-bottom:10px;}
+  .offer-section .sub{color:rgba(251,246,238,.7); font-size:14px; margin-bottom:30px;}
+  .countdown{display:flex; align-items:center; justify-content:center; gap:12px;}
+  .cd-box{background:var(--ink); color:var(--gold-soft); border-radius:2px; padding:12px 18px; min-width:68px; font-family:'Tiro Bangla',serif;}
+  .cd-box .num{font-size:24px; font-weight:400; line-height:1;}
+  .cd-box .lbl{font-size:9px; color:rgba(232,213,168,.7); margin-top:4px; font-family:'Hind Siliguri';}
+  .offer-cta{display:inline-flex; background:var(--gold); color:var(--maroon-dark); font-weight:600; padding:14px 32px; border-radius:2px; margin-top:34px; font-size:14.5px;}
+  .offer-cta:hover{background:var(--gold-soft);}
+
+  .order-section{background:rgba(243,233,216,.6);}
+  .order-layout{display:grid; gap:26px;}
+  .order-form{background:var(--paper); border:1px solid rgba(201,162,75,.2); border-radius:2px; padding:24px;}
+  .field{margin-bottom:18px;}
+  .field label{display:block; font-size:13.5px; font-weight:500; margin-bottom:6px;}
+  .field input, .field select, .field textarea{width:100%; border:1px solid rgba(43,36,29,.15); border-radius:2px; padding:12px 14px; font-size:13.5px; font-family:'Hind Siliguri'; background:rgba(251,246,238,.4);}
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:var(--gold);}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .submit-btn{width:100%; padding:16px; font-size:15px;}
+  .cod-note{text-align:center; font-size:12px; color:var(--muted); margin-top:14px; line-height:1.6;}
+  .pay-badges{display:flex; justify-content:center; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .pay-badges span{font-size:11px; border:1px solid rgba(43,36,29,.15); padding:4px 10px; border-radius:20px; color:var(--muted);}
+
+  .order-summary{background:var(--ink); color:var(--cream); border-radius:2px; padding:22px; height:fit-content;}
+  .order-summary h3{font-size:19px; margin-bottom:14px;}
+  .sum-row{display:flex; justify-content:space-between; font-size:13.5px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.1);}
+  .sum-row .k{color:rgba(251,246,238,.6);}
+  .sum-total{display:flex; justify-content:space-between; font-size:16px; font-weight:600; padding:14px 0 4px;}
+  .sum-total .v{color:var(--gold-soft); font-family:'Tiro Bangla',serif; font-weight:400;}
+  .sum-note{font-size:10.5px; color:rgba(251,246,238,.45); margin-top:8px; line-height:1.6;}
+
+  .fab-stack{position:fixed; right:16px; bottom:96px; z-index:50; display:flex; flex-direction:column; gap:12px;}
+  .fab{width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 18px rgba(0,0,0,.2); transition:transform .15s ease;}
+  .fab:hover{transform:scale(1.06);}
+  .fab-whatsapp{background:#25D366;}
+  .fab-messenger{background:#0084FF;}
+  .fab-call{background:var(--maroon);}
+
+  .sticky-bar{position:fixed; left:0; right:0; bottom:0; z-index:45; background:rgba(255,255,255,.96); backdrop-filter:blur(6px); border-top:1px solid rgba(201,162,75,.25); padding:12px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 -8px 22px rgba(0,0,0,.08);}
+  .sticky-bar .info{flex:1;}
+  .sticky-bar .price{font-family:'Tiro Bangla',serif; font-size:18px; line-height:1;}
+  .sticky-bar .note{font-size:10px; color:var(--muted); margin-top:3px;}
+  .sticky-bar .btn-primary{padding:12px 22px; font-size:13.5px;}
+
+  #order-form{scroll-margin-top:70px;}
+
+  @media (min-width:900px){
+    .head-cta{display:inline-flex;}
+    .hero-grid{grid-template-columns:1fr 1fr; align-items:center; padding:70px 0 90px; gap:70px;}
+    .hero h1{font-size:48px;}
+    .hero-sub{font-size:16.5px; max-width:460px;}
+    section{padding:88px 0;}
+    .section-head h2{font-size:32px;}
+    .trust-grid{grid-template-columns:repeat(4,1fr); padding:26px 0;}
+    .products-grid{grid-template-columns:repeat(3,1fr); gap:26px;}
+    .why-grid{grid-template-columns:repeat(3,1fr); gap:40px;}
+    .gallery-grid{grid-template-columns:repeat(4,1fr); gap:18px;}
+    .reviews-scroll{overflow:visible; display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+    .review-card{flex:none;}
+    .accordion{max-width:720px; margin:0 auto;}
+    .cd-box{min-width:88px; padding:16px 24px;}
+    .cd-box .num{font-size:30px;}
+    .order-layout{grid-template-columns:2fr 1fr;}
+    .order-form{padding:36px;}
+    .order-summary{position:sticky; top:96px;}
+    .submit-btn{width:auto; padding:16px 40px;}
+    .sticky-bar{display:none;}
+    .fab-stack{bottom:28px;}
+  }
+  @media (min-width:1200px){ .hero h1{font-size:52px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container header-inner">
+    <a href="#" class="brand">বিদেশী<em>শাড়ি</em></a>
+    <a href="#order-form" class="btn btn-primary head-cta">অর্ডার করুন</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ১. হিরো সেকশন -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="hero-blob"></div>
+    <div class="container hero-grid">
+      <div class="reveal">
+        <p class="eyebrow">— নতুন উৎসব কালেকশন —</p>
+        <h1 id="hero-heading">প্রতিটি অনুষ্ঠানে<br><b>অভিজাত</b> শাড়ি</h1>
+        <p class="hero-sub">প্রিমিয়াম মান &nbsp;|&nbsp; ক্যাশ অন ডেলিভারি &nbsp;|&nbsp; সারাদেশে ডেলিভারি</p>
+        <a href="#order-form" class="btn shimmer">এখনই অর্ডার করুন →</a>
+        <div class="hero-stats">
+          <span>★★★★★ ৪.৯/৫</span>
+          <span class="div"></span>
+          <span>২,০০০+ সন্তুষ্ট গ্রাহক</span>
+        </div>
+      </div>
+      <div class="hero-image reveal">
+        <div class="hero-frame"></div>
+        <div class="hero-img-wrap">
+          <img src="https://placehold.co/900x1125/F3E9D8/A9822F?text=Saree+Model+Photo" alt="প্রিমিয়াম শাড়ি পরিহিত মডেল" loading="eager" width="900" height="1125">
+        </div>
+        <div class="price-badge">
+          <p class="now">৳১,৪৯০</p>
+          <p class="label">শুরু হচ্ছে যেখান থেকে</p>
+        </div>
+      </div>
+    </div>
+    <div class="zari"></div>
+  </section>
+
+  <!-- ২. ট্রাস্ট ব্যাজ -->
+  <section class="trust-bar" aria-label="বিশ্বস্ততার নিশ্চয়তা" style="padding:0;">
+    <div class="container trust-grid">
+      <div class="trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h13v9H3z"/><path d="M16 10h3l2 3v3h-5z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="17.5" cy="18" r="1.5"/></svg><span>ক্যাশ অন ডেলিভারি</span></div>
+      <div class="trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span>১০০% মান পরীক্ষিত</span></div>
+      <div class="trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M5 15a7 7 0 0012-4M19 9a7 7 0 00-12 4"/></svg><span>সহজ এক্সচেঞ্জ</span></div>
+      <div class="trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2 3 14h7l-1 8 11-14h-7z"/></svg><span>দ্রুত ডেলিভারি</span></div>
+    </div>
+  </section>
+
+  <!-- ৩. ফিচার্ড কালেকশন -->
+  <section id="collection" aria-labelledby="collection-heading">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="tag">ফিচার্ড কালেকশন</p>
+        <h2 id="collection-heading">আপনার জন্য বাছাই করা</h2>
+      </div>
+      <div class="products-grid">
+        <article class="product-card reveal">
+          <a href="#order-form" class="product-img-wrap" style="display:block;">
+            <img src="https://placehold.co/600x800/F3E9D8/A9822F?text=Jamdani+Saree" alt="জামদানি শাড়ি" loading="lazy" width="600" height="800">
+            <span class="discount-badge">-২৫%</span>
+          </a>
+          <h3 class="product-name">জামদানি শাড়ি</h3>
+          <div class="price-row"><span class="now">৳৩,৪৯০</span><span class="old">৳৪,৬৯০</span></div>
+          <a href="#order-form" class="btn-outline">অর্ডার করুন</a>
+        </article>
+        <article class="product-card reveal">
+          <a href="#order-form" class="product-img-wrap" style="display:block;">
+            <img src="https://placehold.co/600x800/F3E9D8/A9822F?text=Tangail+Taat" alt="টাঙ্গাইল তাঁতের শাড়ি" loading="lazy" width="600" height="800">
+            <span class="discount-badge">-১৮%</span>
+          </a>
+          <h3 class="product-name">টাঙ্গাইল তাঁতের শাড়ি</h3>
+          <div class="price-row"><span class="now">৳১,৬৯০</span><span class="old">৳২,০৯০</span></div>
+          <a href="#order-form" class="btn-outline">অর্ডার করুন</a>
+        </article>
+        <article class="product-card reveal">
+          <a href="#order-form" class="product-img-wrap" style="display:block;">
+            <img src="https://placehold.co/600x800/F3E9D8/A9822F?text=Rajshahi+Silk" alt="রাজশাহী সিল্ক শাড়ি" loading="lazy" width="600" height="800">
+            <span class="discount-badge">-২০%</span>
+          </a>
+          <h3 class="product-name">রাজশাহী সিল্ক শাড়ি</h3>
+          <div class="price-row"><span class="now">৳২,৪৯০</span><span class="old">৳৩,১৯০</span></div>
+          <a href="#order-form" class="btn-outline">অর্ডার করুন</a>
+        </article>
+        <article class="product-card reveal">
+          <a href="#order-form" class="product-img-wrap" style="display:block;">
+            <img src="https://placehold.co/600x800/F3E9D8/A9822F?text=Dhakai+Katan" alt="ঢাকাই কাতান শাড়ি" loading="lazy" width="600" height="800">
+            <span class="discount-badge">-১৫%</span>
+          </a>
+          <h3 class="product-name">ঢাকাই কাতান শাড়ি</h3>
+          <div class="price-row"><span class="now">৳২,৯৯০</span><span class="old">৳৩,৫৯০</span></div>
+          <a href="#order-form" class="btn-outline">অর্ডার করুন</a>
+        </article>
+        <article class="product-card reveal">
+          <a href="#order-form" class="product-img-wrap" style="display:block;">
+            <img src="https://placehold.co/600x800/F3E9D8/A9822F?text=Monipuri+Saree" alt="মণিপুরী শাড়ি" loading="lazy" width="600" height="800">
+            <span class="discount-badge">-২২%</span>
+          </a>
+          <h3 class="product-name">মণিপুরী শাড়ি</h3>
+          <div class="price-row"><span class="now">৳১,২৯০</span><span class="old">৳১,৬৯০</span></div>
+          <a href="#order-form" class="btn-outline">অর্ডার করুন</a>
+        </article>
+        <article class="product-card reveal">
+          <a href="#order-form" class="product-img-wrap" style="display:block;">
+            <img src="https://placehold.co/600x800/F3E9D8/A9822F?text=Muslin+Saree" alt="মসলিন শাড়ি" loading="lazy" width="600" height="800">
+            <span class="discount-badge">-৩০%</span>
+          </a>
+          <h3 class="product-name">মসলিন শাড়ি</h3>
+          <div class="price-row"><span class="now">৳৪,৯৯০</span><span class="old">৳৭,১৯০</span></div>
+          <a href="#order-form" class="btn-outline">অর্ডার করুন</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <div class="zari-line"></div>
+
+  <!-- ৪. কেন আমাদের বেছে নেবেন -->
+  <section class="why-band" aria-labelledby="why-heading">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="tag">কেন আমাদের বেছে নেবেন</p>
+        <h2 id="why-heading">বিদেশী শাড়ির প্রতিশ্রুতি</h2>
+      </div>
+      <div class="why-grid">
+        <div class="why-item reveal">
+          <div class="why-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg></div>
+          <h3>প্রিমিয়াম ফেব্রিক</h3><p>সেরা সিল্ক, কটন ও জর্জেট</p>
+        </div>
+        <div class="why-item reveal">
+          <div class="why-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.35-9.5-9C.5 7 3 3 6.5 3 9 3 11 5 12 6c1-1 3-3 5.5-3C21 3 23.5 7 21.5 12 19 16.65 12 21 12 21z"/></svg></div>
+          <h3>আরামদায়ক পরিধান</h3><p>সারাদিন আরাম, যেকোনো ঋতুতে</p>
+        </div>
+        <div class="why-item reveal">
+          <div class="why-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.4 6.9L21 11l-6.6 2.1L12 20l-2.4-6.9L3 11l6.6-2.1z"/></svg></div>
+          <h3>এলিগ্যান্ট ডিজাইন</h3><p>ফ্যাশন বিশেষজ্ঞদের বাছাই</p>
+        </div>
+        <div class="why-item reveal">
+          <div class="why-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H7"/></svg></div>
+          <h3>সাশ্রয়ী মূল্য</h3><p>বাজেটের মধ্যে বিলাসিতা</p>
+        </div>
+        <div class="why-item reveal">
+          <div class="why-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg></div>
+          <h3>বিশ্বস্ত বিক্রেতা</h3><p>২,০০০+ সন্তুষ্ট গ্রাহক</p>
+        </div>
+        <div class="why-item reveal">
+          <div class="why-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2 3 14h7l-1 8 11-14h-7z"/></svg></div>
+          <h3>দ্রুত ডেলিভারি</h3><p>সারাদেশে ২-৪ দিনে</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ৫. প্রোডাক্ট গ্যালারি -->
+  <section id="gallery" aria-labelledby="gallery-heading">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="tag">স্টাইল গ্যালারি</p>
+        <h2 id="gallery-heading">অভিজাত্যে মোড়ানো</h2>
+      </div>
+      <div class="gallery-grid">
+        <div class="gallery-item reveal"><img src="https://placehold.co/500x500/F3E9D8/A9822F?text=Style+1" alt="শাড়ি স্টাইল গ্যালারি ছবি ১" loading="lazy" width="500" height="500"></div>
+        <div class="gallery-item reveal"><img src="https://placehold.co/500x500/F3E9D8/A9822F?text=Style+2" alt="শাড়ি স্টাইল গ্যালারি ছবি ২" loading="lazy" width="500" height="500"></div>
+        <div class="gallery-item reveal"><img src="https://placehold.co/500x500/F3E9D8/A9822F?text=Style+3" alt="শাড়ি স্টাইল গ্যালারি ছবি ৩" loading="lazy" width="500" height="500"></div>
+        <div class="gallery-item reveal"><img src="https://placehold.co/500x500/F3E9D8/A9822F?text=Style+4" alt="শাড়ি স্টাইল গ্যালারি ছবি ৪" loading="lazy" width="500" height="500"></div>
+        <div class="gallery-item reveal"><img src="https://placehold.co/500x500/F3E9D8/A9822F?text=Style+5" alt="শাড়ি স্টাইল গ্যালারি ছবি ৫" loading="lazy" width="500" height="500"></div>
+        <div class="gallery-item reveal"><img src="https://placehold.co/500x500/F3E9D8/A9822F?text=Style+6" alt="শাড়ি স্টাইল গ্যালারি ছবি ৬" loading="lazy" width="500" height="500"></div>
+        <div class="gallery-item reveal"><img src="https://placehold.co/500x500/F3E9D8/A9822F?text=Style+7" alt="শাড়ি স্টাইল গ্যালারি ছবি ৭" loading="lazy" width="500" height="500"></div>
+        <div class="gallery-item reveal"><img src="https://placehold.co/500x500/F3E9D8/A9822F?text=Style+8" alt="শাড়ি স্টাইল গ্যালারি ছবি ৮" loading="lazy" width="500" height="500"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ৬. কাস্টমার রিভিউ -->
+  <section class="reviews-section" aria-labelledby="reviews-heading">
+    <div class="container">
+      <div class="section-head light reveal">
+        <p class="tag">কাস্টমার রিভিউ</p>
+        <h2 id="reviews-heading">হাজারো গ্রাহকের পছন্দ</h2>
+      </div>
+      <div class="reviews-scroll">
+        <div class="review-card reveal">
+          <div class="review-top"><img src="https://placehold.co/80x80/E8D5A8/2B241D?text=SA" alt=""><div><p class="name">সুমাইয়া আক্তার</p><p class="stars">★★★★★</p></div></div>
+          <p>কাপড়ের মান আশাতীত ভালো — প্রিমিয়াম মনে হয়েছে, ছবির সাথে রংও একদম মিলে গেছে।</p>
+        </div>
+        <div class="review-card reveal">
+          <div class="review-top"><img src="https://placehold.co/80x80/E8D5A8/2B241D?text=RH" alt=""><div><p class="name">রিমা হক</p><p class="stars">★★★★★</p></div></div>
+          <p>বোনের বিয়েতে পরেছিলাম, অনেক প্রশংসা পেয়েছি। ডেলিভারিও দ্রুত পেয়েছি — সিলেট থেকে।</p>
+        </div>
+        <div class="review-card reveal">
+          <div class="review-top"><img src="https://placehold.co/80x80/E8D5A8/2B241D?text=NA" alt=""><div><p class="name">নুসরাত জাহান</p><p class="stars">★★★★★</p></div></div>
+          <p>ক্যাশ অন ডেলিভারি থাকায় ভরসা করে অর্ডার করতে পেরেছি। আবারও অর্ডার করব ইনশাআল্লাহ।</p>
+        </div>
+        <div class="review-card reveal">
+          <div class="review-top"><img src="https://placehold.co/80x80/E8D5A8/2B241D?text=FA" alt=""><div><p class="name">ফারজানা ইসলাম</p><p class="stars">★★★★★</p></div></div>
+          <p>শাড়ির ড্রেপ খুব সুন্দর, ব্লাউজ পিসের কালারও একদম মিলে গেছে। রাজশাহী থেকে অর্ডার করেছিলাম।</p>
+        </div>
+        <div class="review-card reveal">
+          <div class="review-top"><img src="https://placehold.co/80x80/E8D5A8/2B241D?text=TS" alt=""><div><p class="name">তাসনিম সুলতানা</p><p class="stars">★★★★★</p></div></div>
+          <p>দ্বিতীয়বার অর্ডার করলাম — প্রতিবারই একই রকম কোয়ালিটি পাচ্ছি। এখন এটাই আমার নিয়মিত দোকান।</p>
+        </div>
+        <div class="review-card reveal">
+          <div class="review-top"><img src="https://placehold.co/80x80/E8D5A8/2B241D?text=MK" alt=""><div><p class="name">মিম খানম</p><p class="stars">★★★★★</p></div></div>
+          <p>প্যাকেজিং যেমন সুন্দর, শাড়িও তেমন প্রিমিয়াম লেগেছে। খুলনায় ডেলিভারি পেতে ৩ দিন লেগেছে।</p>
+        </div>
+        <div class="review-card reveal">
+          <div class="review-top"><img src="https://placehold.co/80x80/E8D5A8/2B241D?text=AB" alt=""><div><p class="name">আফসানা বেগম</p><p class="stars">★★★★★</p></div></div>
+          <p>কোনো ঝামেলা ছাড়াই এক্সচেঞ্জ করতে পেরেছি। কাস্টমার সার্ভিস দ্রুত রেসপন্স করেছে।</p>
+        </div>
+        <div class="review-card reveal">
+          <div class="review-top"><img src="https://placehold.co/80x80/E8D5A8/2B241D?text=SR" alt=""><div><p class="name">শিরিন রহমান</p><p class="stars">★★★★★</p></div></div>
+          <p>ধোয়ার পরও রং একদম ফ্যাকাশে হয়নি। দামের তুলনায় সত্যিই মূল্যবান একটা শাড়ি।</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ৭. পণ্যের বিবরণ -->
+  <section aria-labelledby="details-heading">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="tag">পণ্যের বিবরণ</p>
+        <h2 id="details-heading">আপনি কী পাচ্ছেন</h2>
+      </div>
+      <div class="accordion reveal">
+        <details open>
+          <summary>ফেব্রিক <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>ভ্যারিয়েন্ট অনুযায়ী প্রিমিয়াম সিল্ক / জর্জেট / কটন — ত্বকে নরম অনুভূতি ও প্রাকৃতিক ঔজ্জ্বল্য।</p>
+        </details>
+        <details>
+          <summary>দৈর্ঘ্য <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>৫.৫ মিটার শাড়ির দৈর্ঘ্য, সব উচ্চতার জন্য সাধারণ ড্রেপিং স্টাইলে উপযোগী।</p>
+        </details>
+        <details>
+          <summary>ব্লাউজ পিস <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>প্রতিটি অর্ডারের সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস (০.৮ মি) দেওয়া হয়, টেইলারিং এর জন্য প্রস্তুত।</p>
+        </details>
+        <details>
+          <summary>ধোয়ার নির্দেশনা <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>সিল্ক ভ্যারিয়েন্টের জন্য ড্রাই ক্লিন সুপারিশ করা হয়; কটন ও জর্জেটের জন্য ঠান্ডা পানিতে হালকা হাতে ধোয়া যাবে।</p>
+        </details>
+        <details>
+          <summary>ডেলিভারি সময় <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>ঢাকার ভিতরে ১-২ দিন, দেশের অন্যান্য জেলায় ২-৪ দিনের মধ্যে কুরিয়ারের মাধ্যমে ডেলিভারি পৌঁছে যাবে।</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ৮. সীমিত সময়ের অফার -->
+  <section class="offer-section" aria-labelledby="offer-heading">
+    <div class="container reveal">
+      <span class="offer-badge">সীমিত সময়ের অফার</span>
+      <h2 id="offer-heading">৩০% পর্যন্ত ছাড় — শীঘ্রই শেষ</h2>
+      <p class="sub">উৎসবের ডিজাইনগুলোতে স্টক সীমিত। অফার শেষ হওয়ার আগেই আপনার শাড়িটি নিশ্চিত করুন।</p>
+      <div class="countdown" id="countdown" role="timer" aria-live="polite">
+        <div class="cd-box"><div class="num" id="cd-hours">৪৮</div><div class="lbl">ঘণ্টা</div></div>
+        <div class="cd-box"><div class="num" id="cd-minutes">০০</div><div class="lbl">মিনিট</div></div>
+        <div class="cd-box"><div class="num" id="cd-seconds">০০</div><div class="lbl">সেকেন্ড</div></div>
+      </div>
+      <a href="#order-form" class="offer-cta">অফার নিন</a>
+    </div>
+  </section>
+
+  <!-- ৯. সাধারণ জিজ্ঞাসা -->
+  <section aria-labelledby="faq-heading">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="tag">সাধারণ জিজ্ঞাসা</p>
+        <h2 id="faq-heading">প্রায়ই জিজ্ঞাসিত প্রশ্ন</h2>
+      </div>
+      <div class="accordion reveal">
+        <details>
+          <summary>ক্যাশ অন ডেলিভারি সুবিধা আছে কি? <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>হ্যাঁ, সারাদেশে ক্যাশ অন ডেলিভারি সুবিধা আছে। পণ্য হাতে পেয়ে দেখে পেমেন্ট করবেন।</p>
+        </details>
+        <details>
+          <summary>ডেলিভারি পেতে কতদিন লাগে? <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>ঢাকার ভিতরে ১-২ দিন এবং দেশের অন্যান্য জেলায় ২-৪ দিনের মধ্যে কুরিয়ারের মাধ্যমে পৌঁছে যায়।</p>
+        </details>
+        <details>
+          <summary>সাইজ বা কালার পছন্দ না হলে এক্সচেঞ্জ করা যাবে? <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>অবশ্যই — ডেলিভারির ৩ দিনের মধ্যে কোনো প্রশ্ন ছাড়াই সহজে এক্সচেঞ্জ করা যাবে।</p>
+        </details>
+        <details>
+          <summary>ব্লাউজ পিস কি সেলাই করা থাকে? <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>ব্লাউজ পিস আনস্টিচড অবস্থায় দেওয়া হয়, যাতে আপনার মাপ অনুযায়ী টেইলার করিয়ে নিতে পারেন।</p>
+        </details>
+        <details>
+          <summary>কীভাবে অর্ডার করব? <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>নিচের অর্ডার ফর্মটি পূরণ করুন, অথবা সরাসরি হোয়াটসঅ্যাপ বা মেসেঞ্জারে মেসেজ করুন।</p>
+        </details>
+        <details>
+          <summary>বিকাশ বা নগদে পেমেন্ট করা যাবে কি? <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>হ্যাঁ, bKash ও Nagad-এ অগ্রিম পেমেন্ট করা যায়, অথবা ক্যাশ অন ডেলিভারিতেও অর্ডার করতে পারবেন।</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ১০. অর্ডার ফর্ম -->
+  <section id="order-form" class="order-section" aria-labelledby="order-heading">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="tag">অর্ডার করুন</p>
+        <h2 id="order-heading">অর্ডার সম্পন্ন করুন</h2>
+      </div>
+      <div class="order-layout reveal">
+        <form class="order-form" id="orderForm">
+          <div class="field">
+            <label for="fullName">পূর্ণ নাম</label>
+            <input required type="text" id="fullName" name="fullName" placeholder="আপনার নাম">
+          </div>
+          <div class="field">
+            <label for="phone">মোবাইল নম্বর</label>
+            <input required type="tel" id="phone" name="phone" placeholder="01XXXXXXXXX">
+          </div>
+          <div class="field">
+            <label for="address">সম্পূর্ণ ঠিকানা</label>
+            <textarea required id="address" name="address" rows="3" placeholder="বাড়ি, রোড, এলাকা, জেলা"></textarea>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="variant">পণ্য নির্বাচন করুন</label>
+              <select id="variant" name="variant">
+                <option value="3490">জামদানি শাড়ি — ৳৩,৪৯০</option>
+                <option value="1690">টাঙ্গাইল তাঁতের শাড়ি — ৳১,৬৯০</option>
+                <option value="2490">রাজশাহী সিল্ক শাড়ি — ৳২,৪৯০</option>
+                <option value="2990">ঢাকাই কাতান শাড়ি — ৳২,৯৯০</option>
+                <option value="1290">মণিপুরী শাড়ি — ৳১,২৯০</option>
+                <option value="4990">মসলিন শাড়ি — ৳৪,৯৯০</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="qty">পরিমাণ</label>
+              <input type="number" id="qty" name="qty" min="1" value="1">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary submit-btn">অর্ডার কনফার্ম করুন</button>
+          <p class="cod-note">✓ ক্যাশ অন ডেলিভারি সুবিধা আছে — পণ্য হাতে পেয়ে দেখে পেমেন্ট করুন।</p>
+          <div class="pay-badges">
+            <span>bKash</span><span>Nagad</span><span>Rocket</span><span>ক্যাশ অন ডেলিভারি</span>
+          </div>
+        </form>
+
+        <aside class="order-summary">
+          <h3>অর্ডার সামারি</h3>
+          <div class="sum-row"><span class="k">পণ্য</span><span id="sum-item">জামদানি শাড়ি</span></div>
+          <div class="sum-row"><span class="k">পরিমাণ</span><span id="sum-qty">১</span></div>
+          <div class="sum-row"><span class="k">একক মূল্য</span><span id="sum-price">৳৩,৪৯০</span></div>
+          <div class="sum-total"><span>মোট</span><span class="v" id="sum-total">৳৩,৪৯০</span></div>
+          <p class="sum-note">ডেলিভারি চার্জ কনফার্মেশন কলে জানানো হবে।</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="fab-stack">
+  <a href="https://wa.me/8801XXXXXXXXX" target="_blank" rel="noopener" aria-label="হোয়াটসঅ্যাপে চ্যাট করুন" class="fab fab-whatsapp">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.2-.4.1-.1 0-.3 0-.4-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.2 1.6 2.4 3.8 3.4.5.2.9.4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1-.1-.1-.2-.2-.4-.3z"/></svg>
+  </a>
+  <a href="https://m.me/yourpage" target="_blank" rel="noopener" aria-label="মেসেঞ্জারে মেসেজ করুন" class="fab fab-messenger">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.1 2 11.2c0 2.9 1.4 5.5 3.7 7.2V22l3.4-1.9c.9.2 1.9.4 2.9.4 5.5 0 10-4.1 10-9.3S17.5 2 12 2zm1 12.5l-2.6-2.7-5 2.7 5.4-5.7 2.6 2.7 5-2.7z"/></svg>
+  </a>
+  <a href="tel:+8801XXXXXXXXX" aria-label="কল করুন" class="fab fab-call">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.7a2 2 0 01-.4 2.1L8 9.8a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.5 2.7.6A2 2 0 0122 16.9z"/></svg>
+  </a>
+</div>
+
+<div class="sticky-bar">
+  <div class="info">
+    <p class="price" id="mobile-price">৳৩,৪৯০</p>
+    <p class="note">সীমিত স্টক আছে</p>
+  </div>
+  <a href="#order-form" class="btn btn-primary">অর্ডার করুন</a>
+</div>
+
+<script>
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  } else {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+  }
+
+  const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+  function toBn(n){ return String(n).split('').map(d => bnDigits[+d] ?? d).join(''); }
+
+  (function(){
+    const end = Date.now() + (48*60*60*1000);
+    const hEl = document.getElementById('cd-hours');
+    const mEl = document.getElementById('cd-minutes');
+    const sEl = document.getElementById('cd-seconds');
+    function tick(){
+      const diff = Math.max(0, end - Date.now());
+      hEl.textContent = toBn(String(Math.floor(diff/3600000)).padStart(2,'0'));
+      mEl.textContent = toBn(String(Math.floor((diff%3600000)/60000)).padStart(2,'0'));
+      sEl.textContent = toBn(String(Math.floor((diff%60000)/1000)).padStart(2,'0'));
+    }
+    tick(); setInterval(tick, 1000);
+  })();
+
+  (function(){
+    const variantEl = document.getElementById('variant');
+    const qtyEl = document.getElementById('qty');
+    const sumItem = document.getElementById('sum-item');
+    const sumQty = document.getElementById('sum-qty');
+    const sumPrice = document.getElementById('sum-price');
+    const sumTotal = document.getElementById('sum-total');
+    const mobilePrice = document.getElementById('mobile-price');
+    function fmt(n){ return '৳' + toBn(Number(n).toLocaleString('en-IN')); }
+    function update(){
+      const price = parseInt(variantEl.value, 10);
+      const qty = Math.max(1, parseInt(qtyEl.value || '1', 10));
+      const label = variantEl.options[variantEl.selectedIndex].text.split('—')[0].trim();
+      sumItem.textContent = label;
+      sumQty.textContent = toBn(qty);
+      sumPrice.textContent = fmt(price);
+      sumTotal.textContent = fmt(price * qty);
+      mobilePrice.textContent = fmt(price);
+    }
+    variantEl.addEventListener('change', update);
+    qtyEl.addEventListener('input', update);
+    update();
+    document.getElementById('orderForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      alert('ধন্যবাদ! আপনার অর্ডার রিকোয়েস্ট পেয়েছি। শীঘ্রই কল করে কনফার্ম করা হবে।');
+      this.reset();
+      update();
+    });
+  })();
+</script>
+
+</body>
+</html>
