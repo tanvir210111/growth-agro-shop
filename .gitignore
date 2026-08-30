@@ -2,6 +2,9 @@
 .env
 .env.local
 .env.*.local
+.htpasswd
+.htpasswd_*
+!.htpasswd_example
 
 # SQLite Database & Backups (Keep private, never commit to git)
 data/database.sqlite
