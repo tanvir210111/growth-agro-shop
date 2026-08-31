@@ -9,6 +9,43 @@
  */
 
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Resolve BD Courier API key from process environment or local .env file (Zero hardcoding)
+ */
+function resolveApiKey(overrideKey) {
+  if (overrideKey) return overrideKey;
+  if (process.env.BD_COURIER_API_KEY) return process.env.BD_COURIER_API_KEY;
+  if (process.env.BDCOURIER_API_KEY) return process.env.BDCOURIER_API_KEY;
+
+  const candidatePaths = [
+    path.join(__dirname, '..', 'E Commerce Baby', '.env'),
+    path.join(__dirname, '..', '.env')
+  ];
+  for (const envPath of candidatePaths) {
+    if (fs.existsSync(envPath)) {
+      try {
+        const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('BD_COURIER_API_KEY=') || trimmed.startsWith('BDCOURIER_API_KEY=')) {
+            let val = trimmed.split('=')[1].trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+              val = val.slice(1, -1);
+            }
+            if (val) {
+              process.env.BD_COURIER_API_KEY = val;
+              return val;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+  }
+  return null;
+}
 
 const COURIER_TIMEOUT_MS = parseInt(process.env.BD_COURIER_TIMEOUT_MS || '8000', 10);
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
@@ -234,8 +271,8 @@ function checkBdCourier(phone, overrideKey) {
       });
     }
 
-    // 2. Resolve server API key (Never expose in response)
-    const apiKey = overrideKey || process.env.BD_COURIER_API_KEY || 'XBFzjdaXoO19MkzMph8fbiH88I0sVAMX5XFrs5UXteP2ibIEX6op0NgDn4HB';
+    // 2. Resolve server API key from environment (Never expose in response)
+    const apiKey = resolveApiKey(overrideKey);
 
     if (!apiKey) {
       return resolve({

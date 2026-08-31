@@ -2,6 +2,38 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+
+// Load environment variables from Laravel .env if available
+function loadLocalEnv() {
+  const envPaths = [
+    path.join(__dirname, 'E Commerce Baby', '.env'),
+    path.join(__dirname, '.env')
+  ];
+  for (const envPath of envPaths) {
+    if (fs.existsSync(envPath)) {
+      try {
+        const content = fs.readFileSync(envPath, 'utf8');
+        for (const line of content.split(/\r?\n/)) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const idx = trimmed.indexOf('=');
+          if (idx > 0) {
+            const k = trimmed.slice(0, idx).trim();
+            let v = trimmed.slice(idx + 1).trim();
+            if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+              v = v.slice(1, -1);
+            }
+            if (!process.env[k]) {
+              process.env[k] = v;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+  }
+}
+loadLocalEnv();
+
 const { spawn } = require('child_process');
 const { calculateOrderTotals } = require('./server/products');
 const { createOrder, listOrders, getOrderByNumber, updateOrderStatus, findDuplicateOrder, ALLOWED_ORDER_STATUSES } = require('./server/db');
