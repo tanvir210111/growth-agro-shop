@@ -113,6 +113,7 @@ function initAuthCheck() {
 
   // Verify server-side session with backend API
   fetch('/api/admin/me', {
+    credentials: 'same-origin',
     headers: { 'Accept': 'application/json' }
   })
   .then(res => res.json())
@@ -166,6 +167,7 @@ window.handleLogin = function(email, pass) {
   // Real Database Authentication API call to Laravel backend
   fetch('/api/admin/login', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
@@ -209,6 +211,7 @@ window.handleLogin = function(email, pass) {
 window.handleLogout = function() {
   fetch('/api/admin/logout', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: { 'Accept': 'application/json' }
   }).catch(() => {});
 
@@ -1741,16 +1744,20 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
   `;
   modal.classList.add('active');
 
-  const token = localStorage.getItem('admin_token') || 'adm_session';
+  const token = localStorage.getItem('admin_token') || '';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['x-admin-token'] = token;
+  }
 
   fetch('/api/admin/fraud/courier-check', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      'x-admin-token': token
-    },
+    credentials: 'same-origin',
+    headers: headers,
     body: JSON.stringify({ phone: phone })
   })
   .then(r => r.json())
@@ -1966,23 +1973,23 @@ window.loadAnalyticsDashboard = async function() {
     query += `&start_date=${encodeURIComponent(customAnalyticsStartDate)}&end_date=${encodeURIComponent(customAnalyticsEndDate)}`;
   }
 
-  const token = localStorage.getItem('admin_token') || 'adm_session';
-  const headers = {
-    'Accept': 'application/json',
-    'Authorization': `Bearer ${token}`,
-    'x-admin-token': token
-  };
+  const token = localStorage.getItem('admin_token') || '';
+  const headers = { 'Accept': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['x-admin-token'] = token;
+  }
 
   try {
     // Fetch all analytics datasets in parallel
     const [overviewRes, funnelRes, attrRes, campRes, lpRes, timeRes, devRes] = await Promise.all([
-      fetch(`/api/admin/analytics/overview?${query}`, { headers }),
-      fetch(`/api/admin/analytics/funnel?${query}`, { headers }),
-      fetch(`/api/admin/analytics/attribution?${query}`, { headers }),
-      fetch(`/api/admin/analytics/campaigns?${query}`, { headers }),
-      fetch(`/api/admin/analytics/landing-pages?${query}`, { headers }),
-      fetch(`/api/admin/analytics/timeline?${query}`, { headers }),
-      fetch(`/api/admin/analytics/devices?${query}`, { headers }),
+      fetch(`/api/admin/analytics/overview?${query}`, { credentials: 'same-origin', headers }),
+      fetch(`/api/admin/analytics/funnel?${query}`, { credentials: 'same-origin', headers }),
+      fetch(`/api/admin/analytics/attribution?${query}`, { credentials: 'same-origin', headers }),
+      fetch(`/api/admin/analytics/campaigns?${query}`, { credentials: 'same-origin', headers }),
+      fetch(`/api/admin/analytics/landing-pages?${query}`, { credentials: 'same-origin', headers }),
+      fetch(`/api/admin/analytics/timeline?${query}`, { credentials: 'same-origin', headers }),
+      fetch(`/api/admin/analytics/devices?${query}`, { credentials: 'same-origin', headers }),
     ]);
 
     if (overviewRes.status === 401) {
@@ -2370,13 +2377,15 @@ window.openFraudDetailModal = async function(orderIdOrInvoice) {
   modal.classList.add('active');
 
   try {
-    const token = localStorage.getItem('admin_token') || 'adm_session';
+    const token = localStorage.getItem('admin_token') || '';
+    const headers = { 'Accept': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      headers['x-admin-token'] = token;
+    }
     const res = await fetch(`/api/admin/fraud/orders/${encodeURIComponent(orderIdOrInvoice)}`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'x-admin-token': token
-      }
+      credentials: 'same-origin',
+      headers: headers
     });
 
     if (!res.ok) throw new Error('Order not found or unauthorized.');
@@ -2485,9 +2494,15 @@ window.loadFraudOverview = async function() {
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '...'; });
 
   try {
-    const token = localStorage.getItem('admin_token') || 'adm_session';
+    const token = localStorage.getItem('admin_token') || '';
+    const headers = { 'Accept': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      headers['x-admin-token'] = token;
+    }
     const res = await fetch('/api/admin/fraud/overview', {
-      headers: { 'Authorization': `Bearer ${token}`, 'x-admin-token': token }
+      credentials: 'same-origin',
+      headers: headers
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
@@ -2533,12 +2548,15 @@ window.openOrderJourneyModal = async function(orderIdOrInvoice) {
   `;
 
   try {
+    const token = localStorage.getItem('admin_token') || '';
+    const headers = { 'Accept': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      headers['x-admin-token'] = token;
+    }
     const res = await fetch(`/api/admin/analytics/journey/${encodeURIComponent(orderIdOrInvoice)}`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer adm_session',
-        'x-admin-token': 'adm_session'
-      }
+      credentials: 'same-origin',
+      headers: headers
     });
 
     if (!res.ok) {
