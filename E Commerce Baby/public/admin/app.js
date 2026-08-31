@@ -93,14 +93,45 @@ function initAuthCheck() {
   const loginSection = document.getElementById('loginSection');
   const appSection = document.getElementById('appSection');
 
-  if (APP_STATE.currentUser && APP_STATE.currentUser.email) {
-    if (loginSection) loginSection.style.display = 'none';
-    if (appSection) appSection.style.display = 'flex';
-  } else {
+  // If user is visiting /admin/login explicitly, ALWAYS show login form and clear any stale local state
+  if (window.location.pathname.includes('/login')) {
+    APP_STATE.currentUser = null;
+    localStorage.removeItem('admin_user');
+    localStorage.removeItem('admin_token');
+    if (loginSection) loginSection.style.display = 'flex';
+    if (appSection) appSection.style.display = 'none';
+    return;
+  }
+
+  // If no current user in state, force login form
+  if (!APP_STATE.currentUser || !APP_STATE.currentUser.email) {
     APP_STATE.currentUser = null;
     if (loginSection) loginSection.style.display = 'flex';
     if (appSection) appSection.style.display = 'none';
+    return;
   }
+
+  // Verify server-side session with backend API
+  fetch('/api/admin/me', {
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data && data.authenticated && data.user) {
+      APP_STATE.currentUser = data.user;
+      if (loginSection) loginSection.style.display = 'none';
+      if (appSection) appSection.style.display = 'flex';
+    } else {
+      throw new Error('Not authenticated');
+    }
+  })
+  .catch(() => {
+    APP_STATE.currentUser = null;
+    localStorage.removeItem('admin_user');
+    localStorage.removeItem('admin_token');
+    if (loginSection) loginSection.style.display = 'flex';
+    if (appSection) appSection.style.display = 'none';
+  });
 }
 
 window.handleLogin = function(email, pass) {
