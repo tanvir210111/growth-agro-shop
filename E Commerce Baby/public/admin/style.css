@@ -2063,10 +2063,11 @@ body {
   transition: all 0.15s;
 }
 .risk-filter-btn:hover { background: #EDF2F7; }
-.risk-filter-btn.active-high   { background: #FEE2E2; color: #991B1B; border-color: #FECACA; }
-.risk-filter-btn.active-medium { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
-.risk-filter-btn.active-low    { background: #DCFCE7; color: #166534; border-color: #BBF7D0; }
-.risk-filter-btn.active-all    { background: #004D40; color: #fff; border-color: #004D40; }
+.risk-filter-btn.active-high         { background: #FEE2E2; color: #991B1B; border-color: #FECACA; }
+.risk-filter-btn.active-medium       { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+.risk-filter-btn.active-low          { background: #DCFCE7; color: #166534; border-color: #BBF7D0; }
+.risk-filter-btn.active-not_assessed { background: #4A5568; color: #fff; border-color: #4A5568; }
+.risk-filter-btn.active-all          { background: #004D40; color: #fff; border-color: #004D40; }
 
 /* Fraud card in Journey modal */
 .fraud-journey-card {

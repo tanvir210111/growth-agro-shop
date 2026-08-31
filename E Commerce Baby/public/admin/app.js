@@ -6,6 +6,7 @@
 const APP_STATE = {
   currentUser: JSON.parse(localStorage.getItem('admin_user')) || null,
   activeFilter: 'All',
+  riskFilter: 'all',
   activeView: 'dashboard',
   searchQuery: '',
   dateFilter: 'All',
@@ -556,11 +557,11 @@ function buildRiskBadge(level, score) {
   if (level === null || level === undefined || score === null || score === undefined) {
     return '<span class="risk-badge risk-badge-none">— Not assessed</span>';
   }
-  const lvl = (level || '').toUpperCase();
+  const lvl = String(level).toUpperCase();
   const scoreNum = parseInt(score, 10);
-  if (lvl === 'HIGH')   return `<span class="risk-badge risk-badge-high">🔴 High ${scoreNum}</span>`;
+  if (lvl === 'HIGH' || lvl === 'HIGH_RISK')   return `<span class="risk-badge risk-badge-high">🔴 High ${scoreNum}</span>`;
   if (lvl === 'MEDIUM') return `<span class="risk-badge risk-badge-medium">🟡 Medium ${scoreNum}</span>`;
-  if (lvl === 'LOW')    return `<span class="risk-badge risk-badge-low">🟢 Low ${scoreNum}</span>`;
+  if (lvl === 'LOW' || lvl === 'SAFE')    return `<span class="risk-badge risk-badge-low">🟢 Low ${scoreNum}</span>`;
   return `<span class="risk-badge risk-badge-none">— ${scoreNum}</span>`;
 }
 
@@ -602,10 +603,28 @@ function renderOrdersTable() {
   // Risk filter (client-side from already-loaded data)
   if (APP_STATE.riskFilter && APP_STATE.riskFilter !== 'all') {
     if (APP_STATE.riskFilter === 'not_assessed') {
-      filtered = filtered.filter(o => o.fraudScore === null || o.fraudScore === undefined);
-    } else {
-      const rl = APP_STATE.riskFilter.toUpperCase();
-      filtered = filtered.filter(o => (o.fraudLevel || '').toUpperCase() === rl);
+      filtered = filtered.filter(o =>
+        o.fraudLevel === null ||
+        o.fraudLevel === undefined ||
+        o.fraudScore === null ||
+        o.fraudScore === undefined ||
+        String(o.fraudLevel).toLowerCase() === 'not_assessed'
+      );
+    } else if (APP_STATE.riskFilter === 'high') {
+      filtered = filtered.filter(o => {
+        const lvl = String(o.fraudLevel || '').toLowerCase();
+        return lvl === 'high' || lvl === 'high_risk' || (o.fraudScore !== null && o.fraudScore !== undefined && o.fraudScore >= 70);
+      });
+    } else if (APP_STATE.riskFilter === 'medium') {
+      filtered = filtered.filter(o => {
+        const lvl = String(o.fraudLevel || '').toLowerCase();
+        return lvl === 'medium' || (o.fraudScore !== null && o.fraudScore !== undefined && o.fraudScore >= 30 && o.fraudScore < 70);
+      });
+    } else if (APP_STATE.riskFilter === 'low') {
+      filtered = filtered.filter(o => {
+        const lvl = String(o.fraudLevel || '').toLowerCase();
+        return (lvl === 'low' || lvl === 'safe') || (o.fraudScore !== null && o.fraudScore !== undefined && o.fraudScore >= 0 && o.fraudScore < 30);
+      });
     }
   }
 
@@ -2474,13 +2493,15 @@ window.closeOrderJourneyModal = function() {
  * Uses client-side filtering from already-loaded APP_STATE.orders.
  */
 window.setRiskFilter = function(level) {
-  APP_STATE.riskFilter = level;
+  // Toggle: clicking the active filter returns to 'all'
+  const targetLevel = (APP_STATE.riskFilter === level && level !== 'all') ? 'all' : (level || 'all');
+  APP_STATE.riskFilter = targetLevel;
 
   // Update button active states
   ['all','high','medium','low','not_assessed'].forEach(k => {
     const btn = document.getElementById('riskBtn-' + k);
     if (!btn) return;
-    btn.className = 'risk-filter-btn' + (k === level ? ` active-${k}` : '');
+    btn.className = 'risk-filter-btn' + (k === targetLevel ? ` active-${k}` : '');
   });
 
   renderOrdersTable();
