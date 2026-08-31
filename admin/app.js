@@ -173,7 +173,7 @@ function loadServerOrders() {
     if (data && data.success && Array.isArray(data.orders)) {
       APP_STATE.orders = data.orders.map(ord => ({
         invoice: ord.order_number,
-        source: ord.source || "Landing Page",
+        source: ord.source || "LANDING_PAGE",
         customer: ord.customer_name || "Customer",
         customerType: "Regular",
         customerLevel: 1,
@@ -188,13 +188,19 @@ function loadServerOrders() {
         subtotal: ord.subtotal || ord.total,
         deliveryCharge: ord.delivery_charge || 0,
         total: ord.total,
-        paid: 0,
-        due: ord.total,
+        paid: ord.advance_paid ? ord.advance_amount : 0,
+        due: ord.advance_paid ? (ord.total - ord.advance_amount) : ord.total,
         status: normalizeStatus(ord.status || 'pending'),
+        fraudLevel: ord.fraud_level || 'new_customer',
+        fraudScore: ord.fraud_score || 0,
+        advanceAmount: ord.advance_amount || 0,
+        advancePaid: ord.advance_paid || 0,
+        timeline: ord.timeline ? (typeof ord.timeline === 'string' ? JSON.parse(ord.timeline) : ord.timeline) : [],
         date: (ord.created_at || new Date().toISOString()).replace('T', ' ').substring(0, 19),
         createdBy: "Customer",
-        courier: "Steadfast"
+        courier: ord.courier_name || "Steadfast"
       }));
+
 
       // Update customers aggregation
       aggregateCustomers();
@@ -353,17 +359,20 @@ function renderDashboardData() {
 
 /**
  * Filter orders table by source type.
- * @param {string} type - 'baby-fashion-storefront' for main website, 'landing' for all landing pages
+ * @param {string} type - 'MAIN_WEBSITE', 'LANDING_PAGE', or null (all)
  */
-function filterOrdersBySource(type) {
-  if (type === 'baby-fashion-storefront') {
-    APP_STATE.sourceFilter = 'baby-fashion-storefront';
+window.filterOrdersBySource = function(type) {
+  if (type === 'MAIN_WEBSITE' || type === 'baby-fashion-storefront') {
+    APP_STATE.sourceFilter = 'MAIN_WEBSITE';
+  } else if (type === 'LANDING_PAGE' || type === 'landing') {
+    APP_STATE.sourceFilter = 'LANDING_PAGE';
   } else {
-    APP_STATE.sourceFilter = 'landing';
+    APP_STATE.sourceFilter = null;
   }
   APP_STATE.activeFilter = 'All';
   renderOrdersTable();
-}
+};
+
 
 
 
@@ -465,12 +474,12 @@ function renderOrdersTable() {
 
   let filtered = [...APP_STATE.orders];
 
-  // Source filter (set by filterOrdersBySource on dashboard click)
+  // Source filter (set by filterOrdersBySource on dashboard or menu click)
   if (APP_STATE.sourceFilter) {
-    if (APP_STATE.sourceFilter === 'baby-fashion-storefront') {
-      filtered = filtered.filter(o => (o.source || '').toLowerCase().includes('baby-fashion'));
-    } else if (APP_STATE.sourceFilter === 'landing') {
-      filtered = filtered.filter(o => !(o.source || '').toLowerCase().includes('baby-fashion'));
+    if (APP_STATE.sourceFilter === 'MAIN_WEBSITE') {
+      filtered = filtered.filter(o => (o.source || '').toUpperCase().includes('MAIN_WEBSITE') || (o.source || '').toLowerCase().includes('baby-fashion'));
+    } else if (APP_STATE.sourceFilter === 'LANDING_PAGE') {
+      filtered = filtered.filter(o => !(o.source || '').toUpperCase().includes('MAIN_WEBSITE') && !(o.source || '').toLowerCase().includes('baby-fashion'));
     }
 
     // Show a clear-filter banner at the top of the orders view
@@ -481,12 +490,12 @@ function renderOrdersTable() {
         const b = document.createElement('div');
         b.id = 'sourceFilterBanner';
         b.style.cssText = 'background:#E0F2FE;border:1px solid #BAE6FD;border-radius:8px;padding:8px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:13px;';
-        b.innerHTML = `<span>🔍 Showing: <strong>${APP_STATE.sourceFilter === 'baby-fashion-storefront' ? '🛍️ Baby Fashion BD (Main Website)' : '🚀 Landing Pages'}</strong> orders only</span><button onclick="APP_STATE.sourceFilter=null; renderOrdersTable();" style="margin-left:auto;background:#EF4444;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;">✕ Clear Filter</button>`;
+        b.innerHTML = `<span>🔍 Showing: <strong>${APP_STATE.sourceFilter === 'MAIN_WEBSITE' ? '🛍️ Main Website Orders' : '🚀 Landing Page Orders'}</strong> only</span><button onclick="filterOrdersBySource(null);" style="margin-left:auto;background:#EF4444;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;">✕ Clear Filter</button>`;
         ordersTopRow.insertAdjacentElement('afterend', b);
       }
     } else {
       banner.style.display = 'flex';
-      banner.querySelector('strong').textContent = APP_STATE.sourceFilter === 'baby-fashion-storefront' ? '🛍️ Baby Fashion BD (Main Website)' : '🚀 Landing Pages';
+      banner.querySelector('strong').textContent = APP_STATE.sourceFilter === 'MAIN_WEBSITE' ? '🛍️ Main Website Orders' : '🚀 Landing Page Orders';
     }
   } else {
     const banner = document.getElementById('sourceFilterBanner');
@@ -535,6 +544,15 @@ function renderOrdersTable() {
   filtered.forEach(ord => {
     const tr = document.createElement('tr');
     const isChecked = APP_STATE.selectedOrders.has(ord.invoice);
+    const isMainWeb = (ord.source || '').toUpperCase().includes('MAIN_WEBSITE') || (ord.source || '').toLowerCase().includes('baby-fashion');
+    const sourceBadge = isMainWeb
+      ? '<span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🛍️ MAIN WEB</span>'
+      : '<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🚀 LANDING</span>';
+
+    const isRisk = ord.fraudLevel === 'risk' || (ord.fraudScore > 0 && ord.fraudScore <= 80);
+    const fraudPill = isRisk
+      ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:700;">⚠️ RISK (অগ্রিম ৳${ord.advanceAmount || 80})</span>`
+      : `<span style="background:#dcfce7;color:#166534;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:700;">✅ SAFE</span>`;
 
     tr.innerHTML = `
       <td style="width:28px;">
@@ -542,13 +560,13 @@ function renderOrdersTable() {
       </td>
       <td>
         <div class="invoice-text">${ord.invoice}</div>
-        <span class="landing-tag">${ord.source}</span>
+        ${sourceBadge}
       </td>
       <td>
         <div class="customer-block">
           <div class="customer-name-line">
             <span class="customer-name-text">${ord.customer}</span>
-            <span class="regular-pill">${ord.customerType} ${ord.customerLevel}</span>
+            ${fraudPill}
           </div>
           <div style="display:flex;align-items:center;gap:6px;margin:3px 0;">
             <a href="tel:${ord.phone}" class="phone-tag" style="text-decoration:none;">📞 ${ord.phone}</a>
@@ -587,12 +605,12 @@ function renderOrdersTable() {
         </div>
       </td>
       <td style="text-align:center;">
-        <button class="icon-btn" onclick="openOrderNoteModal('${ord.invoice}')" title="View Note">📝</button>
+        <button class="icon-btn" onclick="openOrderTimelineModal('${ord.invoice}')" title="View Order Timeline">⏱️</button>
       </td>
       <td style="text-align:center;">
         <div style="display:flex;gap:4px;justify-content:center;">
           <button class="action-dots-btn" onclick="viewOrderInvoice('${ord.invoice}')" title="Invoice">👁️</button>
-          <button class="action-dots-btn" onclick="editOrderDetails('${ord.invoice}')" title="Edit">✏️</button>
+          <button class="action-dots-btn" onclick="openOrderTimelineModal('${ord.invoice}')" title="Timeline">⏱️</button>
           <button class="action-dots-btn" onclick="openOrderActionsModal('${ord.invoice}')" title="Change Status">🔄</button>
           <button class="action-dots-btn" onclick="deleteOrder('${ord.invoice}')" title="Delete" style="color:#E53E3E;">🗑️</button>
         </div>
@@ -601,6 +619,7 @@ function renderOrdersTable() {
     tbody.appendChild(tr);
   });
 }
+
 
 function updateTabCountBadges() {
   const getC = (st) => APP_STATE.orders.filter(o => o.status.toLowerCase() === st.toLowerCase()).length;
@@ -752,11 +771,99 @@ window.deleteOrder = function(invoice) {
   }
 };
 
-window.openOrderNoteModal = function(invoice) {
+window.openOrderTimelineModal = function(invoice) {
   const ord = APP_STATE.orders.find(o => o.invoice === invoice);
   if (!ord) return;
-  alert(`Order #${invoice} Internal Note:\n\nCustomer: ${ord.customer} (${ord.phone})\nDelivery Address: ${ord.address}\nPayment: Cash on Delivery\nCourier: Steadfast (Auto-Sync)`);
+
+  const timelineList = Array.isArray(ord.timeline) && ord.timeline.length > 0
+    ? ord.timeline
+    : [
+        { event: 'Order Created', time: ord.date, note: `অর্ডার গ্রহণ করা হয়েছে (উৎস: ${ord.source})` },
+        { event: 'Fraud Checked', time: ord.date, note: `ফ্রড স্ট্যাটাস: ${ord.fraudLevel} (সাকসেস রেট: ${ord.fraudScore || 100}%)` }
+      ];
+
+  const steps = [
+    { title: "Order Created", desc: "কাস্টমার কর্তৃক অর্ডার প্লেস করা হয়েছে" },
+    { title: "Fraud Checked", desc: `কুরিয়ার ফ্রড স্কোর ও রিস্ক অ্যাসেসমেন্ট (${ord.fraudLevel})` },
+    { title: "Payment Verified", desc: ord.advanceAmount > 0 ? `অগ্রিম ডেলিভারি চার্জ ৳${ord.advanceAmount} প্রযোজ্য` : "১০০% ক্যাশ অন ডেলিভারি মোড" },
+    { title: "Confirmed", desc: "এডমিন কর্তৃক অর্ডার কনফার্ম করা হয়েছে" },
+    { title: "Courier Submitted", desc: `${ord.courier} কুরিয়ারে এন্ট্রি ও ট্র্যাকিং তৈরি` },
+    { title: "Picked Up", desc: "কুরিয়ার রাইডার পার্সেল সংগ্রহ করেছে" },
+    { title: "In Transit", desc: "পার্সেল গন্তব্যে প্রেরিত হচ্ছে" },
+    { title: "Delivered", desc: "কাস্টমারের নিকট ডেলিভারি সম্পন্ন" }
+  ];
+
+  const currentStatus = (ord.status || 'pending').toLowerCase();
+  let stepIndex = 1;
+  if (currentStatus === 'pending') stepIndex = 2;
+  if (currentStatus === 'confirmed' || currentStatus === 'approved') stepIndex = 4;
+  if (currentStatus === 'packaging' || currentStatus === 'processing') stepIndex = 5;
+  if (currentStatus === 'shipment' || currentStatus === 'shipped') stepIndex = 7;
+  if (currentStatus === 'delivered') stepIndex = 8;
+  if (currentStatus === 'cancel' || currentStatus === 'cancelled') stepIndex = -1;
+
+  let timelineHtml = `
+    <div style="padding:16px;font-family:sans-serif;">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:16px;">
+        <div>
+          <h3 style="margin:0;font-size:17px;color:#0f172a;">অর্ডার টাইমলাইন: #${ord.invoice}</h3>
+          <span style="font-size:12px;color:#64748b;">উৎস: <b>${ord.source}</b> | তারিখ: ${ord.date}</span>
+        </div>
+        <div>
+          <span style="background:${currentStatus === 'delivered' ? '#dcfce7' : (currentStatus === 'cancel' ? '#fee2e2' : '#e0f2fe')};color:${currentStatus === 'delivered' ? '#166534' : (currentStatus === 'cancel' ? '#991b1b' : '#0369a1')};font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;">
+            ${ord.status.toUpperCase()}
+          </span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <h4 style="margin:0 0 10px 0;font-size:13px;color:#475569;text-transform:uppercase;">লাইফসাইকেল প্রগ্রেস (Order Lifecycle)</h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;">
+          ${steps.map((st, i) => {
+            const isDone = (i + 1) <= stepIndex;
+            const isCurrent = (i + 1) === stepIndex;
+            return `
+              <div style="background:${isDone ? '#f0fdf4' : '#f8fafc'};border:1px solid ${isCurrent ? '#22c55e' : (isDone ? '#86efac' : '#e2e8f0')};border-radius:8px;padding:8px 10px;font-size:11.5px;">
+                <div style="font-weight:700;color:${isDone ? '#15803d' : '#94a3b8'};">${isDone ? '✓ ' : ''}${i+1}. ${st.title}</div>
+                <div style="font-size:10px;color:#64748b;margin-top:2px;">${st.desc}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <div>
+        <h4 style="margin:0 0 10px 0;font-size:13px;color:#475569;text-transform:uppercase;">রেকর্ডকৃত ইভেন্ট হিস্ট্রি (Event History)</h4>
+        <div style="border-left:2px solid #cbd5e1;padding-left:16px;margin-left:8px;">
+          ${timelineList.map(item => `
+            <div style="position:relative;margin-bottom:14px;">
+              <div style="position:absolute;left:-23px;top:2px;width:12px;height:12px;border-radius:50%;background:#0d9488;border:2px solid #fff;"></div>
+              <div style="display:flex;justify-content:space-between;font-size:12.5px;">
+                <b style="color:#0f172a;">${item.event || item.status || 'Event'}</b>
+                <span style="color:#64748b;font-size:11px;">${(item.time || '').replace('T', ' ').substring(0, 19)}</span>
+              </div>
+              <div style="font-size:12px;color:#475569;margin-top:2px;">${item.note || ''}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="margin-top:20px;text-align:right;">
+        <button class="btn-primary-teal" onclick="document.getElementById('genericModal').classList.remove('active')" style="padding:6px 18px;font-size:12.5px;">বন্ধ করুন</button>
+      </div>
+    </div>
+  `;
+
+  const modalBody = document.getElementById('genericModalBody');
+  const modalTitle = document.getElementById('genericModalTitle');
+  const modal = document.getElementById('genericModal');
+  if (modal && modalBody) {
+    modalTitle.textContent = `Order Lifecycle Timeline #${ord.invoice}`;
+    modalBody.innerHTML = timelineHtml;
+    modal.classList.add('active');
+  }
 };
+
 
 // Printable Invoice Modal
 window.viewOrderInvoice = function(invoice) {

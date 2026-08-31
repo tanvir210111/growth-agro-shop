@@ -103,48 +103,81 @@ function checkCourierRateLimit(ip) {
 }
 
 /**
- * Calculate internal heuristic trust assessment
+ * Calculate internal heuristic trust assessment & Delivery Advance Decision
  * 
- * IMPORTANT: This score is calculated via an internal heuristic model based
- * on delivered vs cancelled parcel ratio. It is clearly labeled as an internal heuristic.
+ * Case 1: No delivery history (totalParcels === 0)
+ *   -> Advance = 0, Product = COD
+ * Case 2: Success Rate > 80%
+ *   -> Advance = 0, Product = COD
+ * Case 3: Success Rate <= 80%
+ *   -> Dhaka: ৳80 Advance Delivery, Outside: ৳150 Advance Delivery, Product = COD
  */
 function calculateHeuristicTrustScore(totalParcels, delivered, cancelled) {
   if (totalParcels === 0) {
     return {
       level: 'new_customer',
-      label: 'New Customer (No Delivery History)',
+      label: 'নতুন কাস্টমার (No Delivery History)',
       success_rate: 100,
-      methodology: 'Internal Heuristic: No past courier parcel records found.'
+      requires_advance: false,
+      advance_amount: 0,
+      advance_delivery_dhaka: 0,
+      advance_delivery_outside: 0,
+      product_payment: 'COD',
+      methodology: 'Internal Heuristic Assessment: Case 1: No previous courier parcel records found. 100% COD eligible.'
     };
   }
 
   const successRate = Math.round((delivered / totalParcels) * 100);
 
-  if (successRate >= 80 && cancelled <= 2) {
+  if (successRate > 80) {
     return {
       level: 'safe',
-      label: 'Safe Customer (High Delivery Trust)',
+      label: 'বিশ্বস্ত কাস্টমার (High Delivery Trust)',
       success_rate: successRate,
-      methodology: 'Internal Heuristic: Delivery success rate >= 80% with minimal returns.'
+      requires_advance: false,
+      advance_amount: 0,
+      advance_delivery_dhaka: 0,
+      advance_delivery_outside: 0,
+      product_payment: 'COD',
+      methodology: `Internal Heuristic Assessment: Case 2: Delivery success rate is ${successRate}% (> 80%). 100% COD eligible.`
     };
   }
 
-  if (successRate >= 60 && cancelled < 5) {
-    return {
-      level: 'medium',
-      label: 'Medium Risk Customer (Moderate Return Rate)',
-      success_rate: successRate,
-      methodology: 'Internal Heuristic: Delivery success rate between 60% and 79%.'
-    };
-  }
-
+  // Case 3: Success Rate <= 80% (requires advance delivery charge, product price remains COD)
+  const isMedium = successRate >= 60;
   return {
-    level: 'high_risk',
-    label: 'High Risk Customer (Frequent Returns / Fraud Warning)',
+    level: isMedium ? 'medium' : 'high_risk',
+    label: isMedium 
+      ? 'মাঝারি রিস্ক কাস্টমার (Advance Delivery Charge Required)' 
+      : 'উচ্চ রিস্ক কাস্টমার (Advance Delivery Charge Required)',
     success_rate: successRate,
-    methodology: 'Internal Heuristic: Delivery success rate < 60% or >= 5 cancelled/returned parcels.'
+    requires_advance: true,
+    advance_amount: 80, // Default to Dhaka, adjusts by zone
+    advance_delivery_dhaka: 80,
+    advance_delivery_outside: 150,
+    product_payment: 'COD',
+    methodology: `Internal Heuristic Assessment: Case 3: Delivery success rate is ${successRate}% (<= 80%). Advance delivery charge mandatory (Dhaka: ৳80, Outside: ৳150). Product price is COD.`
   };
 }
+
+
+/**
+ * Calculate final delivery and advance decision for a specific zone
+ */
+function calculateDeliveryDecision(totalParcels, delivered, cancelled, deliveryZone = 'inside') {
+  const trust = calculateHeuristicTrustScore(totalParcels, delivered, cancelled);
+  const isInsideDhaka = deliveryZone === 'inside' || deliveryZone === 'inside_dhaka' || deliveryZone === 'dhaka';
+  const advanceAmount = trust.requires_advance ? (isInsideDhaka ? 80 : 150) : 0;
+
+  return {
+    ...trust,
+    delivery_zone: isInsideDhaka ? 'inside_dhaka' : 'outside_dhaka',
+    advance_amount: advanceAmount,
+    delivery_charge: isInsideDhaka ? 80 : 150,
+    product_payment: 'COD'
+  };
+}
+
 
 /**
  * Normalize upstream BD Courier API response
@@ -318,6 +351,8 @@ module.exports = {
   checkCourierRateLimit,
   checkBdCourier,
   calculateHeuristicTrustScore,
+  calculateDeliveryDecision,
   normalizeCourierResponse,
   maskPhone
 };
+

@@ -149,7 +149,7 @@ async function runTests() {
   await test('Landing page order submission (/api/orders) functions without basic auth rejection', async () => {
     const orderPayload = {
       product_id: 'chicken-booster',
-      variant_id: 'combo-2kg',
+      variant_id: 'broiler-1kg',
       quantity: 1,
       delivery_zone: 'inside',
       customer_name: 'আব্দুল করিম',

@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "serve:baby": "cd \"E Commerce Baby\" && php -S 127.0.0.1:8000 -t public",
     "sync": "node sync_chicken_booster.js",
     "test": "node test_phase6.js",
     "test:all": "node test_phase1.js && node test_phase2.js && node test_phase3.js && node test_phase4.js && node test_phase5.js && node test_phase6.js && node audit_all.js",

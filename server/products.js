@@ -99,15 +99,15 @@ const PRODUCTS = {
       "2-pack": { id: "2-pack", name: "২ টি প্যাক (১ কেজি কম্বো)", quantityPerUnit: 2, weight: "1kg", price: 1850, regularPrice: 2400, freeDelivery: false },
       "variant-3": { id: "variant-3", name: "৪ টি প্যাক (২ কেজি মেগা সেভার)", quantityPerUnit: 4, weight: "2kg", price: 3400, regularPrice: 5400, freeDelivery: true },
       "4-pack": { id: "4-pack", name: "৪ টি প্যাক (২ কেজি মেগা সেভার)", quantityPerUnit: 4, weight: "2kg", price: 3400, regularPrice: 4600, freeDelivery: true },
-      "broiler-1kg": { id: "broiler-1kg", name: "Broiler Booster (১ কেজি)", quantityPerUnit: 1, weight: "1kg", price: 1150, regularPrice: 1550, freeDelivery: false },
-      "layer-1kg": { id: "layer-1kg", name: "Layer Booster (১ কেজি)", quantityPerUnit: 1, weight: "1kg", price: 1150, regularPrice: 1550, freeDelivery: false },
-      "combo-2kg": { id: "combo-2kg", name: "সুপার কম্বো অফার (Broiler 1KG + Layer 1KG)", quantityPerUnit: 2, weight: "2kg", price: 2100, regularPrice: 3100, freeDelivery: true }
+      "broiler-1kg": { id: "broiler-1kg", name: "Broiler Booster (১ কেজি)", quantityPerUnit: 1, weight: "1kg", price: 2300, regularPrice: 2800, freeDelivery: true },
+      "layer-1kg": { id: "layer-1kg", name: "Layer Booster (১ কেজি)", quantityPerUnit: 1, weight: "1kg", price: 2300, regularPrice: 2800, freeDelivery: true },
+      "combo-2kg": { id: "combo-2kg", name: "সুপার কম্বো অফার (Broiler 1KG + Layer 1KG)", quantityPerUnit: 2, weight: "2kg", price: 2300, regularPrice: 3100, freeDelivery: true }
     },
     deliveryZones: {
-      "inside": { id: "inside", label: "ঢাকার ভিতরে", charge: 60 },
-      "inside_dhaka": { id: "inside_dhaka", label: "ঢাকার ভিতরে", charge: 60 },
-      "outside": { id: "outside", label: "ঢাকার বাইরে", charge: 120 },
-      "outside_dhaka": { id: "outside_dhaka", label: "ঢাকার বাইরে", charge: 120 }
+      "inside": { id: "inside", label: "ঢাকার ভিতরে", charge: 0 },
+      "inside_dhaka": { id: "inside_dhaka", label: "ঢাকার ভিতরে", charge: 0 },
+      "outside": { id: "outside", label: "ঢাকার বাইরে", charge: 0 },
+      "outside_dhaka": { id: "outside_dhaka", label: "ঢাকার বাইরে", charge: 0 }
     }
   },
   "broiler-booster": {
@@ -119,12 +119,13 @@ const PRODUCTS = {
     currencySymbol: "৳",
     source: "Landing Page",
     variants: {
-      "default": { id: "default", name: "১ কেজি প্যাক", price: 1150, regularPrice: 1550, freeDelivery: false },
-      "1kg": { id: "1kg", name: "১ কেজি প্যাক", price: 1150, regularPrice: 1550, freeDelivery: false }
+      "default": { id: "default", name: "১ কেজি প্যাক", price: 2300, regularPrice: 2800, freeDelivery: true },
+      "1kg": { id: "1kg", name: "১ কেজি প্যাক", price: 2300, regularPrice: 2800, freeDelivery: true },
+      "broiler-1kg": { id: "broiler-1kg", name: "Broiler Booster (১ কেজি)", price: 2300, regularPrice: 2800, freeDelivery: true }
     },
     deliveryZones: {
-      "inside": { id: "inside", label: "ঢাকার ভিতরে", charge: 60 },
-      "outside": { id: "outside", label: "ঢাকার বাইরে", charge: 120 }
+      "inside": { id: "inside", label: "ঢাকার ভিতরে", charge: 0 },
+      "outside": { id: "outside", label: "ঢাকার বাইরে", charge: 0 }
     }
   },
   "layer-booster": {
@@ -136,12 +137,13 @@ const PRODUCTS = {
     currencySymbol: "৳",
     source: "Landing Page",
     variants: {
-      "default": { id: "default", name: "১ কেজি প্যাক", price: 1150, regularPrice: 1550, freeDelivery: false },
-      "1kg": { id: "1kg", name: "১ কেজি প্যাক", price: 1150, regularPrice: 1550, freeDelivery: false }
+      "default": { id: "default", name: "১ কেজি প্যাক", price: 2300, regularPrice: 2800, freeDelivery: true },
+      "1kg": { id: "1kg", name: "১ কেজি প্যাক", price: 2300, regularPrice: 2800, freeDelivery: true },
+      "layer-1kg": { id: "layer-1kg", name: "Layer Booster (১ কেজি)", price: 2300, regularPrice: 2800, freeDelivery: true }
     },
     deliveryZones: {
-      "inside": { id: "inside", label: "ঢাকার ভিতরে", charge: 60 },
-      "outside": { id: "outside", label: "ঢাকার বাইরে", charge: 120 }
+      "inside": { id: "inside", label: "ঢাকার ভিতরে", charge: 0 },
+      "outside": { id: "outside", label: "ঢাকার বাইরে", charge: 0 }
     }
   },
   "chicken-booster-1": {
@@ -182,7 +184,7 @@ const PRODUCTS = {
 /**
  * Resolve product, variant, quantity and calculate authoritative totals
  */
-function calculateOrderTotals(productId = "baby-butterfly-set", variantId = "default", quantity = 1, deliveryZone = "outside") {
+function calculateOrderTotals(productId, variantId, quantity, deliveryZone, items) {
   let product = PRODUCTS[productId];
   
   if (!product) {
@@ -205,7 +207,52 @@ function calculateOrderTotals(productId = "baby-butterfly-set", variantId = "def
     };
   }
 
-  // Resolve variant
+  // If multi-item array is passed
+  if (Array.isArray(items) && items.length > 0) {
+    let subtotal = 0;
+    let totalQty = 0;
+    const summaries = [];
+    let isFreeDelivery = true;
+
+    for (const it of items) {
+      const itQty = parseInt(it.quantity || 0, 10);
+      if (itQty > 0) {
+        const itVariant = (product.variants && product.variants[it.variantId]) || { price: 2300, name: it.variantId, freeDelivery: true };
+        subtotal += itVariant.price * itQty;
+        totalQty += itQty;
+        summaries.push(`${itVariant.name} × ${itQty}`);
+        if (!itVariant.freeDelivery) isFreeDelivery = false;
+      }
+    }
+
+    if (totalQty > 0) {
+      const deliveryOption = (product.deliveryZones && product.deliveryZones[deliveryZone]) 
+        ? product.deliveryZones[deliveryZone] 
+        : { id: "outside", label: "ঢাকার বাইরে", charge: 0 };
+      const deliveryCharge = isFreeDelivery ? 0 : deliveryOption.charge;
+      const total = subtotal + deliveryCharge;
+
+      return {
+        product,
+        variant: {
+          id: items.map(i => i.variantId).join('+'),
+          name: summaries.join(' + '),
+          price: 2300,
+          freeDelivery: isFreeDelivery
+        },
+        quantity: totalQty,
+        deliveryZone: deliveryOption.id,
+        deliveryZoneLabel: deliveryOption.label,
+        unitPrice: 2300,
+        subtotal,
+        deliveryCharge,
+        total,
+        currency: product.currency || "BDT"
+      };
+    }
+  }
+
+  // Resolve single variant
   let variant = product.variants ? product.variants[variantId] : null;
   if (!variant && product.variants) {
     const variantKeys = Object.keys(product.variants);

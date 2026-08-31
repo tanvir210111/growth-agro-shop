@@ -138,6 +138,31 @@ class CheckoutService
             // log error
         }
 
+        // Central Order Gateway Synchronization (Node.js Gateway on Port 3000)
+        try {
+            \Illuminate\Support\Facades\Http::timeout(3)
+                ->withHeaders([
+                    'X-Internal-Secret' => env('INTERNAL_API_SECRET', 'baby-fashion-internal-2024-secret')
+                ])
+                ->post('http://127.0.0.1:3000/api/internal/sync-order', [
+                    'order_number' => $orderNumber,
+                    'customer_name' => $order['customer_name'],
+                    'customer_phone' => $order['customer_phone'],
+                    'customer_address' => $order['customer_address'],
+                    'delivery_area' => $area,
+                    'delivery_charge' => $shipping,
+                    'subtotal' => $subtotal,
+                    'total_amount' => $total,
+                    'payment_method' => 'Cash on Delivery',
+                    'note' => $order['notes'],
+                    'source' => 'MAIN_WEBSITE',
+                    'items' => $items,
+                ]);
+        } catch (\Throwable $t) {
+            // Non-blocking sync error tolerance
+        }
+
+
         // Store in session and recent orders
         Session::put("order_{$orderNumber}", $order);
         Session::put('last_order', $order);

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3.0">
+  <link rel="stylesheet" href="/admin/style.css?v=3.0">
 </head>
 <body>
 
@@ -98,10 +98,11 @@
           </a>
           <div class="submenu-tree">
             <ul class="tree-list">
-              <li class="tree-item"><a class="tree-link" id="subnav-manage-order" onclick="APP_STATE.sourceFilter=null; switchView('orders')">All Orders</a></li>
-              <li class="tree-item"><a class="tree-link" id="subnav-website-orders" onclick="filterOrdersBySource('baby-fashion-storefront'); switchView('orders')">🛍️ Main Website Orders</a></li>
-              <li class="tree-item"><a class="tree-link" id="subnav-landing-orders" onclick="filterOrdersBySource('landing'); switchView('orders')">🚀 Landing Page Orders</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-manage-order" onclick="filterOrdersBySource(null); switchView('orders')">All Orders</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-website-orders" onclick="filterOrdersBySource('MAIN_WEBSITE'); switchView('orders')">🛍️ Main Website Orders</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-landing-orders" onclick="filterOrdersBySource('LANDING_PAGE'); switchView('orders')">🚀 Landing Page Orders</a></li>
               <li class="tree-item"><a class="tree-link" id="subnav-processing-report" onclick="switchView('report')">Order Processing Report</a></li>
+
             </ul>
           </div>
         </li>
@@ -2428,6 +2429,6 @@
   <!-- TOAST NOTIFICATION -->
   <div class="toast-box" id="toastBox">Action Completed</div>
 
-  <script src="app.js?v=6.0"></script>
+  <script src="/admin/app.js?v=6.0"></script>
 </body>
 </html>

@@ -1,5 +1,8 @@
 # Environment Variables & Secrets
 .env
+.env.*
+!.env.example
+!.env.fraud-checker.example
 .env.local
 .env.*.local
 .htpasswd
@@ -7,6 +10,9 @@
 !.htpasswd_example
 
 # SQLite Database & Backups (Keep private, never commit to git)
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
 data/database.sqlite
 data/database.sqlite-wal
 data/database.sqlite-shm
@@ -14,6 +20,12 @@ data/backups/
 *.sqlite
 *.sqlite3
 *.db
+
+# SSH & SSL Keys (Keep private, never commit to git)
+*.pem
+*.ppk
+id_rsa*
+id_ed25519*
 
 # Node.js dependencies & Logs
 node_modules/

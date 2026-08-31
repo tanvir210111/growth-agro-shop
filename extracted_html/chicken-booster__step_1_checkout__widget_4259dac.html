@@ -56,8 +56,8 @@
       --btn-red-hover: #b50322;
       --btn-red-shadow: rgba(217, 4, 41, 0.35);
 
-      --btn-maroon: #851e22;
-      --btn-maroon-hover: #6c171a;
+      --btn-maroon: #d90429;
+      --btn-maroon-hover: #b50322;
 
       --accent-yellow: #ffd166;
       --accent-gold: #f59e0b;
@@ -150,21 +150,25 @@
     }
 
     .btn-hotline {
-      background: var(--btn-maroon);
-      color: var(--white);
+      background: linear-gradient(180deg, #e63946 0%, #d90429 100%);
+      color: #ffffff;
       font-size: 14px;
       font-weight: 700;
-      padding: 8px 18px;
+      padding: 9px 18px;
       border-radius: var(--radius-sm);
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       transition: all 0.2s ease;
       white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(217, 4, 41, 0.35);
+      border: 1px solid rgba(255,255,255,0.15);
     }
     .btn-hotline:hover {
-      background: var(--btn-maroon-hover);
+      background: linear-gradient(180deg, #d90429 0%, #b50322 100%);
       transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(217, 4, 41, 0.45);
     }
 
     .brand-logo-wrap {
@@ -180,26 +184,30 @@
     }
 
     .btn-header-order {
-      background: var(--btn-maroon);
-      color: var(--white);
+      background: linear-gradient(180deg, #e63946 0%, #d90429 100%);
+      color: #ffffff;
       font-size: 14px;
       font-weight: 700;
-      padding: 8px 20px;
+      padding: 9px 20px;
       border-radius: var(--radius-sm);
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       transition: all 0.2s ease;
       white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(217, 4, 41, 0.35);
+      border: 1px solid rgba(255,255,255,0.15);
     }
     .btn-header-order:hover {
-      background: var(--btn-maroon-hover);
+      background: linear-gradient(180deg, #d90429 0%, #b50322 100%);
       transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(217, 4, 41, 0.45);
     }
 
     @media (max-width: 600px) {
       .btn-hotline span.phone-text { display: none; }
-      .btn-hotline { padding: 8px 12px; }
+      .btn-hotline { padding: 8px 12px; min-width: 40px; min-height: 40px; }
       .brand-logo-img { height: 40px; }
       .btn-header-order { padding: 8px 14px; font-size: 13px; }
     }
@@ -216,12 +224,12 @@
     }
 
     .hero-alert-hook {
-      color: #ff4d6d;
+      color: #ff1a1a;
       font-size: clamp(20px, 3.8vw, 30px);
       font-weight: 800;
       line-height: 1.3;
       margin-bottom: 8px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.45);
     }
 
     .hero-main-title {
@@ -568,22 +576,30 @@
     }
 
     .btn-helpline-pill {
-      background: var(--brand-teal);
-      color: var(--white);
+      background: #054c55;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
       font-size: 16px;
       font-weight: 700;
       padding: 10px 24px;
       border-radius: var(--radius-sm);
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      box-shadow: var(--shadow-teal);
-      margin-top: 10px;
+      box-shadow: 0 4px 14px rgba(5, 76, 85, 0.35);
+      margin-top: 12px;
       transition: all 0.2s ease;
+      cursor: pointer;
     }
     .btn-helpline-pill:hover {
-      background: var(--brand-teal-dark);
+      background: #03363d;
+      color: #ffffff;
       transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(5, 76, 85, 0.45);
+    }
+    .btn-helpline-pill svg {
+      stroke: #ffffff;
     }
 
     /* ==========================================================================
@@ -736,6 +752,103 @@
       font-size: 14px;
       font-weight: 800;
       color: var(--accent-yellow);
+    }
+
+    /* Quantity Stepper (Exact Match to User Reference) */
+    .qty-controller-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 4px;
+    }
+    .qty-stepper {
+      display: inline-flex;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .qty-btn {
+      width: 32px;
+      height: 36px;
+      background: #ffffff;
+      border: none;
+      color: #374151;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      user-select: none;
+      line-height: 1;
+    }
+    .qty-btn:hover:not(:disabled) {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .qty-btn:active:not(:disabled) {
+      background: #e2e8f0;
+    }
+    .qty-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .qty-number {
+      width: 44px;
+      height: 36px;
+      border: none;
+      border-left: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      background: #ffffff;
+      outline: none;
+      user-select: none;
+    }
+    .qty-live-price {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      font-family: inherit;
+    }
+    .qty-live-price.price-dark {
+      color: #0f172a;
+    }
+    .qty-live-price.price-light {
+      color: var(--accent-yellow);
+    }
+
+    /* Stepper directly inside each product option card (Pashapashi) */
+    .prod-card-qty {
+      margin-left: auto;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+    }
+    .product-option-card .qty-stepper {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    .product-option-card .qty-btn {
+      width: 28px;
+      height: 32px;
+      font-size: 16px;
+      color: #334155;
+    }
+    .product-option-card .qty-number {
+      width: 32px;
+      height: 32px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
     }
 
     /* Right Column: Order Review Box */
@@ -980,7 +1093,9 @@
   <header class="top-header">
     <div class="container top-header-inner">
       <a href="tel:01864444411" class="btn-hotline" title="সরাসরি কল করুন">
-        <span>📞</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="header-call-icon" style="display:inline-block; vertical-align:middle; flex-shrink:0;">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
         <span class="phone-text">01864-444411</span>
       </a>
 
@@ -1073,6 +1188,13 @@
         <a href="#checkout-form-section" class="btn-red-cta">
           <span>👉</span> অর্ডার করতে ক্লিক করুন
         </a>
+        <br>
+        <a href="tel:01864444411" class="btn-helpline-pill">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; display:inline-block; vertical-align:middle;">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          <span>প্রয়োজনে কল করুন: 01864-444411</span>
+        </a>
       </div>
 
       <div class="benefits-box">
@@ -1128,6 +1250,13 @@
       <div class="cta-center-wrap">
         <a href="#checkout-form-section" class="btn-red-cta">
           <span>👉</span> অর্ডার করতে ক্লিক করুন
+        </a>
+        <br>
+        <a href="tel:01864444411" class="btn-helpline-pill">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; display:inline-block; vertical-align:middle;">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          <span>প্রয়োজনে কল করুন: 01864-444411</span>
         </a>
       </div>
 
@@ -1186,7 +1315,10 @@
         </a>
         <br>
         <a href="tel:01864444411" class="btn-helpline-pill">
-          <span>📞 প্রয়োজনে কল করুন: 01864-444411</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; display:inline-block; vertical-align:middle;">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          <span>প্রয়োজনে কল করুন: 01864-444411</span>
         </a>
       </div>
     </section>
@@ -1222,37 +1354,41 @@
                 <div class="field-error">সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন (যেমন: 017XXXXXXXX)</div>
               </div>
 
-              <!-- Product Selection Radio Cards -->
+              <!-- Product Selection Cards -->
               <div class="product-select-group">
-                <label class="form-label">পণ্যটি সিলেক্ট করুন <span class="req">*</span></label>
+                <label class="form-label">পণ্য সিলেক্ট ও পরিমাণ নির্ধারণ করুন <span class="req">*</span></label>
 
                 <!-- Option 1: Broiler Booster -->
-                <div class="product-option-card" data-variant="broiler-1kg" data-product="broiler-booster" data-price="1150" data-name="Broiler Booster (১ কেজি)">
-                  <input type="radio" name="product-select" value="broiler-1kg" class="prod-radio">
+                <div class="product-option-card selected" data-variant="broiler-1kg" data-product="broiler-booster" data-price="2300" data-name="Broiler Booster (১ কেজি)">
+                  <input type="checkbox" name="product-select-cb" value="broiler-1kg" class="prod-radio" checked style="accent-color: var(--btn-red);">
                   <img src="../../pic/Broiler.png" alt="Broiler Booster" class="prod-thumb" onerror="this.src='../../assets/images/broiler-booster-product.png'">
                   <div class="prod-meta">
                     <div class="prod-title">Broiler Booster (১ কেজি)</div>
-                    <div class="prod-price">৳১,১৫০</div>
+                    <div class="prod-price">৳২,৩০০</div>
+                  </div>
+                  <div class="prod-card-qty" onclick="event.stopPropagation()">
+                    <div class="qty-stepper">
+                      <button type="button" class="qty-btn btn-qty-minus" data-target="broiler-1kg" aria-label="Decrease quantity">−</button>
+                      <input type="text" class="qty-number" id="qty-input-broiler-1kg" value="1" readonly>
+                      <button type="button" class="qty-btn btn-qty-plus" data-target="broiler-1kg" aria-label="Increase quantity">+</button>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Option 2: Layer Booster -->
-                <div class="product-option-card" data-variant="layer-1kg" data-product="layer-booster" data-price="1150" data-name="Layer Booster (১ কেজি)">
-                  <input type="radio" name="product-select" value="layer-1kg" class="prod-radio">
+                <div class="product-option-card" data-variant="layer-1kg" data-product="layer-booster" data-price="2300" data-name="Layer Booster (১ কেজি)">
+                  <input type="checkbox" name="product-select-cb" value="layer-1kg" class="prod-radio" style="accent-color: var(--btn-red);">
                   <img src="../../pic/Layer.png" alt="Layer Booster" class="prod-thumb" onerror="this.src='../../assets/images/layer-booster-product.png'">
                   <div class="prod-meta">
                     <div class="prod-title">Layer Booster (১ কেজি)</div>
-                    <div class="prod-price">৳১,১৫০</div>
+                    <div class="prod-price">৳২,৩০০</div>
                   </div>
-                </div>
-
-                <!-- Option 3: Super Combo (Default Selected) -->
-                <div class="product-option-card selected" data-variant="combo-2kg" data-product="chicken-booster" data-price="2100" data-name="সুপার কম্বো অফার (Broiler 1KG + Layer 1KG)">
-                  <input type="radio" name="product-select" value="combo-2kg" class="prod-radio" checked>
-                  <img src="../../assets/images/chicken-booster-product.png" alt="Super Combo" class="prod-thumb" onerror="this.src='../../pic/Untitled design (1).png'">
-                  <div class="prod-meta">
-                    <div class="prod-title">সুপার কম্বো প্যাক (Broiler 1KG + Layer 1KG) ★</div>
-                    <div class="prod-price">৳২,১০০ (ফ্রি ডেলিভারি)</div>
+                  <div class="prod-card-qty" onclick="event.stopPropagation()">
+                    <div class="qty-stepper">
+                      <button type="button" class="qty-btn btn-qty-minus" data-target="layer-1kg" aria-label="Decrease quantity">−</button>
+                      <input type="text" class="qty-number" id="qty-input-layer-1kg" value="0" readonly>
+                      <button type="button" class="qty-btn btn-qty-plus" data-target="layer-1kg" aria-label="Increase quantity">+</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1268,17 +1404,16 @@
                 <thead>
                   <tr>
                     <th>পণ্য</th>
-                    <th class="text-right">সাবটোটাল</th>
+                    <th class="text-right">মূল্য</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="review-items-body">
+                  <!-- Dynamic Line Items Loaded Here -->
+                </tbody>
+                <tfoot>
                   <tr>
-                    <td id="review-product-name">সুপার কম্বো প্যাক (Broiler 1KG + Layer 1KG) × 1</td>
-                    <td class="text-right" id="review-subtotal">৳২,১০০.০০</td>
-                  </tr>
-                  <tr>
-                    <td>সাবটোটাল</td>
-                    <td class="text-right" id="review-subtotal-row">৳২,১০০.০০</td>
+                    <td style="padding-top: 12px; font-weight: 600; color: #475569;">সাবটোটাল</td>
+                    <td class="text-right" id="review-subtotal-row" style="padding-top: 12px; font-weight: 700; color: #0f172a;">৳ 2,300.00</td>
                   </tr>
                   <tr>
                     <td>
@@ -1286,25 +1421,25 @@
                       <div class="delivery-group">
                         <label class="delivery-radio-label">
                           <span>
-                            <input type="radio" name="delivery-zone" value="inside" data-charge="60">
-                            ঢাকার ভিতরে (৳৬০)
+                            <input type="radio" name="delivery-zone" value="inside" data-charge="0">
+                            ঢাকার ভিতরে (ফ্রি)
                           </span>
                         </label>
                         <label class="delivery-radio-label">
                           <span>
-                            <input type="radio" name="delivery-zone" value="outside" data-charge="120" checked>
-                            ঢাকার বাইরে (৳১২০)
+                            <input type="radio" name="delivery-zone" value="outside" data-charge="0" checked>
+                            ঢাকার বাইরে (ফ্রি)
                           </span>
                         </label>
                       </div>
                     </td>
-                    <td class="text-right" id="review-delivery-charge" style="vertical-align: top; padding-top: 14px;">৳০.০০</td>
+                    <td class="text-right" id="review-delivery-charge" style="vertical-align: top; padding-top: 14px; color: #16a34a; font-weight: bold;">ফ্রি ডেলিভারি</td>
                   </tr>
                   <tr class="total-row">
                     <td>সর্বমোট</td>
-                    <td class="text-right" id="review-grand-total">৳২,১০০.০০</td>
+                    <td class="text-right" id="review-grand-total">৳ 0.00</td>
                   </tr>
-                </tbody>
+                </tfoot>
               </table>
 
               <!-- Cash On Delivery Notice -->
@@ -1324,7 +1459,7 @@
 
               <!-- Big Red Order Button -->
               <button type="button" class="btn-submit-order" id="btn-submit-order">
-                <span id="btn-order-text">অর্ডার করুন ৳ ২,১০০.০০</span>
+                <span id="btn-order-text">অর্ডার করুন ৳ 0.00</span>
                 <span class="spinner-icon" id="order-spinner"></span>
               </button>
             </div>
@@ -1390,40 +1525,19 @@
   (function() {
     "use strict";
 
-    // Products catalog
     const CATALOG = {
-      "broiler-1kg": {
-        productId: "chicken-booster",
-        variantId: "broiler-1kg",
-        name: "Broiler Booster (১ কেজি)",
-        price: 1150,
-        freeDelivery: false
-      },
-      "layer-1kg": {
-        productId: "chicken-booster",
-        variantId: "layer-1kg",
-        name: "Layer Booster (১ কেজি)",
-        price: 1150,
-        freeDelivery: false
-      },
-      "combo-2kg": {
-        productId: "chicken-booster",
-        variantId: "combo-2kg",
-        name: "সুপার কম্বো অফার (Broiler 1KG + Layer 1KG)",
-        price: 2100,
-        freeDelivery: true
-      }
+      "broiler-1kg": { productId: "chicken-booster", variantId: "broiler-1kg", sku: "CB-AGRO-01", name: "Broiler Booster (১ কেজি)", price: 2300 },
+      "layer-1kg": { productId: "chicken-booster", variantId: "layer-1kg", sku: "CB-AGRO-01", name: "Layer Booster (১ কেজি)", price: 2300 }
     };
 
-    // State
-    let currentVariantKey = "combo-2kg";
     let currentDeliveryZone = "outside";
+    let variantQuantities = {
+      "broiler-1kg": 1,
+      "layer-1kg": 0
+    };
 
-    // UI references
     const optionCards = document.querySelectorAll('.product-option-card');
     const deliveryRadios = document.querySelectorAll('input[name="delivery-zone"]');
-    const reviewProductName = document.getElementById('review-product-name');
-    const reviewSubtotal = document.getElementById('review-subtotal');
     const reviewSubtotalRow = document.getElementById('review-subtotal-row');
     const reviewDeliveryCharge = document.getElementById('review-delivery-charge');
     const reviewGrandTotal = document.getElementById('review-grand-total');
@@ -1441,152 +1555,109 @@
     const modalProductName = document.getElementById('modal-product-name');
     const modalTotalAmount = document.getElementById('modal-total-amount');
 
-    // Google & Gemini Privacy Standard Event Dispatcher (Vendor-Neutral, Zero PII)
-    function emitDataLayerEvent(name, data) {
+    function sanitize(str) { return (str || '').replace(/[<>]/g, '').trim(); }
+    function validatePhone(phone) { return /^01[3-9]\d{8}$/.test(phone.replace(/[^0-9]/g, '')); }
+
+    function emitDataLayerEvent(event, data) {
       window.dataLayer = window.dataLayer || [];
-      const eventObj = {
-        event: name,
-        event_id: (data && data.event_id) ? data.event_id : ('evt_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8)),
-        event_time: new Date().toISOString(),
-        page: {
-          url: window.location.href,
-          title: document.title
-        },
-        ...data
-      };
-      window.dataLayer.push(eventObj);
-      return eventObj;
+      window.dataLayer.push({ event, ...data });
     }
 
-    // TrackingBus Engine (Vendor-Neutral, Strict Privacy Standards)
     const TrackingBus = {
-      isDebug: false,
-      hasViewedContent: false,
-      hasInitiatedCheckout: false,
       completedPurchases: new Set(),
-
-      enableDebug: function(enabled) { this.isDebug = Boolean(enabled); },
-      emit: function(eventName, payload) { return emitDataLayerEvent(eventName, payload); },
-      trackPageView: function() { return this.emit("page_view"); },
-      trackViewContent: function(variant) {
-        if (this.hasViewedContent) return null;
-        this.hasViewedContent = true;
-        return this.emit("view_content", {
-          ecommerce: {
-            currency: 'BDT',
-            value: (variant && variant.price) ? variant.price : 2100,
-            items: [{ item_id: 'CB-AGRO-01', item_name: 'Chicken Booster', price: (variant && variant.price) ? variant.price : 2100, quantity: 1 }]
-          }
-        });
-      },
-      trackCtaClick: function(ctaName, targetSection) {
-        return this.emit("cta_click", { cta_name: ctaName || "Order CTA", target_section: targetSection || "#checkout-form-section" });
-      },
-      trackSelectItem: function(variant) {
-        return this.emit("select_item", {
-          ecommerce: {
-            currency: 'BDT',
-            value: (variant && variant.price) ? variant.price : 2100,
-            items: [{ item_id: 'CB-AGRO-01', item_name: (variant && variant.name) ? variant.name : 'Chicken Booster', price: (variant && variant.price) ? variant.price : 2100, quantity: 1 }]
-          }
-        });
-      },
-      trackInitiateCheckout: function(variant, totalAmount) {
-        if (this.hasInitiatedCheckout) return null;
-        this.hasInitiatedCheckout = true;
-        return this.emit("initiate_checkout", {
-          ecommerce: {
-            currency: 'BDT',
-            value: totalAmount || 2100,
-            items: [{ item_id: 'CB-AGRO-01', item_name: 'Chicken Booster', price: totalAmount || 2100, quantity: 1 }]
-          }
-        });
-      },
       trackPurchase: function(order) {
-        if (!order || !order.order_number) return null;
-        if (this.completedPurchases.has(order.order_number)) return null;
+        if (!order || this.completedPurchases.has(order.order_number)) return;
         this.completedPurchases.add(order.order_number);
-
-        const eventId = 'evt_pur_' + order.order_number.replace(/[^A-Za-z0-9]/g, '_');
-        return this.emit("purchase", {
-          event_id: eventId,
-          transaction_id: order.order_number,
-          order_number: order.order_number,
-          ecommerce: {
-            transaction_id: order.order_number,
-            value: order.total || 2100,
-            currency: order.currency || 'BDT',
-            shipping: order.delivery_charge || 0,
-            items: [{
-              item_id: 'CB-AGRO-01',
-              item_name: order.product || 'Chicken Booster',
-              price: order.subtotal || order.total || 2100,
-              quantity: order.quantity || 1
-            }]
-          }
-        });
+        emitDataLayerEvent("purchase", { ecommerce: { transaction_id: order.order_number, value: order.total } });
       }
     };
-    window.trackingEvents = TrackingBus;
 
-    // Initial View Events
-    TrackingBus.trackPageView();
-    TrackingBus.trackViewContent({ price: 2100 });
-
-    // Update Live Calculation
     function recalculate() {
-      const selected = CATALOG[currentVariantKey] || CATALOG["combo-2kg"];
-      let deliveryCost = 0;
+      const itemsBody = document.getElementById('review-items-body');
+      let subtotalVal = 0;
+      let totalQty = 0;
+      let rowsHtml = '';
+      const keys = ["broiler-1kg", "layer-1kg"];
 
-      if (!selected.freeDelivery) {
-        deliveryCost = currentDeliveryZone === 'inside' ? 60 : 120;
-      }
+      keys.forEach(key => {
+        const qty = variantQuantities[key] || 0;
+        const item = CATALOG[key];
+        const card = document.querySelector('.product-option-card[data-variant="' + key + '"]');
+        const input = document.getElementById('qty-input-' + key);
+        if (input) input.value = qty;
 
-      const total = selected.price + deliveryCost;
+        const cb = card ? card.querySelector('input[type="checkbox"]') : null;
+        if (cb) cb.checked = (qty > 0);
 
-      // Update Order Review
-      reviewProductName.textContent = selected.name + " × 1";
-      reviewSubtotal.textContent = "৳" + selected.price.toLocaleString('en-US') + ".00";
-      reviewSubtotalRow.textContent = "৳" + selected.price.toLocaleString('en-US') + ".00";
+        if (qty > 0) {
+          if (card) card.classList.add('selected');
+          subtotalVal += item.price * qty;
+          totalQty += qty;
+          rowsHtml += '<tr style="border-bottom: 1px solid #f1f5f9;">' +
+            '<td style="padding: 10px 4px;">' +
+              '<div style="font-weight: 700; font-size: 14.5px; color: #0f172a; margin-bottom: 2px;">' + item.name + '</div>' +
+              '<div style="font-size: 13px; color: #64748b; font-weight: 600;">৳২,৩০০ × ' + qty + '</div>' +
+            '</td>' +
+            '<td class="text-right" style="vertical-align: middle; font-size: 15px; font-weight: 700; color: #0f172a;">' +
+              '৳ ' + (item.price * qty).toLocaleString('en-US') + '.00' +
+            '</td>' +
+          '</tr>';
+        } else if (card) {
+          card.classList.remove('selected');
+        }
+      });
 
-      if (deliveryCost === 0) {
-        reviewDeliveryCharge.textContent = "ফ্রি ডেলিভারি";
-        reviewDeliveryCharge.style.color = "#16a34a";
-      } else {
-        reviewDeliveryCharge.textContent = "৳" + deliveryCost + ".00";
-        reviewDeliveryCharge.style.color = "inherit";
-      }
+      keys.forEach(key => {
+        const btnMinus = document.querySelector('.btn-qty-minus[data-target="' + key + '"]');
+        if (btnMinus) {
+          const qty = variantQuantities[key] || 0;
+          btnMinus.disabled = (qty === 0 || (totalQty === 1 && qty === 1));
+        }
+      });
 
-      reviewGrandTotal.textContent = "৳" + total.toLocaleString('en-US') + ".00";
-      btnOrderText.textContent = "অর্ডার করুন ৳ " + total.toLocaleString('en-US') + ".00";
+      if (itemsBody) itemsBody.innerHTML = rowsHtml;
+      if (reviewSubtotalRow) reviewSubtotalRow.textContent = "৳ " + subtotalVal.toLocaleString('en-US') + ".00";
+      if (reviewGrandTotal) reviewGrandTotal.textContent = "৳ " + subtotalVal.toLocaleString('en-US') + ".00";
+      if (btnOrderText) btnOrderText.textContent = "অর্ডার করুন ৳ " + subtotalVal.toLocaleString('en-US') + ".00";
     }
 
-    // Switch Product Variant
+    function setVariantQuantity(variantKey, newQty) {
+      if (newQty >= 0 && newQty <= 50) {
+        variantQuantities[variantKey] = newQty;
+        recalculate();
+      }
+    }
+
+    document.querySelectorAll('.btn-qty-minus').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const target = btn.getAttribute('data-target');
+        setVariantQuantity(target, (variantQuantities[target] || 0) - 1);
+      });
+    });
+
+    document.querySelectorAll('.btn-qty-plus').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const target = btn.getAttribute('data-target');
+        setVariantQuantity(target, (variantQuantities[target] || 0) + 1);
+      });
+    });
+
+    // Card click toggles product on/off
     optionCards.forEach(card => {
       card.addEventListener('click', function() {
-        optionCards.forEach(c => c.classList.remove('selected'));
-        this.classList.add('selected');
-        const radio = this.querySelector('input[type="radio"]');
-        if (radio) radio.checked = true;
+        const key = this.getAttribute('data-variant');
+        const otherKey = (key === "broiler-1kg") ? "layer-1kg" : "broiler-1kg";
+        const currentQty = variantQuantities[key] || 0;
+        const otherQty = variantQuantities[otherKey] || 0;
 
-        currentVariantKey = this.getAttribute('data-variant');
+        if (currentQty === 0) {
+          variantQuantities[key] = 1;
+        } else if (otherQty > 0) {
+          variantQuantities[key] = 0;
+        }
         recalculate();
-
-        // Dispatch select_item without PII
-        const sel = CATALOG[currentVariantKey];
-        emitDataLayerEvent('select_item', {
-          ecommerce: {
-            currency: 'BDT',
-            value: sel.price,
-            items: [{
-              item_id: sel.productId,
-              item_variant: sel.variantId,
-              item_name: sel.name,
-              price: sel.price,
-              quantity: 1
-            }]
-          }
-        });
       });
     });
 
@@ -1649,7 +1720,32 @@
         return;
       }
 
-      const selected = CATALOG[currentVariantKey] || CATALOG["combo-2kg"];
+      // Collect all selected products
+      const items = [];
+      if ((variantQuantities["broiler-1kg"] || 0) > 0) {
+        items.push({
+          productId: "chicken-booster",
+          variantId: "broiler-1kg",
+          quantity: variantQuantities["broiler-1kg"]
+        });
+      }
+      if ((variantQuantities["layer-1kg"] || 0) > 0) {
+        items.push({
+          productId: "chicken-booster",
+          variantId: "layer-1kg",
+          quantity: variantQuantities["layer-1kg"]
+        });
+      }
+
+      if (items.length === 0) {
+        alert('অনুগ্রহ করে কমপক্ষে একটি পণ্য সিলেক্ট করুন।');
+        return;
+      }
+
+      const totalQuantity = items.reduce((sum, it) => sum + it.quantity, 0);
+      const primaryVariant = items.length === 1 ? items[0].variantId : "combo-2kg";
+      const primaryName = items.map(it => (CATALOG[it.variantId] ? CATALOG[it.variantId].name : it.variantId) + " (" + it.quantity + " টি)").join(" + ");
+
       const customerName = sanitize(nameInput.value);
       const customerPhone = phoneInput.value.trim().replace(/[^0-9]/g, '');
       const customerAddress = sanitize(addressInput.value);
@@ -1661,11 +1757,12 @@
 
       // Authoritative payload
       const orderPayload = {
-        productId: selected.productId,
-        product_id: selected.productId,
-        variantId: selected.variantId,
-        variant_id: selected.variantId,
-        quantity: 1,
+        productId: "chicken-booster",
+        product_id: "chicken-booster",
+        variantId: primaryVariant,
+        variant_id: primaryVariant,
+        quantity: totalQuantity,
+        items: items,
         deliveryZone: currentDeliveryZone,
         delivery_zone: currentDeliveryZone,
         customerName: customerName,
@@ -1697,26 +1794,19 @@
         if (res.ok && data.success) {
           const order = data.order || {};
           const orderNo = order.order_number || data.order_number || ('CB-' + Date.now().toString().slice(-6));
-          const totalVal = order.total || (selected.price + (selected.freeDelivery ? 0 : (currentDeliveryZone === 'inside' ? 60 : 120)));
+          const totalVal = order.total || (2300 * totalQuantity);
 
-          // Google & Gemini Privacy Compliant Purchase Event (Strictly No Customer PII)
           TrackingBus.trackPurchase(order);
 
           // Show Success Modal
           modalOrderNumber.textContent = orderNo;
-          modalProductName.textContent = selected.name;
+          modalProductName.textContent = primaryName;
           modalTotalAmount.textContent = "৳" + totalVal.toLocaleString('en-US') + " (ক্যাশ অন ডেলিভারি)";
           successModal.classList.add('active');
 
           // Reset Form
           form.reset();
-          currentVariantKey = "combo-2kg";
-          optionCards.forEach(c => c.classList.remove('selected'));
-          const comboCard = document.querySelector('[data-variant="combo-2kg"]');
-          if (comboCard) {
-            comboCard.classList.add('selected');
-            comboCard.querySelector('input').checked = true;
-          }
+          variantQuantities = { "broiler-1kg": 1, "layer-1kg": 0 };
           recalculate();
         } else {
           alert('অর্ডার সম্পন্ন করা যায়নি: ' + (data.error || 'অনুগ্রহ করে আবার চেষ্টা করুন।'));
@@ -1733,8 +1823,10 @@
 
     // Select and scroll helper for interactive hero cards
     window.selectAndScroll = function(variantKey) {
-      const card = document.querySelector('.product-option-card[data-variant="' + variantKey + '"]');
-      if (card) card.click();
+      if (variantKey) {
+        variantQuantities[variantKey] = Math.max(1, variantQuantities[variantKey] || 0);
+      }
+      recalculate();
       const checkout = document.getElementById('checkout-form-section');
       if (checkout) checkout.scrollIntoView({ behavior: 'smooth' });
     };

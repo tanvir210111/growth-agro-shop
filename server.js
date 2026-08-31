@@ -2,15 +2,106 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 const { calculateOrderTotals } = require('./server/products');
 const { createOrder, listOrders, getOrderByNumber, updateOrderStatus, findDuplicateOrder, ALLOWED_ORDER_STATUSES } = require('./server/db');
 const { authenticateAdmin, verifyAdminToken } = require('./server/auth');
 const { getHealthStatus } = require('./server/health');
-const { validateBdPhone, checkCourierRateLimit, checkBdCourier } = require('./server/courier');
+const { validateBdPhone, checkCourierRateLimit, checkBdCourier, calculateDeliveryDecision } = require('./server/courier');
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const HOST = process.env.HOST || '127.0.0.1';
 const IS_PROD = process.env.NODE_ENV === 'production';
+
+const LARAVEL_PORT = parseInt(process.env.LARAVEL_PORT, 10) || 8000;
+const LARAVEL_HOST = process.env.LARAVEL_HOST || '127.0.0.1';
+let laravelProcess = null;
+
+function isStorefrontRoute(pathname) {
+  if (pathname === '/' || pathname === '') return true;
+  // Exclude Landing Pages, Admin, APIs, and Node assets
+  if (pathname.startsWith('/products/')) return false;
+  if (pathname.startsWith('/admin')) return false;
+  if (pathname.startsWith('/api/')) return false;
+  if (pathname.startsWith('/assets/')) return false;
+  if (pathname.startsWith('/pic/')) return false;
+  if (pathname.startsWith('/extracted_html/')) return false;
+
+  const storePrefixes = [
+    '/shop',
+    '/collections',
+    '/product/',
+    '/cart',
+    '/checkout',
+    '/order',
+    '/about-us',
+    '/contact-us',
+    '/policy',
+    '/css/',
+    '/images/',
+    '/js/'
+  ];
+  return storePrefixes.some(p => pathname === p || pathname.startsWith(p));
+}
+
+function proxyToLaravel(req, res, reqPath, search) {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: LARAVEL_HOST,
+      port: LARAVEL_PORT,
+      path: reqPath + (search || ''),
+      method: req.method,
+      headers: {
+        ...req.headers,
+        host: `127.0.0.1:${LARAVEL_PORT}`,
+        'x-forwarded-for': getClientIp(req),
+        'x-forwarded-host': req.headers.host || `127.0.0.1:${PORT}`,
+        'x-forwarded-proto': 'http'
+      }
+    };
+
+    const proxyReq = http.request(options, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      proxyRes.pipe(res);
+      proxyRes.on('end', () => resolve(true));
+    });
+
+    proxyReq.on('error', () => {
+      resolve(false);
+    });
+
+    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+      req.pipe(proxyReq);
+    } else {
+      proxyReq.end();
+    }
+  });
+}
+
+function startLaravelServer() {
+  const laravelDir = path.join(__dirname, 'E Commerce Baby');
+  if (!fs.existsSync(laravelDir)) return;
+
+  const testReq = http.request({ hostname: LARAVEL_HOST, port: LARAVEL_PORT, path: '/', method: 'HEAD', timeout: 800 }, () => {
+    console.log(`[Laravel] E Commerce Baby is active on http://${LARAVEL_HOST}:${LARAVEL_PORT}`);
+  });
+  testReq.on('error', () => {
+    console.log(`[Laravel] Auto-launching E Commerce Baby on http://${LARAVEL_HOST}:${LARAVEL_PORT}...`);
+    try {
+      laravelProcess = spawn('php', ['-S', `${LARAVEL_HOST}:${LARAVEL_PORT}`, '-t', 'public'], {
+        cwd: laravelDir,
+        stdio: 'ignore',
+        detached: false
+      });
+      laravelProcess.on('error', (err) => {
+        console.warn(`[Laravel] Could not start PHP server: ${err.message}`);
+      });
+    } catch (e) {
+      console.warn(`[Laravel] Spawning PHP server failed: ${e.message}`);
+    }
+  });
+  testReq.end();
+}
 
 // Internal API secret shared between Laravel (port 8000) and Node.js (port 3000)
 // Laravel must send this in X-Internal-Secret header for /api/internal/* routes
@@ -208,6 +299,68 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // 1.5. Public Fast Checkout Courier & Risk Check (POST /api/checkout/courier-check)
+    if (reqPath === '/api/checkout/courier-check' && method === 'POST') {
+      const limit = checkRateLimit(clientIp, 'checkout_courier_check', 30, 60000);
+      if (!limit.allowed) {
+        return sendJson(res, 429, {
+          success: false,
+          error: `অনুরোধের মাত্রা ছাড়িয়েছে। দয়া করে ${limit.retryAfterSec} সেকেন্ড অপেক্ষা করুন।`
+        });
+      }
+
+      try {
+        const body = await parseJsonBody(req);
+        const rawPhone = body && typeof body === 'object' ? (body.phone || '') : '';
+        const deliveryZone = body && typeof body === 'object' ? (body.deliveryZone || body.delivery_zone || 'inside') : 'inside';
+        const validation = validateBdPhone(rawPhone);
+
+        if (!validation.valid) {
+          return sendJson(res, 400, { success: false, error: validation.error });
+        }
+
+        const phone = validation.normalized;
+        let courierResult = null;
+        try {
+          courierResult = await checkBdCourier(phone);
+        } catch (e) {
+          courierResult = null;
+        }
+
+        let totalParcels = 0;
+        let delivered = 0;
+        let cancelled = 0;
+
+        if (courierResult && courierResult.success && courierResult.data) {
+          totalParcels = courierResult.data.total_parcels || 0;
+          delivered = courierResult.data.delivered || 0;
+          cancelled = courierResult.data.cancelled_or_returned || 0;
+        }
+
+        const decision = calculateDeliveryDecision(totalParcels, delivered, cancelled, deliveryZone);
+
+        return sendJson(res, 200, {
+          success: true,
+          phone: phone.slice(0, 3) + '****' + phone.slice(-4),
+          total_parcels: totalParcels,
+          delivered: delivered,
+          cancelled: cancelled,
+          success_rate: decision.success_rate,
+          risk_level: decision.level,
+          risk_label: decision.label,
+          requires_advance: decision.requires_advance,
+          advance_amount: decision.advance_amount,
+          advance_delivery_dhaka: decision.advance_delivery_dhaka,
+          advance_delivery_outside: decision.advance_delivery_outside,
+          delivery_charge: decision.delivery_charge,
+          product_payment: decision.product_payment,
+          payment_message: decision.message
+        });
+      } catch (err) {
+        return sendJson(res, 500, { success: false, error: 'সার্ভার ভেরিফিকেশনে ত্রুটি হয়েছে।' });
+      }
+    }
+
     // 2. Public Order Submission (POST /api/orders) - Rate limited
     if (reqPath === '/api/orders' && method === 'POST') {
       const limit = checkRateLimit(clientIp, 'create_order', RATE_LIMIT_MAX_ORDERS, 60000);
@@ -225,12 +378,13 @@ const server = http.createServer(async (req, res) => {
         const customer = body.customer || {};
         const customerName = (customer.name || body.customerName || body.name || body.customer_name || '').trim();
         const rawPhone = (customer.phone || body.customerPhone || body.phone || body.customer_phone || '').trim();
-        const address = (customer.address || body.customerAddress || body.address || body.shipping_address || '').trim();
+        const address = (customer.address || body.customerAddress || body.shippingAddress || body.address || body.shipping_address || '').trim();
         const deliveryZone = (customer.delivery_zone || body.deliveryZone || body.delivery_zone || (body.shipping_city === 'Dhaka' ? 'inside' : 'outside')).trim();
         const productId = (body.productId || body.product_id || 'chicken-booster').trim();
         const variantId = (body.variantId || body.variant_id || body.package_id || 'variant-2').trim();
         const quantity = parseInt(body.quantity || 1, 10);
         const idempotencyKey = body.idempotency_key ? String(body.idempotency_key).trim() : null;
+        const source = (body.source || 'LANDING_PAGE').trim();
 
         // Server-Side Validation
         const validationErrors = [];
@@ -263,10 +417,29 @@ const server = http.createServer(async (req, res) => {
         // Resolve authoritative server-side pricing & product data (NEVER trust client price)
         let calculated;
         try {
-          calculated = calculateOrderTotals(productId, variantId, quantity, deliveryZone);
+          calculated = calculateOrderTotals(productId, variantId, quantity, deliveryZone, body.items);
         } catch (err) {
           return sendJson(res, 400, { success: false, error: err.message });
         }
+
+        // Evaluate customer risk via Courier check
+        let fraudLevel = 'new_customer';
+        let fraudScore = 100;
+        let advanceAmount = 0;
+        try {
+          const courierCheck = await checkBdCourier(phone);
+          if (courierCheck && courierCheck.success && courierCheck.data) {
+            const dec = calculateDeliveryDecision(
+              courierCheck.data.total_parcels,
+              courierCheck.data.delivered,
+              courierCheck.data.cancelled_or_returned,
+              calculated.deliveryZone
+            );
+            fraudLevel = dec.level;
+            fraudScore = dec.success_rate;
+            advanceAmount = dec.advance_amount;
+          }
+        } catch (e) {}
 
         // Server-Side Deduplication / Idempotency Check
         const existingOrder = findDuplicateOrder(phone, productId, variantId, idempotencyKey);
@@ -284,7 +457,10 @@ const server = http.createServer(async (req, res) => {
               delivery_charge: existingOrder.delivery_charge,
               total: existingOrder.total,
               currency: existingOrder.currency,
-              payment_method: existingOrder.payment_method
+              payment_method: existingOrder.payment_method,
+              source: existingOrder.source,
+              fraud_level: existingOrder.fraud_level,
+              advance_amount: existingOrder.advance_amount
             }
           });
         }
@@ -306,7 +482,12 @@ const server = http.createServer(async (req, res) => {
           total: calculated.total,
           currency: calculated.currency,
           idempotencyKey,
-          landingPage: calculated.product.landingPage || '/products/chicken-booster/'
+          landingPage: calculated.product.landingPage || '/products/chicken-booster/',
+          source,
+          fraudLevel,
+          fraudScore,
+          advanceAmount,
+          advancePaid: advanceAmount > 0 ? (body.advance_paid ? 1 : 0) : 0
         });
 
         // Clean public response (no internal DB IDs, no sensitive PII exposure)
@@ -323,6 +504,9 @@ const server = http.createServer(async (req, res) => {
             total: newOrder.total,
             currency: newOrder.currency,
             payment_method: newOrder.payment_method,
+            source: newOrder.source,
+            fraud_level: newOrder.fraud_level,
+            advance_amount: newOrder.advance_amount,
             created_at: newOrder.created_at
           }
         });
@@ -344,10 +528,12 @@ const server = http.createServer(async (req, res) => {
 
       const limit = parseInt(parsedUrl.searchParams.get('limit') || '100', 10);
       const offset = parseInt(parsedUrl.searchParams.get('offset') || '0', 10);
-      const orders = listOrders(limit, offset);
+      const sourceFilter = parsedUrl.searchParams.get('source') || null;
+      const orders = listOrders(limit, offset, sourceFilter);
 
       return sendJson(res, 200, { success: true, count: orders.length, orders });
     }
+
 
     // 4. Admin: Get Single Order (GET /api/orders/:orderNumber) - Protected
     const singleOrderMatch = reqPath.match(/^\/api\/orders\/([A-Za-z0-9_\-]+)$/);
@@ -484,26 +670,28 @@ const server = http.createServer(async (req, res) => {
           });
         }
 
-        const trustScore = courierResult.data.heuristic_trust_score;
-        const successRate = courierResult.data.success_rate;
-        const level = trustScore.level; // 'new_customer' | 'safe' | 'medium' | 'high_risk'
-
-        // 80% Rule: < 60% success rate or high_risk → advance payment required
-        const requiresAdvance = (level === 'high_risk');
+        const decision = calculateDeliveryDecision(
+          courierResult.data.total_parcels,
+          courierResult.data.delivered,
+          courierResult.data.cancelled_or_returned,
+          deliveryZone
+        );
 
         return sendJson(res, 200, {
           success: true,
           phone: courierResult.data.phone,
-          success_rate: successRate,
-          trust_level: level,
-          trust_label: trustScore.label,
+          success_rate: decision.success_rate,
+          trust_level: decision.level,
+          trust_label: decision.label,
           total_parcels: courierResult.data.total_parcels,
           delivered: courierResult.data.delivered,
           cancelled: courierResult.data.cancelled_or_returned,
-          payment_decision: requiresAdvance ? 'advance_required' : 'cod',
-          payment_message: requiresAdvance
-            ? `আপনার ডেলিভারি সাকসেস রেট ${successRate}% (< 80%)। অর্ডার নিশ্চিত করতে অগ্রিম পেমেন্ট করতে হবে।`
-            : `আপনার ডেলিভারি সাকসেস রেট ভালো (${successRate}%)। ক্যাশ অন ডেলিভারিতে অর্ডার করতে পারবেন।`
+          requires_advance: decision.requires_advance,
+          advance_amount: decision.advance_amount,
+          advance_delivery_dhaka: decision.advance_delivery_dhaka,
+          advance_delivery_outside: decision.advance_delivery_outside,
+          payment_decision: decision.requires_advance ? 'advance_required' : 'cod',
+          payment_message: decision.message
         });
       } catch (err) {
         // Fail-open on any error
@@ -534,9 +722,9 @@ const server = http.createServer(async (req, res) => {
         const subtotal     = parseFloat(body.subtotal) || 0;
         const shipping     = parseFloat(body.delivery_charge) || 0;
         const total        = parseFloat(body.total_amount) || 0;
-        const paymentMethod = body.payment_method || 'COD';
+        const paymentMethod = body.payment_method || 'Cash on Delivery';
         const notes        = body.note || '';
-        const source       = body.source || 'baby-fashion-storefront';
+        const source       = body.source || 'MAIN_WEBSITE';
         const fraudLevel   = body.fraud_level || 'unknown';
         const itemsJson    = body.items ? JSON.stringify(body.items) : '[]';
 
@@ -602,10 +790,23 @@ const server = http.createServer(async (req, res) => {
   }
 
 
+  // Dynamic Storefront Proxy: Forward to E Commerce Baby (Laravel)
+  if (isStorefrontRoute(reqPath)) {
+    const proxied = await proxyToLaravel(req, res, reqPath, parsedUrl.search);
+    if (proxied) return;
+    // Fallback: If Laravel is offline
+    res.writeHead(503, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end('<h2>Storefront Service Unavailable</h2><p>The backend application is currently starting or offline.</p>');
+  }
+
   let filePath = path.join(__dirname, decodeURIComponent(localReqPath));
 
-  // If path is a directory, look for index.html inside
+  // If path is a directory, redirect if missing trailing slash, then look for index.html inside
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+    if (!reqPath.endsWith('/')) {
+      res.writeHead(301, { 'Location': reqPath + '/' + (parsedUrl.search || '') });
+      return res.end();
+    }
     filePath = path.join(filePath, 'index.html');
   }
 
@@ -632,11 +833,15 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`[Server] Production Node server listening on http://${HOST}:${PORT} (Env: ${process.env.NODE_ENV || 'development'})`);
+  startLaravelServer();
 });
 
 // Graceful Shutdown for PM2 / CloudPanel
 function handleShutdown(signal) {
   console.log(`[Server] Received ${signal}. Closing server gracefully...`);
+  if (laravelProcess) {
+    try { laravelProcess.kill(); } catch (e) {}
+  }
   server.close(() => {
     console.log('[Server] HTTP connections closed. Process exiting.');
     process.exit(0);

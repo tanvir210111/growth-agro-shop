@@ -80,7 +80,34 @@ db.exec(`
 
 console.log(`[Database] SQLite connected & initialized at: ${dbPath}`);
 
+// Safe Schema Migrations for Growth Agro Unified Order System
+const existingColumns = new Set(
+  db.prepare("PRAGMA table_info(orders);").all().map(c => c.name)
+);
+
+const requiredColumns = [
+  { name: 'fraud_level', def: "TEXT DEFAULT 'new_customer'" },
+  { name: 'fraud_score', def: "INTEGER DEFAULT 0" },
+  { name: 'advance_amount', def: "INTEGER DEFAULT 0" },
+  { name: 'advance_paid', def: "INTEGER DEFAULT 0" },
+  { name: 'courier_name', def: "TEXT DEFAULT NULL" },
+  { name: 'courier_tracking_id', def: "TEXT DEFAULT NULL" },
+  { name: 'courier_status', def: "TEXT DEFAULT NULL" },
+  { name: 'timeline', def: "TEXT DEFAULT '[]'" }
+];
+
+for (const col of requiredColumns) {
+  if (!existingColumns.has(col.name)) {
+    try {
+      db.exec(`ALTER TABLE orders ADD COLUMN ${col.name} ${col.def};`);
+    } catch (e) {
+      console.warn(`[Migration] Column ${col.name} note:`, e.message);
+    }
+  }
+}
+
 const ALLOWED_ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+
 
 /**
  * Generate a collision-safe unique order number
@@ -161,44 +188,82 @@ function findDuplicateOrder(phone, productId, variantId, idempotencyKey = null) 
 /**
  * Create a new order with atomic transaction
  */
-function createOrder({
-  customerName,
-  phone,
-  address,
-  productId,
-  productName,
-  variantId,
-  variantName,
-  quantity,
-  unitPrice,
-  subtotal,
-  deliveryZone,
-  deliveryCharge,
-  total,
-  currency = 'BDT',
-  idempotencyKey = null,
-  landingPage = '/products/chicken-booster/'
-}) {
+function createOrder(orderInput = {}) {
   const now = new Date().toISOString();
-  const orderNumber = generateOrderNumber();
+  const cName = orderInput.customerName || orderInput.customer_name || 'Customer';
+  const cPhone = orderInput.phone || orderInput.customer_phone || '';
+  const cAddress = orderInput.address || orderInput.customer_address || orderInput.shipping_address || '-';
+  const pId = orderInput.productId || orderInput.product_id || 'chicken-booster';
+  const pName = orderInput.productName || orderInput.product_name || 'Product';
+  const vId = orderInput.variantId || orderInput.variant_id || 'default';
+  const vName = orderInput.variantName || orderInput.variant_name || 'Standard';
+  const qty = Number(orderInput.quantity || 1);
+  const uPrice = Number(orderInput.unitPrice || orderInput.unit_price || (orderInput.subtotal ? orderInput.subtotal / qty : orderInput.total || 0));
+  const sTotal = Number(orderInput.subtotal ?? (uPrice * qty));
+  const dZone = orderInput.deliveryZone || orderInput.delivery_zone || orderInput.delivery_area || 'inside';
+  const dCharge = Number(orderInput.deliveryCharge ?? orderInput.delivery_charge ?? 0);
+  const gTotal = Number(orderInput.total ?? orderInput.total_amount ?? (sTotal + dCharge));
+  const curr = orderInput.currency || 'BDT';
+  const idempKey = orderInput.idempotencyKey || orderInput.idempotency_key || null;
+  const lp = orderInput.landingPage || orderInput.landing_page || '/products/chicken-booster/';
+  const src = orderInput.source || 'LANDING_PAGE';
+  const payMethod = orderInput.paymentMethod || orderInput.payment_method || 'Cash on Delivery';
+  const fLevel = orderInput.fraudLevel || orderInput.fraud_level || 'new_customer';
+  const fScore = Number(orderInput.fraudScore ?? orderInput.fraud_score ?? 0);
+  const advAmount = Number(orderInput.advanceAmount ?? orderInput.advance_amount ?? 0);
+  const advPaid = Number(orderInput.advancePaid ?? orderInput.advance_paid ?? 0);
+  const cNameCourier = orderInput.courierName || orderInput.courier_name || 'Steadfast';
+  const timeline = orderInput.timeline || null;
+
+  const orderNumber = orderInput.orderNumber || orderInput.order_number || generateOrderNumber();
+
+  const initialTimeline = Array.isArray(timeline) && timeline.length > 0 ? timeline : [
+    { event: 'Order Created', status: 'pending', time: now, note: `অর্ডার গ্রহণ করা হয়েছে (উৎস: ${src})` },
+    ...(fLevel && fLevel !== 'unknown' ? [{
+      event: 'Fraud Checked',
+      status: 'verified',
+      time: now,
+      note: `ফ্রড স্ট্যাটাস: ${fLevel} (সাকসেস রেট: ${fScore}%, অগ্রিম ডেলিভারি: ৳${advAmount})`
+    }] : [])
+  ];
 
   db.exec('BEGIN TRANSACTION;');
   try {
-    const customerId = resolveCustomer(customerName, phone, address);
+    const customerId = resolveCustomer(cName, cPhone, cAddress);
 
     const insertOrder = db.prepare(`
       INSERT INTO orders (
         order_number, customer_id, customer_name, phone, address,
         delivery_zone, delivery_charge, subtotal, total, currency,
         status, payment_method, source, landing_page, idempotency_key,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'Cash on Delivery', 'Landing Page', ?, ?, ?, ?)
+        fraud_level, fraud_score, advance_amount, advance_paid,
+        courier_name, timeline, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const orderResult = insertOrder.run(
-      orderNumber, customerId, customerName, phone, address,
-      deliveryZone, deliveryCharge, subtotal, total, currency,
-      landingPage, idempotencyKey, now, now
+      orderNumber,
+      customerId ?? null,
+      cName,
+      cPhone,
+      cAddress,
+      dZone,
+      dCharge,
+      sTotal,
+      gTotal,
+      curr,
+      payMethod,
+      src,
+      lp,
+      idempKey,
+      fLevel,
+      fScore,
+      advAmount,
+      advPaid,
+      cNameCourier,
+      JSON.stringify(initialTimeline),
+      now,
+      now
     );
     const orderId = Number(orderResult.lastInsertRowid);
 
@@ -210,31 +275,32 @@ function createOrder({
     `);
 
     insertItem.run(
-      orderId, productId, productName, variantId, variantName,
-      quantity, unitPrice, subtotal
+      orderId,
+      pId,
+      pName,
+      vId,
+      vName,
+      qty,
+      uPrice,
+      sTotal
     );
 
     db.exec('COMMIT;');
 
     return {
-      id: orderId,
       order_number: orderNumber,
-      customer_id: customerId,
-      customer_name: customerName,
-      phone,
-      address,
-      delivery_zone: deliveryZone,
-      delivery_charge: deliveryCharge,
-      subtotal,
-      total,
-      currency,
       status: 'pending',
-      payment_method: 'Cash on Delivery',
-      product_id: productId,
-      product_name: productName,
-      variant_id: variantId,
-      variant_name: variantName,
-      quantity,
+      product: pName,
+      variant: vName,
+      quantity: qty,
+      subtotal: sTotal,
+      delivery_charge: dCharge,
+      total: gTotal,
+      currency: curr,
+      payment_method: payMethod,
+      source: src,
+      fraud_level: fLevel,
+      advance_amount: advAmount,
       created_at: now
     };
   } catch (err) {
@@ -243,23 +309,60 @@ function createOrder({
   }
 }
 
+
 /**
- * List all orders with items (Admin only)
+ * Append an event to an order's timeline
  */
-function listOrders(limit = 100, offset = 0) {
-  const rows = db.prepare(`
+function addOrderTimelineEvent(orderNumber, eventName, note = '', status = null) {
+  const now = new Date().toISOString();
+  const order = db.prepare('SELECT timeline, status FROM orders WHERE order_number = ?').get(orderNumber);
+  if (!order) return false;
+
+  let timelineArray = [];
+  try {
+    timelineArray = order.timeline ? JSON.parse(order.timeline) : [];
+  } catch (e) {
+    timelineArray = [];
+  }
+
+  timelineArray.push({
+    event: eventName,
+    status: status || order.status,
+    time: now,
+    note: note
+  });
+
+  const update = db.prepare('UPDATE orders SET timeline = ?, updated_at = ? WHERE order_number = ?');
+  return update.run(JSON.stringify(timelineArray), now, orderNumber).changes > 0;
+}
+
+/**
+ * List orders with optional source filter (ALL, MAIN_WEBSITE, LANDING_PAGE)
+ */
+function listOrders(limit = 100, offset = 0, sourceFilter = null) {
+  let query = `
     SELECT 
       o.id, o.order_number, o.customer_id, o.customer_name, o.phone, o.address,
       o.delivery_zone, o.delivery_charge, o.subtotal, o.total, o.currency,
-      o.status, o.payment_method, o.source, o.landing_page, o.created_at, o.updated_at,
+      o.status, o.payment_method, o.source, o.landing_page, 
+      o.fraud_level, o.fraud_score, o.advance_amount, o.advance_paid,
+      o.courier_name, o.courier_tracking_id, o.courier_status, o.timeline,
+      o.created_at, o.updated_at,
       oi.product_id, oi.product_name, oi.variant_id, oi.variant_name, oi.quantity, oi.unit_price
     FROM orders o
     LEFT JOIN order_items oi ON o.id = oi.order_id
-    ORDER BY o.id DESC
-    LIMIT ? OFFSET ?
-  `).all(limit, offset);
+  `;
 
-  return rows;
+  const params = [];
+  if (sourceFilter && sourceFilter !== 'ALL') {
+    query += ` WHERE o.source = ? `;
+    params.push(sourceFilter);
+  }
+
+  query += ` ORDER BY o.id DESC LIMIT ? OFFSET ? `;
+  params.push(limit, offset);
+
+  return db.prepare(query).all(...params);
 }
 
 /**
@@ -270,7 +373,10 @@ function getOrderByNumber(orderNumber) {
     SELECT 
       o.id, o.order_number, o.customer_id, o.customer_name, o.phone, o.address,
       o.delivery_zone, o.delivery_charge, o.subtotal, o.total, o.currency,
-      o.status, o.payment_method, o.source, o.landing_page, o.created_at, o.updated_at,
+      o.status, o.payment_method, o.source, o.landing_page,
+      o.fraud_level, o.fraud_score, o.advance_amount, o.advance_paid,
+      o.courier_name, o.courier_tracking_id, o.courier_status, o.timeline,
+      o.created_at, o.updated_at,
       oi.product_id, oi.product_name, oi.variant_id, oi.variant_name, oi.quantity, oi.unit_price
     FROM orders o
     LEFT JOIN order_items oi ON o.id = oi.order_id
@@ -281,17 +387,43 @@ function getOrderByNumber(orderNumber) {
 }
 
 /**
- * Update order status (Admin only)
+ * Update order status and automatically append to timeline
  */
-function updateOrderStatus(orderNumber, newStatus) {
+function updateOrderStatus(orderNumber, newStatus, note = '') {
   const normalizedStatus = (newStatus || '').toLowerCase().trim();
   if (!ALLOWED_ORDER_STATUSES.includes(normalizedStatus)) {
     throw new Error(`Invalid status: ${newStatus}. Allowed: ${ALLOWED_ORDER_STATUSES.join(', ')}`);
   }
 
   const now = new Date().toISOString();
-  const update = db.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE order_number = ?');
-  const result = update.run(normalizedStatus, now, orderNumber);
+  const order = db.prepare('SELECT timeline FROM orders WHERE order_number = ?').get(orderNumber);
+  if (!order) return false;
+
+  let timelineArray = [];
+  try {
+    timelineArray = order.timeline ? JSON.parse(order.timeline) : [];
+  } catch (e) {
+    timelineArray = [];
+  }
+
+  const statusLabels = {
+    pending: 'অর্ডার পেন্ডিং',
+    confirmed: 'অর্ডার কনফার্ম করা হয়েছে',
+    processing: 'প্রসেসিং শুরু হয়েছে',
+    shipped: 'কুরিয়ারে হস্তান্তর করা হয়েছে',
+    delivered: 'সফলভাবে ডেলিভারি সম্পন্ন',
+    cancelled: 'অর্ডার বাতিল করা হয়েছে'
+  };
+
+  timelineArray.push({
+    event: `Status: ${normalizedStatus.toUpperCase()}`,
+    status: normalizedStatus,
+    time: now,
+    note: note || (statusLabels[normalizedStatus] || `স্ট্যাটাস পরিবর্তন: ${normalizedStatus}`)
+  });
+
+  const update = db.prepare('UPDATE orders SET status = ?, timeline = ?, updated_at = ? WHERE order_number = ?');
+  const result = update.run(normalizedStatus, JSON.stringify(timelineArray), now, orderNumber);
   
   return result.changes > 0;
 }
@@ -305,5 +437,7 @@ module.exports = {
   listOrders,
   getOrderByNumber,
   updateOrderStatus,
+  addOrderTimelineEvent,
   ALLOWED_ORDER_STATUSES
 };
+

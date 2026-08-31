@@ -54,9 +54,13 @@ class FrontendController extends Controller
         $plans = collect();
         $features = collect();
         $gs = (object)[
-            'title' => 'Anon — Premium eCommerce Store',
+            'title' => 'BD Courier & Fraud Protection',
             'favicon' => 'favicon.ico',
-            'logo' => 'logo.svg'
+            'logo' => 'logo.png',
+            'og_baner' => 'og_banner.jpg',
+            'phone' => '01772411171',
+            'email' => 'support@bdcourier.com',
+            'address' => 'Dhaka, Bangladesh'
         ];
         $products = collect();
 
