@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/*',
             'checkout',
         ]);
+        $middleware->encryptCookies(except: [
+            'growth_agro_visitor_id',
+            'growth_agro_session_id',
+        ]);
         $middleware->web(append: [
             \App\Http\Middleware\TrackVisitor::class,
         ]);

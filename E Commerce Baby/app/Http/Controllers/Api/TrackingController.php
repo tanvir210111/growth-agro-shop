@@ -63,6 +63,35 @@ class TrackingController extends Controller
             $pagePath = isset($payload['page_path']) ? substr(trim((string)$payload['page_path']), 0, 255) : null;
             $eventValue = isset($payload['event_value']) && is_numeric($payload['event_value']) ? (float)$payload['event_value'] : null;
 
+            // Extract URL and Referrer context from frontend payload for landing pages
+            $eventUrl = isset($payload['url']) ? trim((string)$payload['url']) : null;
+            $eventReferrer = isset($payload['referrer']) ? trim((string)$payload['referrer']) : null;
+
+            if (!empty($eventUrl)) {
+                $request->attributes->set('event_url', $eventUrl);
+                $parsed = parse_url($eventUrl);
+                if (!empty($parsed['query'])) {
+                    parse_str($parsed['query'], $queryParams);
+                    foreach ($queryParams as $qk => $qv) {
+                        if (!$request->query->has($qk) && is_scalar($qv)) {
+                            $request->query->set($qk, (string)$qv);
+                        }
+                    }
+                }
+                if (!empty($parsed['path']) && empty($pagePath)) {
+                    $pagePath = $parsed['path'];
+                }
+            }
+
+            if (!empty($pagePath)) {
+                $request->attributes->set('event_page_path', $pagePath);
+            }
+
+            if (!empty($eventReferrer) && !$request->headers->has('referer')) {
+                $request->headers->set('referer', $eventReferrer);
+                $request->attributes->set('event_referrer', $eventReferrer);
+            }
+
             // Sanitize properties to prevent sensitive customer data leaks
             $rawProps = isset($payload['properties']) && is_array($payload['properties']) ? $payload['properties'] : [];
             $properties = $this->sanitizeProperties($rawProps);

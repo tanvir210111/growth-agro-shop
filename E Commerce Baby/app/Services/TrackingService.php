@@ -60,7 +60,9 @@ class TrackingService
             return $this->currentVisitor;
         }
 
-        $cookieUuid = $request->cookie(self::COOKIE_VISITOR);
+        $cookieUuid = $request->cookie(self::COOKIE_VISITOR)
+            ?: $request->input('visitor_uuid')
+            ?: $request->header('x-visitor-id');
 
         if ($cookieUuid) {
             $visitor = TrackingVisitor::where('visitor_uuid', $cookieUuid)->first();
@@ -75,11 +77,13 @@ class TrackingService
 
         // Create new Visitor record
         $newUuid = (string) Str::uuid();
-        $referrer = $request->headers->get('referer');
+        $referrer = $request->attributes->get('event_referrer') ?: $request->headers->get('referer');
         $referrerDomain = $this->extractReferrerDomain($referrer);
         $channel = $this->classifyChannel($request, $referrerDomain);
 
-        $landingPage = '/' . ltrim($request->path(), '/');
+        $landingPage = $request->attributes->get('event_page_path')
+            ?: $request->input('landing_page')
+            ?: ('/' . ltrim($request->path(), '/'));
 
         $visitor = TrackingVisitor::create([
             'visitor_uuid' => $newUuid,
@@ -87,7 +91,7 @@ class TrackingService
             'last_seen_at' => now(),
             'first_source' => $request->query('utm_source') ?: $channel,
             'first_utm_campaign' => $request->query('utm_campaign'),
-            'first_landing_page' => $landingPage,
+            'first_landing_page' => substr($landingPage, 0, 255),
             'total_orders' => 0,
             'total_revenue' => 0,
         ]);
@@ -107,7 +111,9 @@ class TrackingService
             return $this->currentSession;
         }
 
-        $sessionUuid = $request->cookie(self::COOKIE_SESSION);
+        $sessionUuid = $request->cookie(self::COOKIE_SESSION)
+            ?: $request->input('session_uuid')
+            ?: $request->header('x-session-id');
 
         if ($sessionUuid) {
             $session = TrackingSession::where('session_uuid', $sessionUuid)
@@ -133,11 +139,14 @@ class TrackingService
 
         // Inactive or new session: create fresh record
         $newSessionUuid = (string) Str::uuid();
-        $path = '/' . ltrim($request->path(), '/');
-        $referrer = $request->headers->get('referer');
+        $path = $request->attributes->get('event_page_path')
+            ?: $request->input('landing_page')
+            ?: ('/' . ltrim($request->path(), '/'));
+        $referrer = $request->attributes->get('event_referrer') ?: $request->headers->get('referer');
         $referrerDomain = $this->extractReferrerDomain($referrer);
         $channel = $this->classifyChannel($request, $referrerDomain);
         $clientInfo = $this->detectClient($request->userAgent() ?? '');
+        $entryUrl = $request->attributes->get('event_url') ?: substr($request->fullUrl(), 0, 500);
 
         $clickId = $request->query('fbclid') 
             ?? $request->query('gclid') 
@@ -149,7 +158,7 @@ class TrackingService
             'session_start' => now(),
             'session_end' => now(),
             'duration_seconds' => 0,
-            'entry_url' => substr($request->fullUrl(), 0, 500),
+            'entry_url' => substr($entryUrl, 0, 500),
             'landing_page_path' => substr($path, 0, 255),
             'page_type' => $this->determinePageType($path),
             'referrer_url' => $referrer ? substr($referrer, 0, 500) : null,
@@ -246,12 +255,15 @@ class TrackingService
             $session = $this->currentSession ?? ($req && $visitor ? $this->resolveSession($req, $visitor) : null);
 
             if ($session) {
-                $isLandingPage = ($session->page_type === 'landing_page' || str_starts_with($session->landing_page_path ?? '', '/products/'));
+                $isLandingPage = ($order->source_type === 'landing_page'
+                    || $session->page_type === 'landing_page'
+                    || str_starts_with($session->landing_page_path ?? '', '/products/')
+                    || str_starts_with($order->landing_page ?? '', '/products/'));
 
                 $order->visitor_id = $visitor?->id;
                 $order->session_id = $session->id;
                 $order->source_type = $isLandingPage ? 'landing_page' : 'storefront';
-                $order->landing_page = $session->landing_page_path;
+                $order->landing_page = $order->landing_page ?: $session->landing_page_path;
                 $order->utm_source = $session->utm_source;
                 $order->utm_medium = $session->utm_medium;
                 $order->utm_campaign = $session->utm_campaign;

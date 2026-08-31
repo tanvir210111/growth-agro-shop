@@ -39,6 +39,8 @@
         entity_id: data.entity_id ? String(data.entity_id) : null,
         cta_identifier: data.cta_identifier || null,
         page_path: data.page_path || window.location.pathname,
+        url: window.location.href,
+        referrer: document.referrer || null,
         event_value: typeof data.event_value === 'number' ? data.event_value : null,
         properties: data.properties && typeof data.properties === 'object' ? data.properties : {}
       };

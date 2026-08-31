@@ -76,3 +76,6 @@ Route::get('/api/admin/analytics/campaigns', [AdminAnalyticsController::class, '
 Route::get('/api/admin/analytics/landing-pages', [AdminAnalyticsController::class, 'landingPages'])->name('api.admin.analytics.landing-pages');
 Route::get('/api/admin/analytics/timeline', [AdminAnalyticsController::class, 'timeline'])->name('api.admin.analytics.timeline');
 
+// Internal Node.js to Laravel Landing Order Sync Bridge
+use App\Http\Controllers\Api\InternalSyncController;
+Route::post('/api/internal/sync-landing-order', [InternalSyncController::class, 'syncLandingOrder'])->name('api.internal.sync-landing-order');

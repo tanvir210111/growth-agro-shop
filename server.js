@@ -490,6 +490,66 @@ const server = http.createServer(async (req, res) => {
           advancePaid: advanceAmount > 0 ? (body.advance_paid ? 1 : 0) : 0
         });
 
+        // Server-to-Server Bridge: Synchronize landing page order to Laravel with attribution (Non-blocking fail-open)
+        try {
+          const cookieHeader = req.headers.cookie || '';
+          const visitorMatch = cookieHeader.match(/growth_agro_visitor_id=([a-f0-9\-]+)/i);
+          const sessionMatch = cookieHeader.match(/growth_agro_session_id=([a-f0-9\-]+)/i);
+          const visitorUuid = visitorMatch ? visitorMatch[1] : null;
+          const sessionUuid = sessionMatch ? sessionMatch[1] : null;
+
+          const syncPayload = JSON.stringify({
+            order_number: newOrder.order_number,
+            customer_name: newOrder.customer_name,
+            customer_phone: newOrder.phone,
+            customer_address: newOrder.address,
+            delivery_zone: newOrder.delivery_zone,
+            delivery_charge: newOrder.delivery_charge,
+            subtotal: newOrder.subtotal,
+            total: newOrder.total,
+            payment_method: newOrder.payment_method,
+            product_name: newOrder.product_name,
+            variant_name: newOrder.variant_name,
+            quantity: newOrder.quantity,
+            unit_price: newOrder.unit_price,
+            landing_page: newOrder.landing_page,
+            visitor_uuid: visitorUuid,
+            session_uuid: sessionUuid,
+            idempotency_key: newOrder.idempotency_key
+          });
+
+          const syncReq = http.request({
+            hostname: LARAVEL_HOST,
+            port: LARAVEL_PORT,
+            path: '/api/internal/sync-landing-order',
+            method: 'POST',
+            timeout: 3000,
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(syncPayload),
+              'X-Internal-Secret': INTERNAL_API_SECRET,
+              'Cookie': cookieHeader,
+              'User-Agent': req.headers['user-agent'] || '',
+              'Referer': req.headers.referer || '',
+              'X-Forwarded-For': clientIp
+            }
+          }, (syncRes) => {
+            syncRes.resume();
+          });
+
+          syncReq.on('error', (syncErr) => {
+            console.warn('[Bridge] Laravel sync failed (fail-open):', syncErr.message);
+          });
+          syncReq.on('timeout', () => {
+            syncReq.destroy();
+            console.warn('[Bridge] Laravel sync timed out (fail-open)');
+          });
+          syncReq.write(syncPayload);
+          syncReq.end();
+        } catch (bridgeErr) {
+          console.warn('[Bridge Error]', bridgeErr.message);
+        }
+
         // Clean public response (no internal DB IDs, no sensitive PII exposure)
         return sendJson(res, 201, {
           success: true,
