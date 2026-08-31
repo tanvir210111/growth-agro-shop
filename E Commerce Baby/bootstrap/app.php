@@ -12,16 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
-        $middleware->alias([
-            'admin.auth' => \App\Http\Middleware\AdminAuth::class,
-        ]);
         $middleware->validateCsrfTokens(except: [
             'cart/*',
             'api/*',
             'checkout',
-            'admin/login',
-            'admin/logout',
-            'admin/orders/*/status',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
