@@ -75,6 +75,26 @@ Route::get('/api/admin/analytics/attribution', [AdminAnalyticsController::class,
 Route::get('/api/admin/analytics/campaigns', [AdminAnalyticsController::class, 'campaigns'])->name('api.admin.analytics.campaigns');
 Route::get('/api/admin/analytics/landing-pages', [AdminAnalyticsController::class, 'landingPages'])->name('api.admin.analytics.landing-pages');
 Route::get('/api/admin/analytics/timeline', [AdminAnalyticsController::class, 'timeline'])->name('api.admin.analytics.timeline');
+Route::get('/api/admin/analytics/devices', [AdminAnalyticsController::class, 'devices'])->name('api.admin.analytics.devices');
+Route::get('/api/admin/analytics/journey/{order_id}', [AdminAnalyticsController::class, 'journey'])->name('api.admin.analytics.journey');
+
+// Phase 5B: Fraud Detection API endpoints (admin-authenticated, source-agnostic)
+Route::get('/api/admin/fraud/overview', [AdminAnalyticsController::class, 'fraudOverview'])->name('api.admin.fraud.overview');
+Route::get('/api/admin/fraud/orders/{order_id}', [AdminAnalyticsController::class, 'fraudOrderDetail'])->name('api.admin.fraud.orders.detail');
+
+// Admin Orders list (used by admin panel JS — includes fraud fields)
+Route::get('/api/orders', [AdminAnalyticsController::class, 'ordersIndex'])->name('api.orders.index');
+Route::get('/api/orders/{order_number}/status', [AdminAnalyticsController::class, 'ordersIndex'])->name('api.orders.status');
+Route::patch('/api/orders/{order_number}/status', function (\Illuminate\Http\Request $request, $order_number) {
+    // Simple inline status updater used by admin panel
+    $admin = app(\App\Http\Controllers\Api\AdminAnalyticsController::class);
+    if (!method_exists($admin, 'authenticateAdmin')) {
+        return response()->json(['success' => false], 403);
+    }
+    $newStatus = $request->input('status', '');
+    $updated = \App\Models\Order::where('invoice_no', $order_number)->update(['status' => $newStatus]);
+    return response()->json(['success' => $updated > 0]);
+})->name('api.orders.updateStatus');
 
 // Internal Node.js to Laravel Landing Order Sync Bridge
 use App\Http\Controllers\Api\InternalSyncController;

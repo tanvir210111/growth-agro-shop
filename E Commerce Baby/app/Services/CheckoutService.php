@@ -141,6 +141,13 @@ class CheckoutService
                     'total' => ($it['price'] ?? 0) * ($it['quantity'] ?? 1),
                 ]);
             }
+
+            // Phase 5B: Server-side fraud assessment (fail-open, never blocks checkout)
+            try {
+                app(\App\Services\FraudDetectionService::class)->assessOrder($dbOrder);
+            } catch (\Throwable $fe) {
+                // Fraud detection failure must never interrupt order creation
+            }
         } catch (\Exception $e) {
             // log error
         }

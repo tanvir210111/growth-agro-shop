@@ -31,15 +31,32 @@ class Order extends Model
         'click_id',
         'device_type',
         'ip_address',
+        // Fraud detection fields (Phase 5B)
+        'fraud_score',
+        'fraud_level',
+        'fraud_reasons',
+        'courier_success_rate',
+        'courier_total_orders',
+        'courier_delivered',
+        'courier_cancelled',
+        'courier_checked_at',
     ];
 
     protected $casts = [
-        'delivery_charge' => 'float',
-        'subtotal' => 'float',
-        'discount' => 'float',
-        'total_amount' => 'float',
-        'visitor_id' => 'integer',
-        'session_id' => 'integer',
+        'delivery_charge'      => 'float',
+        'subtotal'             => 'float',
+        'discount'             => 'float',
+        'total_amount'         => 'float',
+        'visitor_id'           => 'integer',
+        'session_id'           => 'integer',
+        // Fraud detection casts (Phase 5B)
+        'fraud_score'          => 'integer',
+        'fraud_reasons'        => 'array',
+        'courier_success_rate' => 'float',
+        'courier_total_orders' => 'integer',
+        'courier_delivered'    => 'integer',
+        'courier_cancelled'    => 'integer',
+        'courier_checked_at'   => 'datetime',
     ];
 
     public function items()

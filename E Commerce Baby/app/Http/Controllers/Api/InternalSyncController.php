@@ -125,9 +125,17 @@ class InternalSyncController extends Controller
 
             DB::commit();
 
+            // Phase 5B: Server-side fraud assessment (fail-open, never blocks landing-page order sync)
+            try {
+                app(\App\Services\FraudDetectionService::class)->assessOrder($order);
+            } catch (\Throwable $fe) {
+                // Fraud detection failure (including courier timeout) must never break order creation
+                Log::warning('[InternalSync] Fraud detection failed (non-blocking): ' . $fe->getMessage());
+            }
+
             return response()->json([
-                'success' => true,
-                'order_id' => $order->id,
+                'success'    => true,
+                'order_id'   => $order->id,
                 'invoice_no' => $order->invoice_no,
             ], 201);
         } catch (\Throwable $e) {

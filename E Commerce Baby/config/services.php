@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | BD Courier API (Phase 5B Fraud Detection)
+    |--------------------------------------------------------------------------
+    | Used exclusively by BdCourierService on the server side.
+    | Never expose this key in frontend JS, HTML, API responses, or logs.
+    */
+    'bdcourier' => [
+        'key'     => env('BDCOURIER_API_KEY'),
+        'api_key' => env('BDCOURIER_API_KEY'),
+        'timeout' => env('BDCOURIER_TIMEOUT_SECONDS', 8),
+    ],
+
 ];

@@ -272,8 +272,9 @@ function loadServerOrders() {
         paid: ord.advance_paid ? ord.advance_amount : 0,
         due: ord.advance_paid ? (ord.total - ord.advance_amount) : ord.total,
         status: normalizeStatus(ord.status || 'pending'),
-        fraudLevel: ord.fraud_level || 'new_customer',
-        fraudScore: ord.fraud_score || 0,
+        fraudLevel: (ord.fraud_level || null),
+        fraudScore: ord.fraud_score !== null && ord.fraud_score !== undefined ? ord.fraud_score : null,
+        fraudReasons: Array.isArray(ord.fraud_reasons) ? ord.fraud_reasons : [],
         advanceAmount: ord.advance_amount || 0,
         advancePaid: ord.advance_paid || 0,
         timeline: ord.timeline ? (typeof ord.timeline === 'string' ? JSON.parse(ord.timeline) : ord.timeline) : [],
@@ -548,6 +549,18 @@ function renderMonthlyChart() {
 // ==============================================================================
 // 4. ORDERS TABLE, FILTERS, SEARCH, CSV EXPORT, & STATUS MODIFIERS
 // ==============================================================================
+function buildRiskBadge(level, score) {
+  if (level === null || level === undefined || score === null || score === undefined) {
+    return '<span class="risk-badge risk-badge-none">— Not assessed</span>';
+  }
+  const lvl = (level || '').toUpperCase();
+  const scoreNum = parseInt(score, 10);
+  if (lvl === 'HIGH')   return `<span class="risk-badge risk-badge-high">🔴 High ${scoreNum}</span>`;
+  if (lvl === 'MEDIUM') return `<span class="risk-badge risk-badge-medium">🟡 Medium ${scoreNum}</span>`;
+  if (lvl === 'LOW')    return `<span class="risk-badge risk-badge-low">🟢 Low ${scoreNum}</span>`;
+  return `<span class="risk-badge risk-badge-none">— ${scoreNum}</span>`;
+}
+
 function renderOrdersTable() {
   const tbody = document.getElementById('ordersTableBody');
   if (!tbody) return;
@@ -583,6 +596,16 @@ function renderOrdersTable() {
     if (banner) banner.style.display = 'none';
   }
 
+  // Risk filter (client-side from already-loaded data)
+  if (APP_STATE.riskFilter && APP_STATE.riskFilter !== 'all') {
+    if (APP_STATE.riskFilter === 'not_assessed') {
+      filtered = filtered.filter(o => o.fraudScore === null || o.fraudScore === undefined);
+    } else {
+      const rl = APP_STATE.riskFilter.toUpperCase();
+      filtered = filtered.filter(o => (o.fraudLevel || '').toUpperCase() === rl);
+    }
+  }
+
   // Tab filter
   if (APP_STATE.activeFilter !== 'All') {
     filtered = filtered.filter(o => o.status.toLowerCase() === APP_STATE.activeFilter.toLowerCase());
@@ -599,7 +622,6 @@ function renderOrdersTable() {
   // Search query
   if (APP_STATE.searchQuery) {
     const q = APP_STATE.searchQuery.toLowerCase();
-
     filtered = filtered.filter(o =>
       (o.invoice && o.invoice.toLowerCase().includes(q)) ||
       (o.phone && o.phone.includes(q)) ||
@@ -618,7 +640,7 @@ function renderOrdersTable() {
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#A0AEC0;font-size:14px;">কোনো অর্ডার পাওয়া যায়নি (No orders yet)</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#A0AEC0;font-size:14px;">No orders found</td></tr>`;
     return;
   }
 
@@ -630,10 +652,7 @@ function renderOrdersTable() {
       ? '<span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🛍️ MAIN WEB</span>'
       : '<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🚀 LANDING</span>';
 
-    const isRisk = ord.fraudLevel === 'risk' || (ord.fraudScore > 0 && ord.fraudScore <= 80);
-    const fraudPill = isRisk
-      ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:700;">⚠️ RISK (অগ্রিম ৳${ord.advanceAmount || 80})</span>`
-      : `<span style="background:#dcfce7;color:#166534;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:700;">✅ SAFE</span>`;
+    const riskBadge = buildRiskBadge(ord.fraudLevel, ord.fraudScore);
 
     tr.innerHTML = `
       <td style="width:28px;">
@@ -647,7 +666,6 @@ function renderOrdersTable() {
         <div class="customer-block">
           <div class="customer-name-line">
             <span class="customer-name-text">${ord.customer}</span>
-            ${fraudPill}
           </div>
           <div style="display:flex;align-items:center;gap:6px;margin:3px 0;">
             <a href="tel:${ord.phone}" class="phone-tag" style="text-decoration:none;">📞 ${ord.phone}</a>
@@ -679,6 +697,11 @@ function renderOrdersTable() {
           <div>By : ${ord.createdBy}</div>
         </div>
       </td>
+      <td style="text-align:center;">
+        <span style="cursor:pointer;display:inline-block;" onclick="openFraudDetailModal('${ord.invoice}')" title="Click to view full fraud assessment">
+          ${riskBadge}
+        </span>
+      </td>
       <td>
         <div class="courier-cell">
           <span>🚀 ${ord.courier}</span>
@@ -686,14 +709,16 @@ function renderOrdersTable() {
         </div>
       </td>
       <td style="text-align:center;">
-        <button class="icon-btn" onclick="openOrderTimelineModal('${ord.invoice}')" title="View Order Timeline">⏱️</button>
-      </td>
-      <td style="text-align:center;">
-        <div style="display:flex;gap:4px;justify-content:center;">
-          <button class="action-dots-btn" onclick="viewOrderInvoice('${ord.invoice}')" title="Invoice">👁️</button>
-          <button class="action-dots-btn" onclick="openOrderTimelineModal('${ord.invoice}')" title="Timeline">⏱️</button>
-          <button class="action-dots-btn" onclick="openOrderActionsModal('${ord.invoice}')" title="Change Status">🔄</button>
-          <button class="action-dots-btn" onclick="deleteOrder('${ord.invoice}')" title="Delete" style="color:#E53E3E;">🗑️</button>
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:center;">
+          <div style="display:flex;gap:4px;">
+            <button class="icon-btn" onclick="openOrderTimelineModal('${ord.invoice}')" title="View Order Status Timeline">⏱️</button>
+            <button class="icon-btn" onclick="openOrderJourneyModal('${ord.invoice}')" title="View Customer Tracking Journey" style="font-size:11px;background:#E6FFFA;color:#234E52;padding:2px 6px;border-radius:4px;border:1px solid #B2F5EA;font-weight:700;">🗺️ Journey</button>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button class="action-dots-btn" onclick="viewOrderInvoice('${ord.invoice}')" title="Invoice">👁️</button>
+            <button class="action-dots-btn" onclick="openOrderActionsModal('${ord.invoice}')" title="Change Status">🔄</button>
+            <button class="action-dots-btn" onclick="deleteOrder('${ord.invoice}')" title="Delete" style="color:#E53E3E;">🗑️</button>
+          </div>
         </div>
       </td>
     `;
@@ -977,8 +1002,15 @@ window.viewOrderInvoice = function(invoice) {
           <div style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;">Status & Courier:</div>
           <div style="font-size:13px;margin-top:2px;">Status: <b style="color:#059669;">${ord.status}</b></div>
           <div style="font-size:13px;color:#4A5568;">Courier: Steadfast (COD)</div>
+          <div style="margin-top:4px;">${buildRiskBadge(ord.fraudLevel, ord.fraudScore)}</div>
         </div>
       </div>
+
+      ${ord.fraudScore !== null && ord.fraudScore !== undefined ? `
+      <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:10px 14px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px; font-weight:700; color:#2D3748;">🛡️ Fraud Risk Assessment: <b>${(ord.fraudLevel || 'LOW').toUpperCase()}</b> (${ord.fraudScore} / 100)</span>
+        <button type="button" onclick="openFraudDetailModal('${ord.invoice}')" style="background:#004D40; color:#fff; border:none; border-radius:4px; padding:4px 10px; font-size:11px; font-weight:600; cursor:pointer;">Full Assessment →</button>
+      </div>` : ''}
 
       <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;">
         <thead>
@@ -1926,13 +1958,14 @@ window.loadAnalyticsDashboard = async function() {
 
   try {
     // Fetch all analytics datasets in parallel
-    const [overviewRes, funnelRes, attrRes, campRes, lpRes, timeRes] = await Promise.all([
+    const [overviewRes, funnelRes, attrRes, campRes, lpRes, timeRes, devRes] = await Promise.all([
       fetch(`/api/admin/analytics/overview?${query}`, { headers }),
       fetch(`/api/admin/analytics/funnel?${query}`, { headers }),
       fetch(`/api/admin/analytics/attribution?${query}`, { headers }),
       fetch(`/api/admin/analytics/campaigns?${query}`, { headers }),
       fetch(`/api/admin/analytics/landing-pages?${query}`, { headers }),
       fetch(`/api/admin/analytics/timeline?${query}`, { headers }),
+      fetch(`/api/admin/analytics/devices?${query}`, { headers }),
     ]);
 
     if (overviewRes.status === 401) {
@@ -1940,13 +1973,14 @@ window.loadAnalyticsDashboard = async function() {
       return;
     }
 
-    const [overviewData, funnelData, attrData, campData, lpData, timeData] = await Promise.all([
+    const [overviewData, funnelData, attrData, campData, lpData, timeData, devData] = await Promise.all([
       overviewRes.json(),
       funnelRes.json(),
       attrRes.json(),
       campRes.json(),
       lpRes.json(),
       timeRes.json(),
+      devRes.json(),
     ]);
 
     if (overviewData && overviewData.success) renderAnalyticsKPIs(overviewData);
@@ -1955,6 +1989,7 @@ window.loadAnalyticsDashboard = async function() {
     if (campData && campData.success) renderAnalyticsCampaigns(campData);
     if (lpData && lpData.success) renderAnalyticsLandingPages(lpData);
     if (timeData && timeData.success) renderAnalyticsTimeline(timeData);
+    if (devData && devData.success) renderAnalyticsDevices(devData);
 
   } catch (err) {
     console.error('[Analytics Error]', err);
@@ -2093,6 +2128,38 @@ function renderAnalyticsAttribution(data) {
       <td style="text-align:right; color:#319795; font-weight:700;">${(ch.conversion_rate || 0).toFixed(2)}%</td>
     </tr>
   `).join('');
+
+  // 3. First-Touch vs Last-Touch Matrix Table
+  const ftLtBody = document.getElementById('analyticsFirstLastBody');
+  if (ftLtBody) {
+    const ftLt = data.first_touch_comparison || [];
+    if (ftLt.length === 0) {
+      ftLtBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#A0AEC0; padding:16px;">No attribution matrix data recorded.</td></tr>';
+    } else {
+      ftLtBody.innerHTML = ftLt.map(item => {
+        const orderDiff = item.order_diff || 0;
+        const revDiff = item.revenue_diff || 0;
+        const orderTag = orderDiff > 0
+          ? `<span class="diff-tag-positive">+${orderDiff}</span>`
+          : (orderDiff < 0 ? `<span class="diff-tag-negative">${orderDiff}</span>` : '<span style="color:#A0AEC0;">0</span>');
+        const revTag = revDiff > 0
+          ? `<span class="diff-tag-positive">+৳ ${revDiff.toLocaleString()}</span>`
+          : (revDiff < 0 ? `<span class="diff-tag-negative">-৳ ${Math.abs(revDiff).toLocaleString()}</span>` : '<span style="color:#A0AEC0;">৳ 0</span>');
+
+        return `
+          <tr>
+            <td><b>${item.channel_label}</b></td>
+            <td style="text-align:right;">${(item.first_touch_orders || 0).toLocaleString()}</td>
+            <td style="text-align:right; color:#718096;">৳ ${(item.first_touch_revenue || 0).toLocaleString()}</td>
+            <td style="text-align:right;"><b>${(item.last_touch_orders || 0).toLocaleString()}</b></td>
+            <td style="text-align:right; font-weight:700; color:#2D3748;">৳ ${(item.last_touch_revenue || 0).toLocaleString()}</td>
+            <td style="text-align:right;">${orderTag}</td>
+            <td style="text-align:right;">${revTag}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
 }
 
 function renderAnalyticsCampaigns(data) {
@@ -2186,3 +2253,442 @@ function renderAnalyticsTimeline(data) {
     </div>
   `;
 }
+
+// ==============================================================================
+// 6. PHASE 5A: DEVICE INTELLIGENCE & CUSTOMER TRACKING JOURNEY
+// ==============================================================================
+function renderAnalyticsDevices(data) {
+  const cardsContainer = document.getElementById('analyticsDeviceCardsContainer');
+  const browserBody = document.getElementById('analyticsBrowsersBody');
+  const osBody = document.getElementById('analyticsOsBody');
+
+  if (cardsContainer) {
+    const devices = data.devices || [];
+    if (devices.length === 0) {
+      cardsContainer.innerHTML = '<div style="text-align:center; color:#A0AEC0; padding:16px;">No device data recorded in this period.</div>';
+    } else {
+      const iconMap = { mobile: '📱', desktop: '🖥️', tablet: '📟' };
+      const colorMap = { mobile: '#319795', desktop: '#3182CE', tablet: '#805AD5' };
+
+      cardsContainer.innerHTML = devices.map(d => {
+        const icon = iconMap[d.device_type] || '💻';
+        const color = colorMap[d.device_type] || '#319795';
+        return `
+          <div class="device-card">
+            <div class="device-card-header">
+              <div class="device-icon-title">
+                <span style="font-size:18px;">${icon}</span>
+                <span>${d.device_label}</span>
+              </div>
+              <span style="font-size:12px; font-weight:700; color:${color};">${d.session_share}% Share</span>
+            </div>
+            <div class="device-bar-track">
+              <div class="device-bar-fill" style="width: ${Math.max(2, d.session_share)}%; background: ${color};"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:8px;">
+              <span style="color:#718096;">Sessions: <b style="color:#1A202C;">${(d.sessions || 0).toLocaleString()}</b></span>
+              <span style="color:#718096;">Visitors: <b style="color:#1A202C;">${(d.visitors || 0).toLocaleString()}</b></span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
+              <span style="color:#718096;">Orders: <b style="color:#2D3748;">${(d.orders || 0).toLocaleString()}</b></span>
+              <span style="color:#718096;">CVR: <b style="color:${color};">${(d.conversion_rate || 0).toFixed(2)}%</b></span>
+            </div>
+            <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #EDF2F7; font-size:12.5px; font-weight:700; color:#2D3748; display:flex; justify-content:space-between;">
+              <span>Revenue:</span>
+              <span>৳ ${(d.revenue || 0).toLocaleString()}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  if (browserBody) {
+    const browsers = data.browsers || [];
+    if (browsers.length === 0) {
+      browserBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#A0AEC0; padding:10px;">No browser data recorded.</td></tr>';
+    } else {
+      browserBody.innerHTML = browsers.map(b => `
+        <tr>
+          <td><b>${b.browser}</b></td>
+          <td style="text-align:right;">${(b.sessions || 0).toLocaleString()}</td>
+          <td style="text-align:right; font-weight:600; color:#4A5568;">${b.share}%</td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  if (osBody) {
+    const osList = data.operating_systems || [];
+    if (osList.length === 0) {
+      osBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#A0AEC0; padding:10px;">No OS data recorded.</td></tr>';
+    } else {
+      osBody.innerHTML = osList.map(o => `
+        <tr>
+          <td><b>${o.os}</b></td>
+          <td style="text-align:right;">${(o.sessions || 0).toLocaleString()}</td>
+          <td style="text-align:right; font-weight:600; color:#4A5568;">${o.share}%</td>
+        </tr>
+      `).join('');
+    }
+  }
+}
+
+// ==============================================================================
+// 6. PHASE 5B: ORDER FRAUD DETAILS MODAL
+// ==============================================================================
+window.openFraudDetailModal = async function(orderIdOrInvoice) {
+  const modal = document.getElementById('genericModal');
+  const modalTitle = document.getElementById('genericModalTitle');
+  const modalBody = document.getElementById('genericModalBody');
+  if (!modal || !modalBody) return;
+
+  modalTitle.textContent = `Fraud Risk Assessment — #${orderIdOrInvoice}`;
+  modalBody.innerHTML = `
+    <div style="padding:24px; text-align:center;">
+      <div style="font-size:24px; margin-bottom:8px;">⏳</div>
+      <div style="font-size:13px; color:#4A5568;">Loading fraud assessment data...</div>
+    </div>
+  `;
+  modal.classList.add('active');
+
+  try {
+    const token = localStorage.getItem('admin_token') || 'adm_session';
+    const res = await fetch(`/api/admin/fraud/orders/${encodeURIComponent(orderIdOrInvoice)}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-admin-token': token
+      }
+    });
+
+    if (!res.ok) throw new Error('Order not found or unauthorized.');
+    const data = await res.json();
+    const d = data.fraud_detail || data;
+
+    if (d.fraud_score === null || d.fraud_score === undefined) {
+      modalBody.innerHTML = `
+        <div style="padding:24px; text-align:center; color:#718096;">
+          <div style="font-size:28px; margin-bottom:8px;">🛡️</div>
+          <div style="font-size:15px; font-weight:700; color:#2D3748;">Not Assessed</div>
+          <p style="font-size:12.5px; margin-top:4px;">This order has not been assessed for fraud risk yet.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const lvl = (d.fraud_level || 'LOW').toUpperCase();
+    const color = lvl === 'HIGH' ? '#DC2626' : (lvl === 'MEDIUM' ? '#D97706' : '#16A34A');
+    const levelIcon = lvl === 'HIGH' ? '🔴' : (lvl === 'MEDIUM' ? '🟡' : '🟢');
+    const reasons = Array.isArray(d.fraud_reasons) ? d.fraud_reasons : [];
+    const reasonsHtml = reasons.length > 0
+      ? `<ul style="margin:4px 0 0 16px; padding:0; font-size:12.5px; color:#4A5568; line-height:1.6;">${reasons.map(r => `<li>${r}</li>`).join('')}</ul>`
+      : '<p style="font-size:12.5px; color:#718096; margin:4px 0 0 0;">No risk signals triggered.</p>';
+
+    modalBody.innerHTML = `
+      <div style="padding:16px 20px; font-family:sans-serif; color:#1A202C;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #E2E8F0; padding-bottom:14px; margin-bottom:16px;">
+          <div>
+            <div style="font-size:11px; color:#718096; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Fraud Risk Assessment</div>
+            <div style="font-size:20px; font-weight:800; color:${color}; margin-top:2px;">${levelIcon} ${lvl}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:24px; font-weight:800; color:#1A202C;">${d.fraud_score} <span style="font-size:13px; color:#718096; font-weight:500;">/ 100</span></div>
+            <div style="font-size:11.5px; color:#718096;">Invoice #${d.invoice_no}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <div style="font-size:12.5px; font-weight:700; color:#2D3748;">Reasons:</div>
+          ${reasonsHtml}
+        </div>
+
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:700; color:#2D3748; margin-bottom:8px;">Courier History:</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px;">
+            <div>Total Parcels: <b>${d.courier_total_orders ?? 0}</b></div>
+            <div>Delivered: <b>${d.courier_delivered ?? 0}</b></div>
+            <div>Cancelled: <b>${d.courier_cancelled ?? 0}</b></div>
+            <div>Success Rate: <b>${d.courier_success_rate !== null && d.courier_success_rate !== undefined ? d.courier_success_rate + '%' : 'N/A'}</b></div>
+          </div>
+        </div>
+
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:700; color:#2D3748; margin-bottom:8px;">Phone History:</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px;">
+            <div>Previous Orders: <b>${d.phone_history ? d.phone_history.previous_orders : 0}</b></div>
+            <div>Cancelled/Rejected: <b>${d.phone_history ? d.phone_history.cancelled_or_rejected : 0}</b></div>
+          </div>
+        </div>
+
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:12px 14px;">
+          <div style="font-size:12px; font-weight:700; color:#2D3748; margin-bottom:8px;">IP Activity:</div>
+          <div style="font-size:12px;">
+            Orders from IP in 24h: <b>${d.ip_activity ? d.ip_activity.other_orders_24h : '1 (this order)'}</b>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    modalBody.innerHTML = `<div style="color:#E53E3E; padding:20px; text-align:center;">Failed to load fraud details: ${err.message}</div>`;
+  }
+};
+
+window.closeOrderJourneyModal = function() {
+  const modal = document.getElementById('orderJourneyModal');
+  if (modal) modal.classList.remove('active');
+};
+
+// ==============================================================================
+// PHASE 5B STEP 3: FRAUD RISK FILTER, FRAUD OVERVIEW, JOURNEY FRAUD CARD
+// ==============================================================================
+
+/**
+ * Risk filter buttons in the Orders view.
+ * Uses client-side filtering from already-loaded APP_STATE.orders.
+ */
+window.setRiskFilter = function(level) {
+  APP_STATE.riskFilter = level;
+
+  // Update button active states
+  ['all','high','medium','low','not_assessed'].forEach(k => {
+    const btn = document.getElementById('riskBtn-' + k);
+    if (!btn) return;
+    btn.className = 'risk-filter-btn' + (k === level ? ` active-${k}` : '');
+  });
+
+  renderOrdersTable();
+};
+
+/**
+ * Load & render Fraud Risk Overview KPIs in the analytics panel.
+ */
+window.loadFraudOverview = async function() {
+  const ids = ['foTotal','foHigh','foMedium','foLow','foAvg'];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '...'; });
+
+  try {
+    const token = localStorage.getItem('admin_token') || 'adm_session';
+    const res = await fetch('/api/admin/fraud/overview', {
+      headers: { 'Authorization': `Bearer ${token}`, 'x-admin-token': token }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.success || !data.fraud_overview) throw new Error('No data');
+
+    const fo = data.fraud_overview;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('foTotal',  fo.assessed_count ?? '0');
+    set('foHigh',   fo.high_count ?? '0');
+    set('foMedium', fo.medium_count ?? '0');
+    set('foLow',    fo.low_count ?? '0');
+    set('foAvg',    fo.average_score !== null && fo.average_score !== undefined ? fo.average_score.toFixed(1) : '—');
+  } catch (e) {
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+  }
+};
+
+// Auto-load fraud overview when analytics view opens
+const _origRefreshAnalytics = window.refreshAnalyticsData;
+window.refreshAnalyticsData = function(...args) {
+  if (typeof _origRefreshAnalytics === 'function') _origRefreshAnalytics(...args);
+  loadFraudOverview();
+};
+
+// ==============================================================================
+// JOURNEY MODAL — Extend to show Fraud Card at top (Phase 5B Step 3)
+// ==============================================================================
+
+window.openOrderJourneyModal = async function(orderIdOrInvoice) {
+  const modal = document.getElementById('orderJourneyModal');
+  const body = document.getElementById('orderJourneyModalBody');
+  const title = document.getElementById('orderJourneyModalTitle');
+  if (!modal || !body) return;
+
+  modal.classList.add('active');
+  if (title) title.textContent = `Customer Journey \u2014 #${orderIdOrInvoice}`;
+  body.innerHTML = `
+    <div style="text-align:center; padding:40px 20px;">
+      <div style="font-size:28px; margin-bottom:8px;">⏳</div>
+      <div style="font-size:14px; font-weight:600; color:#4A5568;">Reconstructing Customer Journey...</div>
+      <div style="font-size:12px; color:#A0AEC0; margin-top:4px;">Stitching visitor timeline, session parameters, events &amp; order data</div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`/api/admin/analytics/journey/${encodeURIComponent(orderIdOrInvoice)}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer adm_session',
+        'x-admin-token': 'adm_session'
+      }
+    });
+
+    if (!res.ok) {
+      body.innerHTML = `
+        <div style="text-align:center; padding:30px 20px; color:#E53E3E;">
+          <div style="font-size:24px; margin-bottom:8px;">⚠️</div>
+          <div style="font-weight:700;">Could not retrieve customer journey.</div>
+          <div style="font-size:12px; color:#718096; margin-top:4px;">Order #${orderIdOrInvoice} not found or unauthorized.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const data = await res.json();
+    if (!data.success || !data.journey) {
+      body.innerHTML = `
+        <div style="text-align:center; padding:30px 20px; color:#718096;">
+          <div style="font-size:24px; margin-bottom:8px;">🔍</div>
+          <div>No customer journey records found for #${orderIdOrInvoice}.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const j = data.journey;
+    const ord = j.order || {};
+    const vis = j.visitor || {};
+    const sess = j.session || {};
+    const timeline = j.timeline || [];
+    const fraud = j.fraud || null;
+
+    const sourceBadge = (ord.source_type || '').toLowerCase().includes('landing')
+      ? '<span style="background:#FEF3C7; color:#B45309; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">🚀 Landing Page</span>'
+      : '<span style="background:#E0F2FE; color:#0369A1; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">🛍️ Storefront</span>';
+
+    // ── Fraud Risk Card ───────────────────────────────────────────────
+    let fraudCardHtml = '';
+    if (fraud) {
+      const lvl = (fraud.fraud_level || '').toUpperCase();
+      const scoreNum = fraud.fraud_score;
+      const circleClass = lvl === 'HIGH' ? 'high' : (lvl === 'MEDIUM' ? 'medium' : 'low');
+      const levelIcon   = lvl === 'HIGH' ? '🔴' : (lvl === 'MEDIUM' ? '🟡' : '🟢');
+      const reasonsHtml = Array.isArray(fraud.fraud_reasons) && fraud.fraud_reasons.length > 0
+        ? `<ul>${fraud.fraud_reasons.map(r => `<li>${r}</li>`).join('')}</ul>`
+        : '<span style="opacity:0.7;">No specific risk signals detected</span>';
+
+      const courierHtml = fraud.courier_total_orders > 0
+        ? `<span style="font-size:11px;opacity:0.75;margin-left:8px;">Courier: ${fraud.courier_delivered}/${fraud.courier_total_orders} delivered (${fraud.courier_success_rate}%)</span>`
+        : '';
+
+      fraudCardHtml = `
+        <div class="fraud-journey-card">
+          <div class="fraud-score-circle ${circleClass}">
+            <div class="fraud-score-num">${scoreNum}</div>
+            <div class="fraud-score-denom">/100</div>
+          </div>
+          <div class="fraud-card-body">
+            <div class="fraud-card-level">${levelIcon} ${lvl} RISK ${courierHtml}</div>
+            <div class="fraud-card-reasons">
+              Fraud Signals Detected:
+              ${reasonsHtml}
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      fraudCardHtml = `<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;color:#718096;">🛡️ <b>Fraud Risk:</b> Not yet assessed for this order</div>`;
+    }
+
+    body.innerHTML = `
+      ${fraudCardHtml}
+
+      <!-- Order & Attribution Summary -->
+      <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:10px; padding:14px 16px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px; font-weight:800; color:#1A202C;">Invoice #${ord.invoice_no || orderIdOrInvoice}</span>
+            ${sourceBadge}
+            <span style="background:#DCFCE7; color:#166534; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:700;">${(ord.status || 'new').toUpperCase()}</span>
+          </div>
+          <div style="font-size:12.5px; color:#4A5568; margin-top:4px;">
+            <b>${ord.customer_name || 'Customer'}</b> \u2022 📞 ${ord.customer_phone || '-'} \u2022 📍 ${ord.customer_address || '-'}
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px; font-weight:800; color:#2D3748;">৳ ${(ord.total_amount || 0).toLocaleString()}</div>
+          <div style="font-size:11px; color:#718096;">Payment: ${ord.payment_method || 'COD'}</div>
+        </div>
+      </div>
+
+      <!-- Visitor & Session Metadata Grid -->
+      <div class="journey-meta-grid">
+        <div class="journey-meta-item">
+          <label>Visitor UUID</label>
+          <span style="font-family:monospace; font-size:11px;">${vis.visitor_uuid || 'N/A'}</span>
+        </div>
+        <div class="journey-meta-item">
+          <label>First-Touch Source</label>
+          <b>${vis.first_source || 'direct'}</b>
+        </div>
+        <div class="journey-meta-item">
+          <label>Entry Landing Page</label>
+          <span>${sess.landing_page_path || ord.landing_page || '/'}</span>
+        </div>
+        <div class="journey-meta-item">
+          <label>Converting Channel</label>
+          <b>${sess.channel || 'direct'}</b>
+        </div>
+        <div class="journey-meta-item">
+          <label>UTM Campaign</label>
+          <span>${sess.utm_campaign || '-'}</span>
+        </div>
+        <div class="journey-meta-item">
+          <label>Ad Click ID</label>
+          <span style="font-family:monospace; font-size:11px;">${sess.click_id || '-'}</span>
+        </div>
+        <div class="journey-meta-item">
+          <label>Environment</label>
+          <span>${(sess.device_type || ord.device_type || 'desktop').toUpperCase()} \u2022 ${sess.browser || 'Browser'} (${sess.os || 'OS'})</span>
+        </div>
+        <div class="journey-meta-item">
+          <label>Customer IP</label>
+          <span style="font-family:monospace; font-size:11px;">${sess.ip_address || ord.ip_address || '-'}</span>
+        </div>
+      </div>
+
+      <!-- Chronological Journey Timeline -->
+      <h4 style="font-size:13.5px; font-weight:700; color:#2D3748; margin:0 0 12px 0; display:flex; align-items:center; gap:6px;">
+        <span>⏳ Chronological User Event Journey</span>
+        <span style="font-size:11px; color:#718096; font-weight:400;">(${timeline.length} sequential touchpoints)</span>
+      </h4>
+
+      <div class="journey-timeline-container">
+        ${timeline.map((step) => {
+          let dotIcon = '●';
+          let dotColor = '#319795';
+          if (step.type === 'arrival') { dotIcon = '🌐'; dotColor = '#3182CE'; }
+          else if (step.type === 'product_view') { dotIcon = '🛍️'; dotColor = '#805AD5'; }
+          else if (step.type === 'cta_click') { dotIcon = '🔘'; dotColor = '#D69E2E'; }
+          else if (step.type === 'add_to_cart') { dotIcon = '🛒'; dotColor = '#DD6B20'; }
+          else if (step.type === 'checkout_started') { dotIcon = '📋'; dotColor = '#E53E3E'; }
+          else if (step.type === 'order_created' || step.type === 'purchase') { dotIcon = '✅'; dotColor = '#38A169'; }
+
+          return `
+            <div class="journey-timeline-step">
+              <div class="journey-step-dot" style="background:${dotColor};">${dotIcon}</div>
+              <div class="journey-step-content">
+                <div class="journey-step-header">
+                  <span class="journey-step-title">${step.title}</span>
+                  <span class="journey-step-time">${step.time || ''}</span>
+                </div>
+                <div class="journey-step-desc">${step.description}</div>
+                ${step.value ? `<div style="font-size:12px; font-weight:700; color:#319795; margin-bottom:4px;">${step.value}</div>` : ''}
+                ${step.details ? `
+                  <div class="journey-step-tags">
+                    ${Object.entries(step.details).filter(([k,v]) => v).map(([k,v]) => `
+                      <span class="journey-step-tag"><b>${k}:</b> ${v}</span>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } catch (err) {
+    body.innerHTML = `<div style="color:#E53E3E; padding:20px; text-align:center;">Failed to load journey: ${err.message}</div>`;
+  }
+};

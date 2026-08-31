@@ -360,11 +360,47 @@ class AdminAnalyticsController extends Controller
             ],
         ];
 
+        // First-Touch vs Last-Touch Channel Comparison
+        $firstTouchStats = Order::leftJoin('tracking_visitors', 'orders.visitor_id', '=', 'tracking_visitors.id')
+            ->whereBetween('orders.created_at', [$start, $end])
+            ->select(
+                DB::raw("COALESCE(tracking_visitors.first_source, 'direct') as channel"),
+                DB::raw('COUNT(*) as total_orders'),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.status NOT IN ('cancelled', 'cancel') THEN orders.total_amount ELSE 0 END), 0) as total_revenue")
+            )
+            ->groupBy('channel')
+            ->get()
+            ->keyBy('channel');
+
+        $comparison = [];
+        foreach ($channels as $ch) {
+            $ft = $firstTouchStats->get($ch);
+            $lt = $orderStats->get($ch);
+
+            $ftOrders = $ft ? (int)$ft->total_orders : 0;
+            $ftRevenue = $ft ? round((float)$ft->total_revenue, 2) : 0.0;
+
+            $ltOrders = $lt ? (int)$lt->total_orders : 0;
+            $ltRevenue = $lt ? round((float)$lt->total_revenue, 2) : 0.0;
+
+            $comparison[] = [
+                'channel'             => $ch,
+                'channel_label'       => ucwords(str_replace('_', ' ', $ch)),
+                'first_touch_orders'  => $ftOrders,
+                'first_touch_revenue' => $ftRevenue,
+                'last_touch_orders'   => $ltOrders,
+                'last_touch_revenue'  => $ltRevenue,
+                'order_diff'          => $ltOrders - $ftOrders,
+                'revenue_diff'        => round($ltRevenue - $ftRevenue, 2),
+            ];
+        }
+
         return response()->json([
-            'success'      => true,
-            'date_range'   => $dates['label'],
-            'channels'     => $result,
-            'source_split' => $splitResult,
+            'success'                => true,
+            'date_range'             => $dates['label'],
+            'channels'               => $result,
+            'source_split'           => $splitResult,
+            'first_touch_comparison' => $comparison,
         ]);
     }
 
@@ -573,6 +609,487 @@ class AdminAnalyticsController extends Controller
             'success'    => true,
             'date_range' => $dates['label'],
             'timeline'   => $timeline,
+        ]);
+    }
+
+    /**
+     * 7. GET /api/admin/analytics/devices
+     * Device type (mobile, desktop, tablet), Browser, and OS breakdown
+     */
+    public function devices(Request $request): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $dates = $this->resolveDateRange($request);
+        $start = $dates['start'];
+        $end = $dates['end'];
+
+        $deviceTypes = ['mobile', 'desktop', 'tablet'];
+        $sessionDevices = TrackingSession::whereBetween('session_start', [$start, $end])
+            ->select(
+                DB::raw("COALESCE(device_type, 'desktop') as device"),
+                DB::raw('COUNT(DISTINCT visitor_id) as visitors'),
+                DB::raw('COUNT(*) as sessions')
+            )
+            ->groupBy('device')
+            ->get()
+            ->keyBy('device');
+
+        $orderDevices = Order::leftJoin('tracking_sessions', 'orders.session_id', '=', 'tracking_sessions.id')
+            ->whereBetween('orders.created_at', [$start, $end])
+            ->select(
+                DB::raw("COALESCE(orders.device_type, tracking_sessions.device_type, 'desktop') as device"),
+                DB::raw('COUNT(*) as orders'),
+                DB::raw("COALESCE(SUM(CASE WHEN orders.status NOT IN ('cancelled', 'cancel') THEN orders.total_amount ELSE 0 END), 0) as revenue")
+            )
+            ->groupBy('device')
+            ->get()
+            ->keyBy('device');
+
+        $totalSessions = TrackingSession::whereBetween('session_start', [$start, $end])->count() ?: 1;
+        $deviceList = [];
+
+        foreach ($deviceTypes as $d) {
+            $sess = $sessionDevices->get($d);
+            $ord = $orderDevices->get($d);
+
+            $visitors = $sess ? (int)$sess->visitors : 0;
+            $sessions = $sess ? (int)$sess->sessions : 0;
+            $orders = $ord ? (int)$ord->orders : 0;
+            $revenue = $ord ? round((float)$ord->revenue, 2) : 0.0;
+            $cvr = $sessions > 0 ? round(($orders / $sessions) * 100, 2) : 0.0;
+            $share = round(($sessions / $totalSessions) * 100, 1);
+
+            $deviceList[] = [
+                'device_type'     => $d,
+                'device_label'    => ucfirst($d),
+                'visitors'        => $visitors,
+                'sessions'        => $sessions,
+                'session_share'   => $share,
+                'orders'          => $orders,
+                'revenue'         => $revenue,
+                'conversion_rate' => $cvr,
+            ];
+        }
+
+        $browsers = TrackingSession::whereBetween('session_start', [$start, $end])
+            ->select(
+                DB::raw("COALESCE(browser, 'Other') as browser_name"),
+                DB::raw('COUNT(DISTINCT visitor_id) as visitors'),
+                DB::raw('COUNT(*) as sessions')
+            )
+            ->groupBy('browser_name')
+            ->orderByDesc('sessions')
+            ->limit(8)
+            ->get()
+            ->map(function ($b) use ($totalSessions) {
+                return [
+                    'browser'  => $b->browser_name,
+                    'visitors' => (int)$b->visitors,
+                    'sessions' => (int)$b->sessions,
+                    'share'    => round(($b->sessions / $totalSessions) * 100, 1),
+                ];
+            });
+
+        $osList = TrackingSession::whereBetween('session_start', [$start, $end])
+            ->select(
+                DB::raw("COALESCE(os, 'Other') as os_name"),
+                DB::raw('COUNT(DISTINCT visitor_id) as visitors'),
+                DB::raw('COUNT(*) as sessions')
+            )
+            ->groupBy('os_name')
+            ->orderByDesc('sessions')
+            ->limit(8)
+            ->get()
+            ->map(function ($o) use ($totalSessions) {
+                return [
+                    'os'       => $o->os_name,
+                    'visitors' => (int)$o->visitors,
+                    'sessions' => (int)$o->sessions,
+                    'share'    => round(($o->sessions / $totalSessions) * 100, 1),
+                ];
+            });
+
+        return response()->json([
+            'success'           => true,
+            'date_range'        => $dates['label'],
+            'devices'           => $deviceList,
+            'browsers'          => $browsers,
+            'operating_systems' => $osList,
+        ]);
+    }
+
+    /**
+     * 8. GET /api/admin/analytics/journey/{order_id}
+     * Complete customer journey timeline for a specific Order
+     */
+    public function journey(Request $request, string $order_id): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $order = Order::with('items')
+            ->where('id', $order_id)
+            ->orWhere('invoice_no', $order_id)
+            ->first();
+
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
+        }
+
+        $visitor = null;
+        if ($order->visitor_id) {
+            $visitor = TrackingVisitor::find($order->visitor_id);
+        }
+
+        $session = null;
+        if ($order->session_id) {
+            $session = TrackingSession::find($order->session_id);
+        }
+
+        $events = collect();
+        if ($session) {
+            $events = TrackingEvent::where('session_id', $session->id)
+                ->orderBy('created_at', 'asc')
+                ->limit(100)
+                ->get();
+        } elseif ($visitor) {
+            $events = TrackingEvent::where('visitor_id', $visitor->id)
+                ->orderBy('created_at', 'asc')
+                ->limit(100)
+                ->get();
+        }
+
+        $journeyTimeline = [];
+
+        // 1. Initial Arrival
+        if ($session) {
+            $journeyTimeline[] = [
+                'type'        => 'arrival',
+                'title'       => 'Visitor Arrival',
+                'description' => 'Landed on ' . ($session->landing_page_path ?: '/'),
+                'time'        => $session->session_start ? $session->session_start->format('d M Y, h:i:s A') : null,
+                'channel'     => $session->channel,
+                'details'     => [
+                    'entry_url'    => $session->entry_url,
+                    'referrer'     => $session->referrer_domain ?: 'Direct / None',
+                    'utm_source'   => $session->utm_source,
+                    'utm_medium'   => $session->utm_medium,
+                    'utm_campaign' => $session->utm_campaign,
+                    'click_id'     => $session->click_id,
+                    'device'       => ucfirst($session->device_type ?? 'desktop') . ' (' . ($session->os ?? 'OS') . ' / ' . ($session->browser ?? 'Browser') . ')',
+                ],
+            ];
+        }
+
+        // 2. Behavioral Events
+        foreach ($events as $ev) {
+            $props = is_array($ev->properties) ? $ev->properties : [];
+            unset($props['password'], $props['token'], $props['auth'], $props['card']);
+
+            $title = ucwords(str_replace('_', ' ', $ev->event_name));
+            $desc = $ev->page_path ?: 'Storefront';
+            if ($ev->event_name === 'cta_click') {
+                $desc = 'Clicked CTA: ' . ($ev->cta_identifier ?: $ev->entity_id);
+            } elseif ($ev->event_name === 'product_view' || $ev->event_name === 'add_to_cart') {
+                $desc = ($ev->event_name === 'add_to_cart' ? 'Added to Cart: ' : 'Viewed Product: ') . ($ev->entity_id ?: 'Product');
+            } elseif ($ev->event_name === 'checkout_started') {
+                $desc = 'Opened Checkout Form';
+            } elseif ($ev->event_name === 'purchase') {
+                $desc = 'Order Placed: #' . ($ev->entity_id ?: $order->invoice_no);
+            }
+
+            $journeyTimeline[] = [
+                'type'        => $ev->event_name,
+                'title'       => $title,
+                'description' => $desc,
+                'time'        => $ev->created_at ? $ev->created_at->format('h:i:s A') : null,
+                'value'       => $ev->event_value ? '৳ ' . number_format($ev->event_value, 2) : null,
+                'properties'  => $props,
+            ];
+        }
+
+        // 3. Purchase Confirmation
+        $journeyTimeline[] = [
+            'type'        => 'order_created',
+            'title'       => 'Purchase Confirmed',
+            'description' => 'Invoice #' . $order->invoice_no . ' created with status ' . ucfirst($order->status),
+            'time'        => $order->created_at ? $order->created_at->format('d M Y, h:i:s A') : null,
+            'value'       => '৳ ' . number_format($order->total_amount, 2),
+            'details'     => [
+                'items_count'    => $order->items ? $order->items->count() : 0,
+                'payment_method' => $order->payment_method,
+                'source_type'    => $order->source_type,
+                'landing_page'   => $order->landing_page,
+            ],
+        ];
+
+        // ── Fraud card for journey modal ──────────────────────────────────
+        $fraudCard = null;
+        if ($order->fraud_score !== null) {
+            $fraudCard = [
+                'fraud_score'        => (int)$order->fraud_score,
+                'fraud_level'        => $order->fraud_level,
+                'fraud_reasons'      => is_array($order->fraud_reasons)
+                    ? $order->fraud_reasons
+                    : (json_decode($order->fraud_reasons ?? '[]', true) ?: []),
+                'courier_success_rate'  => $order->courier_success_rate !== null ? round((float)$order->courier_success_rate, 1) : null,
+                'courier_total_orders'  => (int)($order->courier_total_orders ?? 0),
+                'courier_delivered'     => (int)($order->courier_delivered ?? 0),
+                'courier_cancelled'     => (int)($order->courier_cancelled ?? 0),
+                'courier_checked_at'    => $order->courier_checked_at
+                    ? (is_string($order->courier_checked_at)
+                        ? $order->courier_checked_at
+                        : $order->courier_checked_at->toIso8601String())
+                    : null,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'journey' => [
+                'order' => [
+                    'id'               => $order->id,
+                    'invoice_no'       => $order->invoice_no,
+                    'customer_name'    => $order->customer_name,
+                    'customer_phone'   => $order->customer_phone,
+                    'customer_address' => $order->customer_address,
+                    'total_amount'     => (float)$order->total_amount,
+                    'payment_method'   => $order->payment_method,
+                    'status'           => $order->status,
+                    'source_type'      => $order->source_type,
+                    'landing_page'     => $order->landing_page,
+                    'created_at'       => $order->created_at ? $order->created_at->format('d M Y, h:i A') : null,
+                    'items'            => $order->items ? $order->items->map(fn($i) => [
+                        'name'     => $i->product_name,
+                        'size'     => $i->size,
+                        'price'    => (float)$i->price,
+                        'quantity' => (int)$i->quantity,
+                        'total'    => (float)$i->total,
+                    ]) : [],
+                ],
+                'visitor' => $visitor ? [
+                    'visitor_uuid'       => $visitor->visitor_uuid,
+                    'first_seen_at'      => $visitor->first_seen_at ? $visitor->first_seen_at->format('d M Y, h:i A') : null,
+                    'first_source'       => $visitor->first_source,
+                    'first_utm_campaign' => $visitor->first_utm_campaign,
+                    'first_landing_page' => $visitor->first_landing_page,
+                    'total_orders'       => (int)$visitor->total_orders,
+                    'total_revenue'      => (float)$visitor->total_revenue,
+                ] : null,
+                'session' => $session ? [
+                    'session_uuid'      => $session->session_uuid,
+                    'session_start'     => $session->session_start ? $session->session_start->format('d M Y, h:i A') : null,
+                    'duration_seconds'  => (int)$session->duration_seconds,
+                    'channel'           => $session->channel,
+                    'landing_page_path' => $session->landing_page_path,
+                    'entry_url'         => $session->entry_url,
+                    'referrer_domain'   => $session->referrer_domain,
+                    'utm_source'        => $session->utm_source,
+                    'utm_medium'        => $session->utm_medium,
+                    'utm_campaign'      => $session->utm_campaign,
+                    'utm_content'       => $session->utm_content,
+                    'click_id'          => $session->click_id,
+                    'device_type'       => $session->device_type,
+                    'browser'           => $session->browser,
+                    'os'                => $session->os,
+                    'ip_address'        => $session->ip_address,
+                ] : null,
+                'timeline'   => $journeyTimeline,
+                'fraud'      => $fraudCard,
+            ],
+        ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // Phase 5B: Admin Fraud Detection APIs
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * 9. GET /api/admin/fraud/overview
+     * Aggregate fraud risk metrics across ALL orders (source-agnostic).
+     */
+    public function fraudOverview(Request $request): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $stats = Order::selectRaw("
+            COUNT(*) as total_orders,
+            SUM(CASE WHEN fraud_level = 'LOW'    THEN 1 ELSE 0 END) as low_count,
+            SUM(CASE WHEN fraud_level = 'MEDIUM' THEN 1 ELSE 0 END) as medium_count,
+            SUM(CASE WHEN fraud_level = 'HIGH'   THEN 1 ELSE 0 END) as high_count,
+            SUM(CASE WHEN fraud_score IS NOT NULL THEN 1 ELSE 0 END) as assessed_count,
+            SUM(CASE WHEN courier_checked_at IS NOT NULL THEN 1 ELSE 0 END) as courier_checked_count,
+            ROUND(AVG(CASE WHEN fraud_score IS NOT NULL THEN fraud_score ELSE NULL END), 1) as avg_score
+        ")->first();
+
+        $fo = [
+            'total_orders'          => (int)($stats->total_orders ?? 0),
+            'assessed_count'        => (int)($stats->assessed_count ?? 0),
+            'not_assessed_count'    => (int)($stats->total_orders ?? 0) - (int)($stats->assessed_count ?? 0),
+            'low_count'             => (int)($stats->low_count ?? 0),
+            'medium_count'          => (int)($stats->medium_count ?? 0),
+            'high_count'            => (int)($stats->high_count ?? 0),
+            'average_score'         => $stats->avg_score !== null ? (float)$stats->avg_score : null,
+            'courier_checked_count' => (int)($stats->courier_checked_count ?? 0),
+            // Aliases matching verbatim prompt wording
+            'low_risk_count'        => (int)($stats->low_count ?? 0),
+            'medium_risk_count'     => (int)($stats->medium_count ?? 0),
+            'high_risk_count'       => (int)($stats->high_count ?? 0),
+            'average_fraud_score'   => $stats->avg_score !== null ? (float)$stats->avg_score : null,
+        ];
+
+        return response()->json(array_merge([
+            'success'        => true,
+            'fraud_overview' => $fo,
+        ], $fo));
+    }
+
+    /**
+     * 10. GET /api/admin/fraud/orders/{order_id}
+     * Per-order fraud details — admin-safe fields only.
+     * No API key, no raw auth headers, no passwords.
+     */
+    public function fraudOrderDetail(Request $request, string $order_id): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $order = Order::where('id', $order_id)
+            ->orWhere('invoice_no', $order_id)
+            ->first();
+
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
+        }
+
+        $phone = $order->customer_phone;
+
+        // Phone history summary (from same orders table only — no new PII)
+        $phoneHistory = DB::table('orders')
+            ->where('customer_phone', $phone)
+            ->where('id', '!=', $order->id)
+            ->selectRaw("
+                COUNT(*) as total_orders,
+                SUM(CASE WHEN status IN ('cancelled','cancel','rejected') THEN 1 ELSE 0 END) as cancelled_count
+            ")
+            ->first();
+
+        // IP activity (24h window)
+        $ipActivity = null;
+        $ip = $order->ip_address;
+        if ($ip && !in_array($ip, ['127.0.0.1', '::1']) && !str_starts_with($ip, '10.') && !str_starts_with($ip, '192.168.') && !str_starts_with($ip, '172.')) {
+            $ipCount = DB::table('orders')
+                ->where('ip_address', $ip)
+                ->where('id', '!=', $order->id)
+                ->where('created_at', '>=', now()->subHours(24))
+                ->count();
+            $ipActivity = [
+                'ip_address'           => $ip,
+                'other_orders_24h'     => $ipCount,
+            ];
+        }
+
+        $detail = [
+            'order_id'              => $order->id,
+            'invoice_no'            => $order->invoice_no,
+            'source_type'           => $order->source_type,
+            'fraud_score'           => $order->fraud_score !== null ? (int)$order->fraud_score : null,
+            'fraud_level'           => $order->fraud_level,
+            'fraud_reasons'         => is_array($order->fraud_reasons)
+                ? $order->fraud_reasons
+                : (json_decode($order->fraud_reasons ?? '[]', true) ?: []),
+            'courier_success_rate'  => $order->courier_success_rate !== null ? round((float)$order->courier_success_rate, 1) : null,
+            'courier_total_orders'  => (int)($order->courier_total_orders ?? 0),
+            'courier_delivered'     => (int)($order->courier_delivered ?? 0),
+            'courier_cancelled'     => (int)($order->courier_cancelled ?? 0),
+            'courier_checked_at'    => $order->courier_checked_at
+                ? (is_string($order->courier_checked_at)
+                    ? $order->courier_checked_at
+                    : $order->courier_checked_at->toIso8601String())
+                : null,
+            'phone_history'         => $phoneHistory ? [
+                'previous_orders'          => (int)$phoneHistory->total_orders,
+                'cancelled_or_rejected'    => (int)$phoneHistory->cancelled_count,
+            ] : null,
+            'ip_activity'           => $ipActivity,
+        ];
+
+        return response()->json(array_merge([
+            'success'      => true,
+            'fraud_detail' => $detail,
+        ], $detail));
+    }
+
+    /**
+     * 11. GET /api/orders
+     * Orders list for admin panel with fraud fields included.
+     * Source-agnostic: returns both storefront and landing-page orders.
+     */
+    public function ordersIndex(Request $request): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $riskFilter = $request->query('risk'); // high | medium | low | not_assessed
+
+        $query = Order::with('items')->orderByDesc('created_at')->limit(500);
+
+        if ($riskFilter === 'high') {
+            $query->where('fraud_level', 'HIGH');
+        } elseif ($riskFilter === 'medium') {
+            $query->where('fraud_level', 'MEDIUM');
+        } elseif ($riskFilter === 'low') {
+            $query->where('fraud_level', 'LOW');
+        } elseif ($riskFilter === 'not_assessed') {
+            $query->whereNull('fraud_score');
+        }
+
+        $orders = $query->get();
+
+        $mapped = $orders->map(function (Order $o) {
+            $items    = $o->items ?? collect();
+            $firstName = $items->first();
+
+            return [
+                'order_number'    => $o->invoice_no,
+                'source'          => $o->source_type ?? 'storefront',
+                'customer_name'   => $o->customer_name,
+                'phone'           => $o->customer_phone,
+                'address'         => $o->customer_address,
+                'product_name'    => $firstName ? $firstName->product_name : 'Product',
+                'variant_name'    => $firstName ? ($firstName->size ?? 'Standard') : 'Standard',
+                'quantity'        => $firstName ? (int)$firstName->quantity : 1,
+                'product_id'      => null,
+                'subtotal'        => (float)$o->subtotal,
+                'delivery_charge' => (float)$o->delivery_charge,
+                'total'           => (float)$o->total_amount,
+                'advance_paid'    => false,
+                'advance_amount'  => 0,
+                'status'          => $o->status,
+                'courier_name'    => 'Steadfast',
+                'timeline'        => [],
+                'created_at'      => $o->created_at ? $o->created_at->toIso8601String() : null,
+                // Phase 5B fraud fields
+                'fraud_score'     => $o->fraud_score !== null ? (int)$o->fraud_score : null,
+                'fraud_level'     => $o->fraud_level,
+                'fraud_reasons'   => is_array($o->fraud_reasons)
+                    ? $o->fraud_reasons
+                    : (json_decode($o->fraud_reasons ?? '[]', true) ?: []),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'count'   => $mapped->count(),
+            'orders'  => $mapped,
         ]);
     }
 }
