@@ -8,11 +8,15 @@
   <meta name="robots" content="index, follow">
 
   <!-- Favicon & Social Meta -->
-  <link rel="icon" type="image/png" href="../../assets/images/chicken-booster-logo.png">
+  <link rel="icon" type="image/webp" href="../../assets/images/chicken-booster-logo.webp">
   <meta property="og:title" content="চিকেন বুস্টার (Broiler & Layer Booster) — Growth Agro">
   <meta property="og:description" content="রোগমুক্ত, দ্রুত মোটাতাজা ও সুস্থ মুরগি পেতে চান? জানুন প্রাকৃতিক সমাধান।">
-  <meta property="og:image" content="../../assets/images/chicken-booster-product.png">
+  <meta property="og:image" content="../../assets/images/chicken-booster-product.webp">
   <meta property="og:type" content="product">
+
+  <!-- Preload Critical Above-The-Fold Hero Product Images -->
+  <link rel="preload" as="image" href="../../assets/images/layer-booster-product.webp" type="image/webp">
+  <link rel="preload" as="image" href="../../assets/images/broiler-booster-product.webp" type="image/webp">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -285,21 +289,21 @@
     /* Left Card: Layer Farm Background (Sharp & Natural, no blur) */
     .hero-card.card-layer {
       background: linear-gradient(180deg, rgba(3, 54, 61, 0.22) 0%, rgba(3, 54, 61, 0.42) 55%, rgba(0, 0, 0, 0.38) 100%),
-                  url('../../assets/images/layer-farm-bg.jpg') center bottom / cover no-repeat;
+                  url('../../assets/images/layer-farm-bg.webp') center bottom / cover no-repeat;
     }
     .hero-card.card-layer:hover {
       background: linear-gradient(180deg, rgba(3, 54, 61, 0.12) 0%, rgba(3, 54, 61, 0.32) 55%, rgba(0, 0, 0, 0.28) 100%),
-                  url('../../assets/images/layer-farm-bg.jpg') center bottom / cover no-repeat;
+                  url('../../assets/images/layer-farm-bg.webp') center bottom / cover no-repeat;
     }
 
     /* Right Card: Broiler Farm Background (Sharp & Natural, no blur) */
     .hero-card.card-broiler {
       background: linear-gradient(180deg, rgba(3, 54, 61, 0.22) 0%, rgba(3, 54, 61, 0.42) 55%, rgba(0, 0, 0, 0.38) 100%),
-                  url('../../assets/images/broiler-farm-bg.jpg') center bottom / cover no-repeat;
+                  url('../../assets/images/broiler-farm-bg.webp') center bottom / cover no-repeat;
     }
     .hero-card.card-broiler:hover {
       background: linear-gradient(180deg, rgba(3, 54, 61, 0.12) 0%, rgba(3, 54, 61, 0.32) 55%, rgba(0, 0, 0, 0.28) 100%),
-                  url('../../assets/images/broiler-farm-bg.jpg') center bottom / cover no-repeat;
+                  url('../../assets/images/broiler-farm-bg.webp') center bottom / cover no-repeat;
     }
 
     /* Product Jar (Layer.png / Broiler.png) placed firmly on the ground */
@@ -1100,7 +1104,7 @@
       </a>
 
       <a href="./" class="brand-logo-wrap">
-        <img src="../../assets/images/chicken-booster-logo.png" alt="Growth Agro Logo" class="brand-logo-img" onerror="this.src='../../pic/Untitled design.png'">
+        <img src="../../assets/images/chicken-booster-logo.webp" alt="Growth Agro Logo" class="brand-logo-img" width="180" height="48" loading="eager" fetchpriority="high">
       </a>
 
       <a href="#checkout-form-section" class="btn-header-order">
@@ -1117,15 +1121,15 @@
       <h2 class="hero-alert-hook">"মুরগি দুর্বল? রোগে আক্রান্ত? উৎপাদনে ক্ষতি?"</h2>
       <h1 class="hero-main-title">"রোগমুক্ত, দ্রুত মোটাতাজা ও সুস্থ মুরগি পেতে চান? জানুন প্রাকৃতিক সমাধান"</h1>
 
-      <!-- Dual Product Visuals (Left: Layer.png, Right: Broiler.png on Farm Ground) -->
+      <!-- Dual Product Visuals (Left: Layer Booster, Right: Broiler Booster on Farm Ground) -->
       <div class="hero-dual-grid">
         <div class="hero-card card-layer" onclick="selectAndScroll('layer-1kg')" title="Layer Booster — ক্লিক করে অর্ডার করুন">
           <span class="hero-card-tag">Layer Booster (১ কেজি)</span>
-          <img src="../../pic/Layer.png" alt="Layer Booster" class="hero-prod-img" loading="eager" onerror="this.src='../../assets/images/layer-booster-product.png'">
+          <img src="../../assets/images/layer-booster-product.webp" alt="Layer Booster" class="hero-prod-img" width="300" height="450" loading="eager" fetchpriority="high">
         </div>
         <div class="hero-card card-broiler" onclick="selectAndScroll('broiler-1kg')" title="Broiler Booster — ক্লিক করে অর্ডার করুন">
           <span class="hero-card-tag">Broiler Booster (১ কেজি)</span>
-          <img src="../../pic/Broiler.png" alt="Broiler Booster" class="hero-prod-img" loading="eager" onerror="this.src='../../assets/images/broiler-booster-product.png'">
+          <img src="../../assets/images/broiler-booster-product.webp" alt="Broiler Booster" class="hero-prod-img" width="300" height="450" loading="eager" fetchpriority="high">
         </div>
       </div>
 
@@ -1157,7 +1161,7 @@
         <!-- Review 1: Broiler Booster Experience -->
         <div class="video-card" onclick="document.getElementById('checkout-form-section').scrollIntoView({behavior: 'smooth'})">
           <div class="video-thumb-wrap">
-            <img src="../../assets/images/review-broiler.jpg" alt="Broiler Booster Farmer Testimonial" loading="lazy">
+            <img src="../../assets/images/review-broiler.webp" alt="Broiler Booster Farmer Testimonial" width="400" height="223" loading="lazy" decoding="async">
             <div class="play-btn-overlay"></div>
           </div>
           <div class="video-card-info">
@@ -1168,7 +1172,7 @@
         <!-- Review 2: Layer Booster Experience -->
         <div class="video-card" onclick="document.getElementById('checkout-form-section').scrollIntoView({behavior: 'smooth'})">
           <div class="video-thumb-wrap">
-            <img src="../../assets/images/review-layer.jpg" alt="Layer Booster Hen Farm Review" loading="lazy">
+            <img src="../../assets/images/review-layer.webp" alt="Layer Booster Hen Farm Review" width="400" height="223" loading="lazy" decoding="async">
             <div class="play-btn-overlay"></div>
           </div>
           <div class="video-card-info">
@@ -1303,7 +1307,7 @@
       <h3 class="section-pill-title">ব্যবহার বিধিঃ</h3>
 
       <div class="usage-card">
-        <img src="../../assets/images/chicks-feeder.jpg" alt="Poultry Feeder and Chicks Drinking" class="usage-card-img" loading="lazy">
+        <img src="../../assets/images/chicks-feeder.webp" alt="Poultry Feeder and Chicks Drinking" class="usage-card-img" width="800" height="447" loading="lazy" decoding="async">
         <div class="usage-instruction-text">
           ১০০০ মুরগির জন্য ১০০ গ্রাম পাউডার পানির সাথে মিশিয়ে ব্যবহার করতে হবে। পরবর্তী দিন থেকে ৫ গ্রাম হারে বেশি ব্যবহার করতে হবে।
         </div>
@@ -1362,7 +1366,7 @@
                 <!-- Option 1: Broiler Booster -->
                 <div class="product-option-card selected" data-variant="broiler-1kg" data-product="broiler-booster" data-price="2300" data-name="Broiler Booster (১ কেজি)">
                   <input type="checkbox" name="product-select-cb" value="broiler-1kg" class="prod-radio" checked style="accent-color: var(--btn-red);">
-                  <img src="../../pic/Broiler.png" alt="Broiler Booster" class="prod-thumb" onerror="this.src='../../assets/images/broiler-booster-product.png'">
+                  <img src="../../assets/images/broiler-booster-product.webp" alt="Broiler Booster" class="prod-thumb" width="50" height="75" loading="lazy" decoding="async">
                   <div class="prod-meta">
                     <div class="prod-title">Broiler Booster (১ কেজি)</div>
                     <div class="prod-price">৳২,৩০০</div>
@@ -1379,7 +1383,7 @@
                 <!-- Option 2: Layer Booster -->
                 <div class="product-option-card" data-variant="layer-1kg" data-product="layer-booster" data-price="2300" data-name="Layer Booster (১ কেজি)">
                   <input type="checkbox" name="product-select-cb" value="layer-1kg" class="prod-radio" style="accent-color: var(--btn-red);">
-                  <img src="../../pic/Layer.png" alt="Layer Booster" class="prod-thumb" onerror="this.src='../../assets/images/layer-booster-product.png'">
+                  <img src="../../assets/images/layer-booster-product.webp" alt="Layer Booster" class="prod-thumb" width="50" height="75" loading="lazy" decoding="async">
                   <div class="prod-meta">
                     <div class="prod-title">Layer Booster (১ কেজি)</div>
                     <div class="prod-price">৳২,৩০০</div>
