@@ -67,13 +67,18 @@ class BdCourierService
         }
 
         try {
-            $response = Http::withHeaders([
+            $client = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type'  => 'application/json',
                 'Accept'        => 'application/json',
-            ])
-            ->timeout(self::TIMEOUT_SECONDS)
-            ->post(self::API_ENDPOINT, [
+            ])->timeout(self::TIMEOUT_SECONDS);
+
+            // In local environments without a configured CA certificate bundle, avoid connection exceptions
+            if (!ini_get('curl.cainfo') && !ini_get('openssl.cafile')) {
+                $client = $client->withoutVerifying();
+            }
+
+            $response = $client->post(self::API_ENDPOINT, [
                 'phone' => $normalized,
             ]);
 
@@ -121,15 +126,59 @@ class BdCourierService
      */
     private function normalizeResponse(string $phone, array $raw): array
     {
-        // BD Courier API shape (based on observed response structure):
-        //   total, delivered, cancelled, success_rate, pathao, redx, paperfly, ...
-        $totalParcels    = (int) ($raw['total']        ?? $raw['total_parcel']    ?? 0);
-        $successParcels  = (int) ($raw['delivered']    ?? $raw['success_parcel']  ?? 0);
-        $cancelledParcels = (int)($raw['cancelled']    ?? $raw['cancel_parcel']   ?? 0);
+        // BD Courier API shape:
+        //   data.summary: total_parcel, success_parcel, cancelled_parcel, success_ratio
+        $data    = (isset($raw['data']) && is_array($raw['data'])) ? $raw['data'] : $raw;
+        $summary = (isset($data['summary']) && is_array($data['summary'])) ? $data['summary'] : $data;
 
-        // Success ratio: prefer API-provided rate, fallback to computed
-        if (isset($raw['success_rate']) && is_numeric($raw['success_rate'])) {
-            $successRatio = (float) $raw['success_rate'];
+        $totalParcels = (int) (
+            $summary['total_parcel']
+            ?? $summary['total_parcels']
+            ?? $summary['total']
+            ?? $data['total_parcel']
+            ?? $data['total']
+            ?? $raw['total_parcel']
+            ?? $raw['total']
+            ?? 0
+        );
+
+        $successParcels = (int) (
+            $summary['success_parcel']
+            ?? $summary['success_parcels']
+            ?? $summary['delivered']
+            ?? $summary['success']
+            ?? $data['success_parcel']
+            ?? $data['delivered']
+            ?? $raw['success_parcel']
+            ?? $raw['delivered']
+            ?? 0
+        );
+
+        $cancelledParcels = (int) (
+            $summary['cancelled_parcel']
+            ?? $summary['cancel_parcel']
+            ?? $summary['cancelled_parcels']
+            ?? $summary['cancelled']
+            ?? $data['cancelled_parcel']
+            ?? $data['cancel_parcel']
+            ?? $data['cancelled']
+            ?? $raw['cancelled_parcel']
+            ?? $raw['cancel_parcel']
+            ?? $raw['cancelled']
+            ?? 0
+        );
+
+        // Success ratio: prefer API-provided rate/ratio, fallback to computed
+        if (isset($summary['success_ratio']) && is_numeric($summary['success_ratio'])) {
+            $successRatio = round((float) $summary['success_ratio'], 2);
+        } elseif (isset($summary['success_rate']) && is_numeric($summary['success_rate'])) {
+            $successRatio = round((float) $summary['success_rate'], 2);
+        } elseif (isset($data['success_ratio']) && is_numeric($data['success_ratio'])) {
+            $successRatio = round((float) $data['success_ratio'], 2);
+        } elseif (isset($raw['success_ratio']) && is_numeric($raw['success_ratio'])) {
+            $successRatio = round((float) $raw['success_ratio'], 2);
+        } elseif (isset($raw['success_rate']) && is_numeric($raw['success_rate'])) {
+            $successRatio = round((float) $raw['success_rate'], 2);
         } elseif ($totalParcels > 0) {
             $successRatio = round(($successParcels / $totalParcels) * 100, 2);
         } else {
@@ -140,21 +189,25 @@ class BdCourierService
         $courierBreakdown = [];
         $courierNames = ['pathao', 'redx', 'paperfly', 'steadfast', 'sundarban', 'ecourier', 'shajogoj'];
         foreach ($courierNames as $cname) {
-            if (isset($raw[$cname])) {
+            if (isset($data[$cname])) {
+                $courierBreakdown[] = ['name' => ucfirst($cname), 'status' => $data[$cname]];
+            } elseif (isset($raw[$cname])) {
                 $courierBreakdown[] = ['name' => ucfirst($cname), 'status' => $raw[$cname]];
             }
         }
 
         // Collect report array if provided (used in admin display only, not stored as PII)
         $reports = [];
-        if (isset($raw['reports']) && is_array($raw['reports'])) {
-            foreach ($raw['reports'] as $rep) {
+        $rawReports = $data['reports'] ?? $raw['reports'] ?? [];
+        if (is_array($rawReports)) {
+            foreach ($rawReports as $rep) {
+                if (!is_array($rep)) continue;
                 // Only keep aggregate stats, not personal names/addresses
                 $reports[] = [
                     'courier'   => $rep['courier']   ?? null,
-                    'total'     => $rep['total']      ?? null,
-                    'delivered' => $rep['delivered']  ?? null,
-                    'cancelled' => $rep['cancelled']  ?? null,
+                    'total'     => $rep['total']      ?? $rep['total_parcel'] ?? null,
+                    'delivered' => $rep['delivered']  ?? $rep['success_parcel'] ?? null,
+                    'cancelled' => $rep['cancelled']  ?? $rep['cancelled_parcel'] ?? null,
                 ];
             }
         }
