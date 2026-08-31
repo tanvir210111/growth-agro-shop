@@ -1092,4 +1092,69 @@ class AdminAnalyticsController extends Controller
             'orders'  => $mapped,
         ]);
     }
+
+    /**
+     * 12. POST/GET /api/admin/fraud/courier-check
+     * Live BD Courier check endpoint for admin panel.
+     * Uses existing Laravel authenticateAdmin() guard.
+     */
+    public function courierCheck(Request $request): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $phone = trim((string)($request->input('phone') ?: $request->query('phone', '')));
+        if (empty($phone)) {
+            return response()->json(['success' => false, 'message' => 'Phone number is required.'], 400);
+        }
+
+        $courierService = app(\App\Services\BdCourierService::class);
+        $result = $courierService->check($phone);
+
+        if (!$result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Courier check failed.',
+            ]);
+        }
+
+        $total     = (int) $result['total_parcels'];
+        $delivered = (int) $result['success_parcels'];
+        $cancelled = (int) $result['cancelled_parcels'];
+        $ratio     = (float) $result['success_ratio'];
+
+        $level = 'safe';
+        $label = 'বিশ্বস্ত কাস্টমার (High Trust)';
+        if ($total === 0) {
+            $level = 'new_customer';
+            $label = 'নতুন কাস্টমার (No Delivery History)';
+        } elseif ($ratio < 50) {
+            $level = 'high_risk';
+            $label = 'ঝুঁকিপূর্ণ কাস্টমার (High Cancellation Risk)';
+        } elseif ($ratio <= 80) {
+            $level = 'medium';
+            $label = 'মাঝারি ঝুঁকি (Moderate Trust)';
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'phone'                 => $phone,
+                'total_parcels'         => $total,
+                'delivered'             => $delivered,
+                'cancelled_or_returned' => $cancelled,
+                'success_rate'          => $ratio,
+                'courier_breakdown'     => $result['courier_breakdown'] ?? [],
+                'reports'               => $result['reports'] ?? [],
+                'heuristic_trust_score' => [
+                    'level'        => $level,
+                    'label'        => $label,
+                    'success_rate' => $ratio,
+                    'methodology'  => 'BD Courier Live Multi-Courier Delivery Verification',
+                ],
+            ],
+            'message' => 'OK',
+        ]);
+    }
 }

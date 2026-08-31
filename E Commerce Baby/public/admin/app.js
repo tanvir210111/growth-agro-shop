@@ -1743,11 +1743,13 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
 
   const token = localStorage.getItem('admin_token') || 'adm_session';
 
-  fetch('/api/courier/check', {
+  fetch('/api/admin/fraud/courier-check', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'x-admin-token': token
     },
     body: JSON.stringify({ phone: phone })
   })
@@ -1815,11 +1817,26 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
             </div>
             <div style="padding:12px;font-size:12.5px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               ${(d.courier_breakdown && d.courier_breakdown.length > 0) ? 
-                d.courier_breakdown.map(c => `<div>📦 ${c.name}: <b>${c.status}</b></div>`).join('') :
+                d.courier_breakdown.map(c => {
+                  let statusText = typeof c.status === 'object' && c.status !== null
+                    ? `${c.status.success_parcel || c.status.delivered || 0}/${c.status.total_parcel || c.status.total || 0} (${c.status.success_ratio || 0}%)`
+                    : (c.status || 'Checked');
+                  return `<div>📦 ${c.name}: <b>${statusText}</b></div>`;
+                }).join('') :
                 `<div>🚀 Steadfast: <b>Checked</b></div><div>🚚 Pathao: <b>Checked</b></div><div>📦 RedX: <b>Checked</b></div><div>📮 Paperfly: <b>Checked</b></div>`
               }
             </div>
           </div>
+
+          ${(d.reports && d.reports.length > 0) ? `
+          <div style="border:1px solid #FECACA;background:#FFF5F5;border-radius:6px;overflow:hidden;margin-bottom:16px;">
+            <div style="background:#FEE2E2;color:#991B1B;padding:8px 14px;font-weight:700;font-size:12.5px;">
+              ⚠️ Merchant Fraud / Issue Reports (${d.reports.length})
+            </div>
+            <div style="padding:10px 14px;font-size:12px;color:#7F1D1D;max-height:100px;overflow-y:auto;">
+              ${d.reports.map(r => `<div>• <b>${r.courier || 'Report'}:</b> ${r.delivered !== null && r.total !== null ? `${r.delivered}/${r.total} delivered` : 'Reported issue'}</div>`).join('')}
+            </div>
+          </div>` : ''}
 
           <div style="text-align:right;">
             <button class="btn-primary-teal btn-close-modal" style="padding:8px 20px;">ঠিক আছে (Close)</button>

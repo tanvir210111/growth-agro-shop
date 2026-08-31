@@ -81,6 +81,7 @@ Route::get('/api/admin/analytics/journey/{order_id}', [AdminAnalyticsController:
 // Phase 5B: Fraud Detection API endpoints (admin-authenticated, source-agnostic)
 Route::get('/api/admin/fraud/overview', [AdminAnalyticsController::class, 'fraudOverview'])->name('api.admin.fraud.overview');
 Route::get('/api/admin/fraud/orders/{order_id}', [AdminAnalyticsController::class, 'fraudOrderDetail'])->name('api.admin.fraud.orders.detail');
+Route::match(['get', 'post'], '/api/admin/fraud/courier-check', [AdminAnalyticsController::class, 'courierCheck'])->name('api.admin.fraud.courier-check');
 
 // Admin Orders list (used by admin panel JS — includes fraud fields)
 Route::get('/api/orders', [AdminAnalyticsController::class, 'ordersIndex'])->name('api.orders.index');
