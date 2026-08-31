@@ -54,3 +54,13 @@ Route::post('/api/auth/login', [AdminAuthController::class, 'login'])->name('api
 Route::get('/api/admin/me', [AdminAuthController::class, 'me'])->name('api.admin.me');
 Route::post('/api/admin/logout', [AdminAuthController::class, 'logout'])->name('api.admin.logout');
 
+// Growth Agro Chicken Booster Campaign Landing Page
+Route::get('/products/chicken-booster', function () {
+    return response()->file(public_path('products/chicken-booster/index.html'));
+})->name('products.chicken-booster');
+
+Route::get('/products/chicken-booster/{any}', function () {
+    return response()->file(public_path('products/chicken-booster/index.html'));
+})->where('any', '.*');
+
+
