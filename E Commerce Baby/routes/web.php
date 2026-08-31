@@ -45,3 +45,12 @@ Route::get('/admin', function () {
 Route::get('/admin/login', function () {
     return response()->file(public_path('admin/index.html'));
 });
+
+// Database-Backed Admin Authentication Endpoints
+use App\Http\Controllers\Api\AdminAuthController;
+
+Route::post('/api/admin/login', [AdminAuthController::class, 'login'])->name('api.admin.login');
+Route::post('/api/auth/login', [AdminAuthController::class, 'login'])->name('api.auth.login');
+Route::get('/api/admin/me', [AdminAuthController::class, 'me'])->name('api.admin.me');
+Route::post('/api/admin/logout', [AdminAuthController::class, 'logout'])->name('api.admin.logout');
+

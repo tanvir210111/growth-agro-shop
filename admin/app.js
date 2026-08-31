@@ -93,44 +93,94 @@ function initAuthCheck() {
   const loginSection = document.getElementById('loginSection');
   const appSection = document.getElementById('appSection');
 
-  if (APP_STATE.currentUser) {
+  if (APP_STATE.currentUser && APP_STATE.currentUser.email) {
     if (loginSection) loginSection.style.display = 'none';
     if (appSection) appSection.style.display = 'flex';
   } else {
+    APP_STATE.currentUser = null;
     if (loginSection) loginSection.style.display = 'flex';
     if (appSection) appSection.style.display = 'none';
   }
 }
 
 window.handleLogin = function(email, pass) {
-  const loginEmail = email || (document.getElementById('loginEmail') ? document.getElementById('loginEmail').value.trim() : 'admin@gmail.com');
-  const loginPass = pass || (document.getElementById('loginPass') ? document.getElementById('loginPass').value.trim() : 'admin123');
+  const emailInput = document.getElementById('loginEmail');
+  const passInput = document.getElementById('loginPass');
+  const loginEmail = (email !== undefined && email !== null) ? String(email).trim() : (emailInput ? emailInput.value.trim() : '');
+  const loginPass = (pass !== undefined && pass !== null) ? String(pass).trim() : (passInput ? passInput.value.trim() : '');
 
-  const user = { name: "Admin", email: loginEmail || 'admin@gmail.com', role: "Super Admin" };
-  APP_STATE.currentUser = user;
-  localStorage.setItem('admin_user', JSON.stringify(user));
+  const errorAlert = document.getElementById('loginErrorAlert');
+  const submitBtn = document.getElementById('loginSubmitBtn');
 
-  // Obtain secure JWT token in background
-  fetch('/api/auth/login', {
+  if (errorAlert) {
+    errorAlert.style.display = 'none';
+    errorAlert.textContent = '';
+  }
+
+  if (!loginEmail || !loginPass) {
+    const msg = 'ইমেইল এবং পাসওয়ার্ড উভয়ই আবশ্যক।';
+    if (errorAlert) {
+      errorAlert.textContent = msg;
+      errorAlert.style.display = 'block';
+    }
+    showToast(msg, 'error');
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'যাচাই করা হচ্ছে...';
+  }
+
+  // Real Database Authentication API call to Laravel backend
+  fetch('/api/admin/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
     body: JSON.stringify({ email: loginEmail, password: loginPass })
   })
-  .then(r => r.json())
-  .then(data => {
-    if (data && data.token) {
-      localStorage.setItem('admin_token', data.token);
-      loadServerOrders();
+  .then(async (response) => {
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'ভুল ইমেইল বা পাসওয়ার্ড।');
     }
-  })
-  .catch(() => {});
 
-  initAuthCheck();
-  loadServerOrders();
-  showToast('লগইন সফল হয়েছে! অ্যাডমিন প্যানেলে স্বাগতম।');
+    // Authenticated successfully against database
+    APP_STATE.currentUser = data.user;
+    localStorage.setItem('admin_user', JSON.stringify(data.user));
+
+    if (errorAlert) errorAlert.style.display = 'none';
+    initAuthCheck();
+    loadServerOrders();
+    showToast('লগইন সফল হয়েছে! স্বাগতম ' + (data.user.name || 'Admin'));
+  })
+  .catch((err) => {
+    // Crucial: Reject invalid credentials and NEVER open dashboard
+    APP_STATE.currentUser = null;
+    localStorage.removeItem('admin_user');
+    const errMsg = err.message || 'ভুল ইমেইল বা পাসওয়ার্ড।';
+    if (errorAlert) {
+      errorAlert.textContent = errMsg;
+      errorAlert.style.display = 'block';
+    }
+    showToast(errMsg, 'error');
+  })
+  .finally(() => {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Login ➔';
+    }
+  });
 };
 
 window.handleLogout = function() {
+  fetch('/api/admin/logout', {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' }
+  }).catch(() => {});
+
   localStorage.removeItem('admin_user');
   localStorage.removeItem('admin_token');
   APP_STATE.currentUser = null;
@@ -1536,15 +1586,6 @@ function bindGlobalEvents() {
       const email = document.getElementById('loginEmail').value;
       const pass = document.getElementById('loginPass').value;
       handleLogin(email, pass);
-    });
-  }
-
-  const demoFill = document.getElementById('demoFillBtn');
-  if (demoFill) {
-    demoFill.addEventListener('click', () => {
-      document.getElementById('loginEmail').value = 'admin@gmail.com';
-      document.getElementById('loginPass').value = 'admin123';
-      handleLogin('admin@gmail.com', 'admin123');
     });
   }
 

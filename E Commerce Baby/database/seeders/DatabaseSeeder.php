@@ -19,7 +19,27 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Admin Account
+        // 1. Admin Accounts
+        Admin::updateOrCreate(
+            ['email' => 'admin@growthagro.shop'],
+            [
+                'name' => 'Growth Agro Admin',
+                'password' => Hash::make('Admin@Growth2026'),
+                'role' => 'super_admin',
+                'avatar' => null,
+            ]
+        );
+
+        Admin::updateOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('admin123'),
+                'role' => 'super_admin',
+                'avatar' => null,
+            ]
+        );
+
         Admin::updateOrCreate(
             ['email' => 'captaincrown@admin.com'],
             [

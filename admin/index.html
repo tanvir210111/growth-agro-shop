@@ -42,16 +42,12 @@
             <input type="checkbox" checked> Remember me
           </label>
           <a href="#" style="color:var(--primary-teal);font-size:13px;text-decoration:none;">Forgot password?</a>
-        </div>
+        <div id="loginErrorAlert" style="display:none;padding:10px 14px;margin-bottom:14px;border-radius:6px;background:#FEE2E2;border:1px solid #F87171;color:#B91C1C;font-size:13px;font-weight:600;"></div>
 
-        <button type="button" class="btn-login" onclick="handleLogin();">
+        <button type="submit" class="btn-login" id="loginSubmitBtn">
           Login ➔
         </button>
       </form>
-
-      <div class="quick-demo-login">
-        💡 Click here to <span id="demoFillBtn" onclick="handleLogin('admin@gmail.com', 'admin123');" style="cursor:pointer;font-weight:700;text-decoration:underline;">1-Click Login</span>
-      </div>
     </div>
   </div>
 
