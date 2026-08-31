@@ -4,7 +4,7 @@
 // ==============================================================================
 
 const APP_STATE = {
-  currentUser: JSON.parse(localStorage.getItem('admin_user')) || { name: "Admin", email: "admin@gmail.com", role: "Admin" },
+  currentUser: JSON.parse(localStorage.getItem('admin_user')) || null,
   activeFilter: 'All',
   activeView: 'dashboard',
   searchQuery: '',
