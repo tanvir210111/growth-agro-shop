@@ -122,6 +122,13 @@ class CheckoutService
                 'note' => $order['notes'],
             ]);
 
+            // Attach Unified Tracking Attribution
+            try {
+                app(\App\Services\TrackingService::class)->attachOrderAttribution($dbOrder);
+            } catch (\Throwable $te) {
+                // Non-blocking tracking safe catch
+            }
+
             foreach ($items as $it) {
                 \App\Models\OrderItem::create([
                     'order_id' => $dbOrder->id,

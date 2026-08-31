@@ -771,6 +771,12 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // Forward any Laravel-backed admin, auth, or tracking APIs to Laravel
+    if (reqPath.startsWith('/api/admin/') || reqPath.startsWith('/api/tracking/') || reqPath.startsWith('/api/auth/')) {
+      const proxied = await proxyToLaravel(req, res, reqPath, parsedUrl.search);
+      if (proxied) return;
+    }
+
     // Unmatched API route
     return sendJson(res, 404, { success: false, error: 'API route not found' });
   }

@@ -19,6 +19,18 @@ class Order extends Model
         'payment_method',
         'status',
         'note',
+        'visitor_id',
+        'session_id',
+        'source_type',
+        'landing_page',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_content',
+        'referrer_domain',
+        'click_id',
+        'device_type',
+        'ip_address',
     ];
 
     protected $casts = [
@@ -26,11 +38,23 @@ class Order extends Model
         'subtotal' => 'float',
         'discount' => 'float',
         'total_amount' => 'float',
+        'visitor_id' => 'integer',
+        'session_id' => 'integer',
     ];
 
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function visitor()
+    {
+        return $this->belongsTo(TrackingVisitor::class, 'visitor_id');
+    }
+
+    public function session()
+    {
+        return $this->belongsTo(TrackingSession::class, 'session_id');
     }
 
     public static function generateInvoiceNo(): string

@@ -64,4 +64,29 @@
         </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+    if (window.GrowthAgroTracking) {
+        @if(!empty($currentCollection['handle']))
+            window.GrowthAgroTracking.track('category_view', {
+                entity_type: 'category',
+                entity_id: '{{ $currentCollection["handle"] }}',
+                properties: { title: '{{ $currentCollection["title"] }}', items_count: {{ count($products) }} }
+            });
+        @endif
+
+        @if(request()->filled('search') || request()->filled('q'))
+            window.GrowthAgroTracking.track('search', {
+                entity_type: 'search',
+                entity_id: '{{ request("search") ?: request("q") }}',
+                properties: {
+                    query: '{{ request("search") ?: request("q") }}',
+                    results_count: {{ count($products) }}
+                }
+            });
+        @endif
+    }
+</script>
+@endpush
 @endsection

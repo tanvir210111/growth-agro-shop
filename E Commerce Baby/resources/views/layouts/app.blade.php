@@ -65,6 +65,9 @@
     <!-- Toast Notification Container -->
     <div id="toastNotification" class="toast-notification" style="display: none;"></div>
 
+    <!-- Global Unified Tracking Helper -->
+    <script src="{{ asset('js/growth-agro-tracking.js') }}?v={{ time() }}"></script>
+
     <!-- Global Frontend JavaScript -->
     <script src="{{ asset('js/baby-fashion.js') }}?v={{ time() }}"></script>
     

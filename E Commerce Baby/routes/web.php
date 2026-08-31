@@ -63,4 +63,16 @@ Route::get('/products/chicken-booster/{any}', function () {
     return response()->file(public_path('products/chicken-booster/index.html'));
 })->where('any', '.*');
 
+// Unified Tracking Event Ingestion Endpoint
+use App\Http\Controllers\Api\TrackingController;
+Route::post('/api/tracking/event', [TrackingController::class, 'recordEvent'])->name('api.tracking.event');
+
+// Central Admin Analytics & Attribution Endpoints
+use App\Http\Controllers\Api\AdminAnalyticsController;
+Route::get('/api/admin/analytics/overview', [AdminAnalyticsController::class, 'overview'])->name('api.admin.analytics.overview');
+Route::get('/api/admin/analytics/funnel', [AdminAnalyticsController::class, 'funnel'])->name('api.admin.analytics.funnel');
+Route::get('/api/admin/analytics/attribution', [AdminAnalyticsController::class, 'attribution'])->name('api.admin.analytics.attribution');
+Route::get('/api/admin/analytics/campaigns', [AdminAnalyticsController::class, 'campaigns'])->name('api.admin.analytics.campaigns');
+Route::get('/api/admin/analytics/landing-pages', [AdminAnalyticsController::class, 'landingPages'])->name('api.admin.analytics.landing-pages');
+Route::get('/api/admin/analytics/timeline', [AdminAnalyticsController::class, 'timeline'])->name('api.admin.analytics.timeline');
 

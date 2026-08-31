@@ -1532,9 +1532,19 @@
   <!-- ==========================================================================
        10. CLIENT-SIDE EVENT DISPATCHER & PRIVACY-COMPLIANT ORDER ENGINE
        ========================================================================== -->
+  <script src="/js/growth-agro-tracking.js"></script>
   <script>
   (function() {
     "use strict";
+
+    // Initialize Growth Agro Unified Landing Page Tracking
+    if (window.GrowthAgroTracking) {
+      window.GrowthAgroTracking.track('page_view', {
+        entity_type: 'landing_page',
+        entity_id: 'chicken-booster',
+        page_path: '/products/chicken-booster/'
+      });
+    }
 
     const CATALOG = {
       "broiler-1kg": { productId: "chicken-booster", variantId: "broiler-1kg", sku: "CB-AGRO-01", name: "Broiler Booster (১ কেজি)", price: 2300 },
@@ -1901,6 +1911,20 @@
 
           TrackingBus.trackPurchase(order);
 
+          // Growth Agro Unified Purchase Event Tracking
+          if (window.GrowthAgroTracking) {
+            window.GrowthAgroTracking.track('purchase', {
+              entity_type: 'order',
+              entity_id: orderNo,
+              event_value: totalVal,
+              properties: {
+                items_count: totalQuantity,
+                currency: 'BDT',
+                landing_page: '/products/chicken-booster/'
+              }
+            });
+          }
+
           // Show Success Modal
           modalOrderNumber.textContent = orderNo;
           modalProductName.textContent = primaryName;
@@ -1937,11 +1961,65 @@
     window.selectAndScroll = function(variantKey) {
       if (variantKey) {
         variantQuantities[variantKey] = Math.max(1, variantQuantities[variantKey] || 0);
+        if (window.GrowthAgroTracking) {
+          window.GrowthAgroTracking.trackCta('hero-card-' + variantKey, 'chicken-booster');
+        }
       }
       recalculate();
       const checkout = document.getElementById('checkout-form-section');
       if (checkout) checkout.scrollIntoView({ behavior: 'smooth' });
     };
+
+    // Growth Agro Unified CTA Click Tracking
+    document.querySelectorAll('.btn-header-order').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (window.GrowthAgroTracking) window.GrowthAgroTracking.trackCta('btn-header-order', 'chicken-booster');
+      }, { passive: true });
+    });
+
+    document.querySelectorAll('.btn-red-cta').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (window.GrowthAgroTracking) window.GrowthAgroTracking.trackCta('btn-hero-order', 'chicken-booster');
+      }, { passive: true });
+    });
+
+    if (btnSubmit) {
+      btnSubmit.addEventListener('click', function() {
+        if (window.GrowthAgroTracking) window.GrowthAgroTracking.trackCta('btn-checkout-submit', 'chicken-booster');
+      }, { passive: true });
+    }
+
+    // Checkout Started tracking (fired once upon interacting with checkout form)
+    var checkoutStartedFired = false;
+    function fireCheckoutStarted() {
+      if (!checkoutStartedFired) {
+        checkoutStartedFired = true;
+        if (window.GrowthAgroTracking) {
+          window.GrowthAgroTracking.track('checkout_started', {
+            entity_type: 'landing_page',
+            entity_id: 'chicken-booster',
+            page_path: '/products/chicken-booster/',
+            properties: {
+              landing_page: '/products/chicken-booster/'
+            }
+          });
+        }
+      }
+    }
+
+    if (form) {
+      form.addEventListener('focusin', fireCheckoutStarted, { once: true, passive: true });
+    }
+    var checkoutSectionEl = document.getElementById('checkout-form-section');
+    if (checkoutSectionEl && window.IntersectionObserver) {
+      var observer = new IntersectionObserver(function(entries) {
+        if (entries[0].isIntersecting) {
+          fireCheckoutStarted();
+          observer.disconnect();
+        }
+      }, { threshold: 0.2 });
+      observer.observe(checkoutSectionEl);
+    }
 
     // Initial calculation
     recalculate();

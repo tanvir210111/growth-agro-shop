@@ -1539,6 +1539,7 @@ window.switchView = function(viewName) {
 
   // View-specific renders
   if (viewName === 'dashboard') renderMonthlyChart();
+  if (viewName === 'analytics') loadAnalyticsDashboard();
   if (viewName === 'orders') renderOrdersTable();
   if (viewName === 'income') renderCreditTable();
   if (viewName === 'products') renderProductsTable();
@@ -1862,3 +1863,326 @@ window.testBdCourierConnection = function() {
   });
 };
 
+// ==============================================================================
+// 14. UNIFIED ANALYTICS & ATTRIBUTION MODULE
+// ==============================================================================
+let currentAnalyticsRange = 'last_7_days';
+let customAnalyticsStartDate = null;
+let customAnalyticsEndDate = null;
+
+window.changeAnalyticsRange = function(range, btn) {
+  currentAnalyticsRange = range;
+  document.querySelectorAll('.btn-analytics-filter').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const customRow = document.getElementById('analyticsCustomDateRow');
+  if (customRow) customRow.style.display = 'none';
+  loadAnalyticsDashboard();
+};
+
+window.toggleAnalyticsCustomRange = function(btn) {
+  const customRow = document.getElementById('analyticsCustomDateRow');
+  if (!customRow) return;
+  const isVisible = customRow.style.display === 'flex';
+  customRow.style.display = isVisible ? 'none' : 'flex';
+  if (!isVisible) {
+    document.querySelectorAll('.btn-analytics-filter').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+  }
+};
+
+window.applyAnalyticsCustomRange = function() {
+  const start = document.getElementById('analyticsStartDate')?.value;
+  const end = document.getElementById('analyticsEndDate')?.value;
+  if (!start || !end) {
+    alert('Please select both Start Date and End Date.');
+    return;
+  }
+  if (start > end) {
+    alert('Start Date cannot be later than End Date.');
+    return;
+  }
+  currentAnalyticsRange = 'custom';
+  customAnalyticsStartDate = start;
+  customAnalyticsEndDate = end;
+  loadAnalyticsDashboard();
+};
+
+window.refreshAnalyticsData = function() {
+  loadAnalyticsDashboard();
+};
+
+window.loadAnalyticsDashboard = async function() {
+  let query = `range=${encodeURIComponent(currentAnalyticsRange)}`;
+  if (currentAnalyticsRange === 'custom' && customAnalyticsStartDate && customAnalyticsEndDate) {
+    query += `&start_date=${encodeURIComponent(customAnalyticsStartDate)}&end_date=${encodeURIComponent(customAnalyticsEndDate)}`;
+  }
+
+  const token = localStorage.getItem('admin_token') || 'adm_session';
+  const headers = {
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token
+  };
+
+  try {
+    // Fetch all analytics datasets in parallel
+    const [overviewRes, funnelRes, attrRes, campRes, lpRes, timeRes] = await Promise.all([
+      fetch(`/api/admin/analytics/overview?${query}`, { headers }),
+      fetch(`/api/admin/analytics/funnel?${query}`, { headers }),
+      fetch(`/api/admin/analytics/attribution?${query}`, { headers }),
+      fetch(`/api/admin/analytics/campaigns?${query}`, { headers }),
+      fetch(`/api/admin/analytics/landing-pages?${query}`, { headers }),
+      fetch(`/api/admin/analytics/timeline?${query}`, { headers }),
+    ]);
+
+    if (overviewRes.status === 401) {
+      console.warn('Analytics API Unauthorized: Admin session required.');
+      return;
+    }
+
+    const [overviewData, funnelData, attrData, campData, lpData, timeData] = await Promise.all([
+      overviewRes.json(),
+      funnelRes.json(),
+      attrRes.json(),
+      campRes.json(),
+      lpRes.json(),
+      timeRes.json(),
+    ]);
+
+    if (overviewData && overviewData.success) renderAnalyticsKPIs(overviewData);
+    if (funnelData && funnelData.success) renderAnalyticsFunnel(funnelData);
+    if (attrData && attrData.success) renderAnalyticsAttribution(attrData);
+    if (campData && campData.success) renderAnalyticsCampaigns(campData);
+    if (lpData && lpData.success) renderAnalyticsLandingPages(lpData);
+    if (timeData && timeData.success) renderAnalyticsTimeline(timeData);
+
+  } catch (err) {
+    console.error('[Analytics Error]', err);
+  }
+};
+
+function formatChangeDelta(change) {
+  if (change === null || change === undefined) return '<span style="color:#718096;">vs previous</span>';
+  const num = Number(change);
+  if (num > 0) {
+    return `<span style="color:#38A169; font-weight:700;">↑ +${num.toFixed(1)}%</span> vs previous`;
+  } else if (num < 0) {
+    return `<span style="color:#E53E3E; font-weight:700;">↓ ${num.toFixed(1)}%</span> vs previous`;
+  }
+  return `<span style="color:#718096;">0.0% vs previous</span>`;
+}
+
+function renderAnalyticsKPIs(data) {
+  const m = data.metrics || {};
+  const c = data.comparison || {};
+
+  const elVisitors = document.getElementById('kpiVisitors');
+  const elSessions = document.getElementById('kpiSessions');
+  const elPageViews = document.getElementById('kpiPageViews');
+  const elCtaClicks = document.getElementById('kpiCtaClicks');
+  const elOrders = document.getElementById('kpiOrders');
+  const elRevenue = document.getElementById('kpiRevenue');
+  const elCvr = document.getElementById('kpiCvr');
+  const elAov = document.getElementById('kpiAov');
+
+  if (elVisitors) elVisitors.textContent = (m.unique_visitors || 0).toLocaleString();
+  if (elSessions) elSessions.textContent = (m.sessions || 0).toLocaleString();
+  if (elPageViews) elPageViews.textContent = (m.page_views || 0).toLocaleString();
+  if (elCtaClicks) elCtaClicks.textContent = (m.cta_clicks || 0).toLocaleString();
+  if (elOrders) elOrders.textContent = (m.orders || 0).toLocaleString();
+  if (elRevenue) elRevenue.textContent = '৳ ' + (m.revenue || 0).toLocaleString();
+  if (elCvr) elCvr.textContent = (m.conversion_rate || 0).toFixed(2) + '%';
+  if (elAov) elAov.textContent = '৳ ' + (m.average_order_value || 0).toLocaleString();
+
+  // Deltas
+  const dVisitors = document.getElementById('kpiVisitorsDelta');
+  const dSessions = document.getElementById('kpiSessionsDelta');
+  const dPageViews = document.getElementById('kpiPageViewsDelta');
+  const dCtaClicks = document.getElementById('kpiCtaClicksDelta');
+  const dOrders = document.getElementById('kpiOrdersDelta');
+  const dRevenue = document.getElementById('kpiRevenueDelta');
+  const dCvr = document.getElementById('kpiCvrDelta');
+  const dAov = document.getElementById('kpiAovDelta');
+
+  if (dVisitors) dVisitors.innerHTML = formatChangeDelta(c.unique_visitors?.change);
+  if (dSessions) dSessions.innerHTML = formatChangeDelta(c.sessions?.change);
+  if (dPageViews) dPageViews.innerHTML = formatChangeDelta(c.page_views?.change);
+  if (dCtaClicks) dCtaClicks.innerHTML = formatChangeDelta(c.cta_clicks?.change);
+  if (dOrders) dOrders.innerHTML = formatChangeDelta(c.orders?.change);
+  if (dRevenue) dRevenue.innerHTML = formatChangeDelta(c.revenue?.change);
+  if (dCvr) dCvr.innerHTML = formatChangeDelta(c.conversion_rate?.change);
+  if (dAov) dAov.innerHTML = formatChangeDelta(c.average_order_value?.change);
+}
+
+function renderAnalyticsFunnel(data) {
+  const container = document.getElementById('analyticsFunnelContainer');
+  const totalCvrEl = document.getElementById('funnelTotalCvr');
+  if (!container) return;
+
+  const stages = data.funnel || [];
+  if (stages.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#A0AEC0;">No funnel activity recorded in this period.</div>';
+    return;
+  }
+
+  const topCount = Math.max(1, stages[0].count || 1);
+  const lastStage = stages[stages.length - 1];
+  if (totalCvrEl && lastStage) {
+    totalCvrEl.textContent = `Overall CVR: ${(lastStage.overall_conversion_rate || 0).toFixed(2)}%`;
+  }
+
+  container.innerHTML = stages.map(s => {
+    const widthPct = Math.max(2, Math.min(100, (s.count / topCount) * 100));
+    return `
+      <div class="funnel-step-row">
+        <div class="funnel-step-label">${s.stage}</div>
+        <div class="funnel-step-bar-wrap">
+          <div class="funnel-step-bar-fill" style="width: ${widthPct}%;"></div>
+        </div>
+        <div class="funnel-step-count">${(s.count || 0).toLocaleString()}</div>
+        <div class="funnel-step-percent">${s.step_conversion_rate !== null ? s.step_conversion_rate.toFixed(1) + '%' : '-'}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAnalyticsAttribution(data) {
+  // 1. Source Split
+  const split = data.source_split || {};
+  const sf = split.storefront || { orders: 0, revenue: 0 };
+  const lp = split.landing_page || { orders: 0, revenue: 0 };
+
+  const elSfOrders = document.getElementById('splitStorefrontOrders');
+  const elSfRev = document.getElementById('splitStorefrontRev');
+  const elSfBar = document.getElementById('splitStorefrontBar');
+
+  const elLpOrders = document.getElementById('splitLandingOrders');
+  const elLpRev = document.getElementById('splitLandingRev');
+  const elLpBar = document.getElementById('splitLandingBar');
+
+  if (elSfOrders) elSfOrders.textContent = (sf.orders || 0).toLocaleString();
+  if (elSfRev) elSfRev.textContent = '৳ ' + (sf.revenue || 0).toLocaleString();
+
+  if (elLpOrders) elLpOrders.textContent = (lp.orders || 0).toLocaleString();
+  if (elLpRev) elLpRev.textContent = '৳ ' + (lp.revenue || 0).toLocaleString();
+
+  const totalRev = (sf.revenue || 0) + (lp.revenue || 0);
+  const sfPct = totalRev > 0 ? ((sf.revenue / totalRev) * 100).toFixed(1) : 0;
+  const lpPct = totalRev > 0 ? ((lp.revenue / totalRev) * 100).toFixed(1) : 0;
+
+  if (elSfBar) elSfBar.style.width = sfPct + '%';
+  if (elLpBar) elLpBar.style.width = lpPct + '%';
+
+  // 2. Channels Table
+  const tbody = document.getElementById('analyticsChannelsBody');
+  if (!tbody) return;
+
+  const channels = data.channels || [];
+  if (channels.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#A0AEC0; padding:16px;">No traffic channels recorded.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = channels.map(ch => `
+    <tr>
+      <td><b>${ch.channel_label}</b></td>
+      <td style="text-align:right;">${(ch.visitors || 0).toLocaleString()}</td>
+      <td style="text-align:right;">${(ch.sessions || 0).toLocaleString()}</td>
+      <td style="text-align:right;"><b>${(ch.orders || 0).toLocaleString()}</b></td>
+      <td style="text-align:right; font-weight:700; color:#2D3748;">৳ ${(ch.revenue || 0).toLocaleString()}</td>
+      <td style="text-align:right; color:#319795; font-weight:700;">${(ch.conversion_rate || 0).toFixed(2)}%</td>
+    </tr>
+  `).join('');
+}
+
+function renderAnalyticsCampaigns(data) {
+  const tbody = document.getElementById('analyticsCampaignsBody');
+  if (!tbody) return;
+
+  const campaigns = data.campaigns || [];
+  if (campaigns.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#A0AEC0; padding:16px;">No campaign UTM parameters detected in this period.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = campaigns.map(c => `
+    <tr>
+      <td><b>${c.utm_source}</b></td>
+      <td><span style="background:#EDF2F7; padding:2px 6px; border-radius:4px; font-size:11px;">${c.utm_medium}</span></td>
+      <td>${c.utm_campaign}</td>
+      <td style="color:#718096; font-size:11.5px;">${c.utm_content}</td>
+      <td style="text-align:right;">${(c.visitors || 0).toLocaleString()}</td>
+      <td style="text-align:right;">${(c.sessions || 0).toLocaleString()}</td>
+      <td style="text-align:right;"><b>${(c.orders || 0).toLocaleString()}</b></td>
+      <td style="text-align:right; font-weight:700;">৳ ${(c.revenue || 0).toLocaleString()}</td>
+      <td style="text-align:right; color:#319795; font-weight:700;">${(c.conversion_rate || 0).toFixed(2)}%</td>
+    </tr>
+  `).join('');
+}
+
+function renderAnalyticsLandingPages(data) {
+  const tbody = document.getElementById('analyticsLandingPagesBody');
+  if (!tbody) return;
+
+  const pages = data.landing_pages || [];
+  if (pages.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#A0AEC0; padding:16px;">No landing page activity recorded in this period.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = pages.map(p => `
+    <tr>
+      <td><b><a href="${p.landing_page}" target="_blank" style="color:#3182CE; text-decoration:none;">${p.landing_page} ↗</a></b></td>
+      <td><span style="background:#EBF8FF; color:#2B6CB0; font-size:11px; font-weight:700; padding:2px 6px; border-radius:4px;">${p.page_type}</span></td>
+      <td style="text-align:right;">${(p.visitors || 0).toLocaleString()}</td>
+      <td style="text-align:right;">${(p.sessions || 0).toLocaleString()}</td>
+      <td style="text-align:right;">${(p.cta_clicks || 0).toLocaleString()}</td>
+      <td style="text-align:right;">${(p.checkout_started || 0).toLocaleString()}</td>
+      <td style="text-align:right;"><b>${(p.orders || 0).toLocaleString()}</b></td>
+      <td style="text-align:right; font-weight:700; color:#2D3748;">৳ ${(p.revenue || 0).toLocaleString()}</td>
+      <td style="text-align:right; color:#319795; font-weight:700;">${(p.conversion_rate || 0).toFixed(2)}%</td>
+    </tr>
+  `).join('');
+}
+
+function renderAnalyticsTimeline(data) {
+  const container = document.getElementById('analyticsTimelineChart');
+  if (!container) return;
+
+  const points = data.timeline || [];
+  if (points.length === 0) {
+    container.innerHTML = '<div style="text-align:center; color:#A0AEC0; padding:20px;">No timeline points available.</div>';
+    return;
+  }
+
+  const maxRev = Math.max(1, ...points.map(p => p.revenue));
+  const maxVis = Math.max(1, ...points.map(p => p.visitors));
+
+  container.innerHTML = `
+    <div style="display:flex; align-items:flex-end; gap:8px; height:120px; border-bottom:1px solid #E2E8F0; padding-bottom:8px;">
+      ${points.map(p => {
+        const hRev = Math.max(4, (p.revenue / maxRev) * 100);
+        const hVis = Math.max(4, (p.visitors / maxVis) * 100);
+        return `
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;" title="${p.date} - Rev: ৳${p.revenue.toLocaleString()} | Visitors: ${p.visitors} | Orders: ${p.orders}">
+            <div style="display:flex; gap:3px; align-items:flex-end; height:100%;">
+              <div style="width:10px; height:${hRev}%; background:#319795; border-radius:3px 3px 0 0;" title="Revenue: ৳${p.revenue}"></div>
+              <div style="width:10px; height:${hVis}%; background:#CBD5E0; border-radius:3px 3px 0 0;" title="Visitors: ${p.visitors}"></div>
+            </div>
+            <div style="font-size:10px; color:#718096; margin-top:6px; white-space:nowrap;">${p.label}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:16px; margin-top:10px; font-size:12px;">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="width:10px; height:10px; background:#319795; border-radius:2px; display:inline-block;"></span>
+        <span style="color:#4A5568; font-weight:600;">Revenue (৳)</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="width:10px; height:10px; background:#CBD5E0; border-radius:2px; display:inline-block;"></span>
+        <span style="color:#4A5568; font-weight:600;">Unique Visitors</span>
+      </div>
+    </div>
+  `;
+}

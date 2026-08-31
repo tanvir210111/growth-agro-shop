@@ -153,6 +153,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCart(data.cart);
                 showToast(data.message || 'Added to bag!');
                 openCartDrawer();
+
+                // Growth Agro Unified Add to Cart Tracking
+                if (window.GrowthAgroTracking) {
+                    window.GrowthAgroTracking.track('add_to_cart', {
+                        entity_type: 'product',
+                        entity_id: productId,
+                        properties: { size: size, color: color, quantity: quantity }
+                    });
+                }
             } else {
                 showToast(data.message || 'Could not add item', 'error');
             }
@@ -326,6 +335,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
                     const data = await res.json();
+
+                    // Growth Agro Unified Search Tracking
+                    if (window.GrowthAgroTracking) {
+                        window.GrowthAgroTracking.track('search', {
+                            entity_type: 'search',
+                            entity_id: query,
+                            properties: {
+                                query: query,
+                                results_count: (data.results || []).length
+                            }
+                        });
+                    }
+
                     if (searchDropdown) {
                         if (data.results && data.results.length > 0) {
                             searchDropdown.innerHTML = data.results.map(p => `

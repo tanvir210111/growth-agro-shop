@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/*',
             'checkout',
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackVisitor::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

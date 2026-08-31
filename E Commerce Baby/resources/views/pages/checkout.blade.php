@@ -145,6 +145,18 @@
         document.getElementById('summaryShipping').textContent = (shipping === 0) ? 'FREE (৳ 0)' : `৳ ${shipping}`;
         document.getElementById('summaryTotal').textContent = `৳ ${(subtotal + shipping).toLocaleString()}`;
     }
+
+    // Growth Agro Unified Checkout Started Tracking
+    if (window.GrowthAgroTracking) {
+        window.GrowthAgroTracking.track('checkout_started', {
+            entity_type: 'checkout',
+            event_value: {{ (float)($subtotal ?? 0) }},
+            properties: {
+                subtotal: {{ (float)($subtotal ?? 0) }},
+                items_count: {{ count($cartSummary['items'] ?? []) }}
+            }
+        });
+    }
 </script>
 @endpush
 @endsection

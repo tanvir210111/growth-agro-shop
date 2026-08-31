@@ -162,6 +162,15 @@
     function addDetailToBag(productId) {
         addToCart(productId, currentDetailSize, null, currentDetailQty);
     }
+
+    // Growth Agro Unified Product View Tracking
+    if (window.GrowthAgroTracking) {
+        window.GrowthAgroTracking.track('product_view', {
+            entity_type: 'product',
+            entity_id: '{{ $product["slug"] }}',
+            event_value: {{ (float)$product["price"] }}
+        });
+    }
 </script>
 @endpush
 @endsection
