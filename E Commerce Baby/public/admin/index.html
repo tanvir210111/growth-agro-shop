@@ -1,0 +1,2434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - E-Commerce</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/style.css?v=3.0">
+</head>
+<body>
+
+  <!-- 1. LOGIN SCREEN -->
+  <div id="loginSection" class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" alt="Admin Avatar" class="login-avatar">
+        <h2>Admin Panel Login</h2>
+        <p>Please enter your credentials to login</p>
+      </div>
+
+      <form id="loginForm" onsubmit="event.preventDefault(); handleLogin(); return false;">
+        <div class="form-group">
+          <label>Email / Username</label>
+          <div class="input-with-icon">
+            <span class="input-icon">👤</span>
+            <input type="text" id="loginEmail" class="form-control" placeholder="admin@gmail.com" required value="admin@gmail.com">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-with-icon">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="loginPass" class="form-control" placeholder="••••••••" required value="admin123">
+          </div>
+        </div>
+
+        <div class="login-options">
+          <label class="checkbox-label">
+            <input type="checkbox" checked> Remember me
+          </label>
+          <a href="#" style="color:var(--primary-teal);font-size:13px;text-decoration:none;">Forgot password?</a>
+        </div>
+
+        <button type="button" class="btn-login" onclick="handleLogin();">
+          Login ➔
+        </button>
+      </form>
+
+      <div class="quick-demo-login">
+        💡 Click here to <span id="demoFillBtn" onclick="handleLogin('admin@gmail.com', 'admin123');" style="cursor:pointer;font-weight:700;text-decoration:underline;">1-Click Login</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. PROTECTED ADMIN DASHBOARD -->
+  <div id="appSection" class="app-container" style="display:none;">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar-wrap">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" alt="User Avatar" class="sidebar-avatar">
+          <span class="status-indicator"></span>
+        </div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Unknown</div>
+          <div class="sidebar-user-role">● Online</div>
+        </div>
+      </div>
+
+      <div class="sidebar-search">
+        <input type="text" placeholder="search menu.....">
+      </div>
+
+      <ul class="sidebar-nav">
+        
+        <!-- 1. Dashboard -->
+        <li class="nav-item">
+          <a class="nav-link active" id="nav-dashboard" onclick="switchView('dashboard')">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <span>Dashboard</span>
+            </div>
+          </a>
+        </li>
+
+        <!-- 2. Orders with Submenu Tree -->
+        <li class="nav-item nav-has-sub" id="nav-group-orders">
+          <a class="nav-link" id="nav-orders">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              <span>Orders</span>
+            </div>
+            <span class="nav-arrow">^</span>
+          </a>
+          <div class="submenu-tree">
+            <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-manage-order" onclick="filterOrdersBySource(null); switchView('orders')">All Orders</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-website-orders" onclick="filterOrdersBySource('MAIN_WEBSITE'); switchView('orders')">🛍️ Main Website Orders</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-landing-orders" onclick="filterOrdersBySource('LANDING_PAGE'); switchView('orders')">🚀 Landing Page Orders</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-processing-report" onclick="switchView('report')">Order Processing Report</a></li>
+
+            </ul>
+          </div>
+        </li>
+
+        <!-- 3. Accounts with Submenu Tree -->
+        <li class="nav-item nav-has-sub" id="nav-group-accounts">
+          <a class="nav-link" id="nav-accounts">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              <span>Accounts</span>
+            </div>
+            <span class="nav-arrow">^</span>
+          </a>
+          <div class="submenu-tree">
+            <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-income" onclick="switchView('income')">Income</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-expense" onclick="switchView('expense')">Expense</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-balance" onclick="switchView('balance')">Balance</a></li>
+            </ul>
+          </div>
+        </li>
+
+        <!-- 4. Products -->
+        <li class="nav-item nav-has-sub" id="nav-group-products">
+          <a class="nav-link" id="nav-products">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+              <span>Products</span>
+            </div>
+            <span class="nav-arrow">^</span>
+          </a>
+          <div class="submenu-tree">
+            <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-products" onclick="switchView('products')">Manage Products</a></li>
+            </ul>
+          </div>
+        </li>
+
+        <!-- 5. Website Setup -->
+        <li class="nav-item nav-has-sub" id="nav-group-website">
+          <a class="nav-link" id="nav-website">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span>Website Setup</span>
+            </div>
+            <span class="nav-arrow">^</span>
+          </a>
+          <div class="submenu-tree">
+            <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-header-setting" onclick="switchView('header-setting')">Header</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-theme-setting" onclick="switchView('theme-setting')">Theme Color</a></li>
+            </ul>
+          </div>
+        </li>
+
+        <!-- 6. Setting & Configuration -->
+        <li class="nav-item nav-has-sub" id="nav-group-settings">
+          <a class="nav-link" id="nav-settings">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Setting & Configuration</span>
+            </div>
+            <span class="nav-arrow">^</span>
+          </a>
+          <div class="submenu-tree">
+            <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-marketing" onclick="switchView('marketing')">Marketing</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-courier-api" onclick="switchView('courier-api')">Courier API</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-invoice-address" onclick="switchView('invoice-address')">Invoice Address</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-delivery-charge" onclick="switchView('delivery-charge')">Delivery Charge</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-cities" onclick="switchView('cities')">City</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-sub-city" onclick="switchView('sub-city')">Sub City</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-couriers" onclick="switchView('couriers')">Courier</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-order-source" onclick="switchView('order-source')">Order Source</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-comments" onclick="switchView('comments')">Comment</a></li>
+            </ul>
+          </div>
+        </li>
+
+        <!-- 7. Admin -->
+        <li class="nav-item nav-has-sub" id="nav-group-admin">
+          <a class="nav-link" id="nav-admin">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Admin</span>
+            </div>
+            <span class="nav-arrow">^</span>
+          </a>
+          <div class="submenu-tree">
+            <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-add-admin" onclick="switchView('add-admin')">Add</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-manage-admin" onclick="switchView('manage-admin')">Manage</a></li>
+            </ul>
+          </div>
+        </li>
+
+        <!-- 8. Customer -->
+        <li class="nav-item nav-has-sub" id="nav-group-customer">
+          <a class="nav-link" id="nav-customer">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>Customer</span>
+            </div>
+            <span class="nav-arrow">^</span>
+          </a>
+          <div class="submenu-tree">
+            <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-customers" onclick="switchView('customers')">Customers</a></li>
+            </ul>
+          </div>
+        </li>
+
+        <!-- 9. Loss/Profit -->
+        <li class="nav-item nav-has-sub" id="nav-group-profit">
+          <a class="nav-link" id="nav-profit">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Loss/Profit</span>
+            </div>
+            <span class="nav-arrow">^</span>
+          </a>
+          <div class="submenu-tree">
+            <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-profit-report" onclick="switchView('profit-report')">Profit/Loss Report</a></li>
+            </ul>
+          </div>
+        </li>
+
+        <!-- 10. Landing Page -->
+        <li class="nav-item nav-has-sub" id="nav-group-landingpages">
+          <a class="nav-link" id="nav-landingpages">
+            <div class="nav-link-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+              <span>Landing Page</span>
+            </div>
+            <span class="nav-arrow">^</span>
+          </a>
+          <div class="submenu-tree">
+            <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-landingpages" onclick="switchView('landingpages')">Landing Page Hub</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-landing-pages-list" onclick="switchView('landing-pages-list')">Pages List</a></li>
+            </ul>
+          </div>
+        </li>
+
+      </ul>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+      
+      <!-- TOP NAVBAR -->
+      <header class="top-navbar">
+        <div class="navbar-left">
+          <button class="hamburger-btn" id="hamburgerBtn" title="Toggle Sidebar">
+            ☰
+          </button>
+          <span style="font-weight:700;font-size:16px;color:#1A202C;margin-left:8px;">Dashboard</span>
+        </div>
+
+        <div class="navbar-right">
+          <a href="http://127.0.0.1:8000" target="_blank" class="btn-primary-teal" style="background:#0284C7;text-decoration:none;padding:6px 12px;font-size:12.5px;margin-right:6px;">
+            🌐 View Live Store
+          </a>
+          <input type="text" id="headerSearchInput" class="order-search-box" style="width:200px;margin-right:8px;" placeholder="Search anything...">
+          <button class="btn-primary-teal" onclick="openAddOrderModal()" style="padding:6px 14px;font-size:12.5px;">
+            + নতুন অর্ডার
+          </button>
+          <div class="user-profile-header">
+            <div class="user-name">Admin User</div>
+            <div class="user-role">Super Admin</div>
+          </div>
+          <button class="btn-logout-header" onclick="handleLogout()">
+            লগআউট 🚪
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT BODY -->
+      <main class="content-body">
+
+        <!-- VIEW 1: DASHBOARD -->
+        <div id="view-dashboard" class="view-panel">
+
+          <!-- DASHBOARD MODE TABS -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <div style="font-size:16px;font-weight:700;color:#1A202C;">
+              📊 Dashboard Overview
+            </div>
+            <div style="display:inline-flex;background:#EDF2F7;padding:4px;border-radius:10px;gap:4px;">
+              <button id="dashTabAll" onclick="setDashboardMode('all')" style="border:none;background:#004D40;color:#fff;font-weight:600;font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
+                📊 All Combined
+              </button>
+              <button id="dashTabWebsite" onclick="setDashboardMode('website')" style="border:none;background:transparent;color:#4A5568;font-weight:600;font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
+                🛍️ Main Website (Baby Fashion BD)
+              </button>
+              <button id="dashTabLanding" onclick="setDashboardMode('landing')" style="border:none;background:transparent;color:#4A5568;font-weight:600;font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
+                🚀 Landing Pages
+              </button>
+            </div>
+          </div>
+
+          <!-- ============================================================ -->
+          <!-- SOURCE SPLIT: Main Website vs Landing Pages -->
+          <!-- ============================================================ -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+
+            <!-- MAIN WEBSITE (Baby Fashion BD) -->
+            <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%); border-radius:14px; padding:20px 24px; color:#fff; position:relative; overflow:hidden;">
+              <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,0.05);border-radius:50%;"></div>
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                <div style="width:44px;height:44px;background:#E040FB;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🛍️</div>
+                <div>
+                  <div style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:1px;">Main E-Commerce Website</div>
+                  <div style="font-size:15px;font-weight:700;">Baby Fashion BD</div>
+                </div>
+                <a href="http://127.0.0.1:8000" target="_blank" style="margin-left:auto;background:rgba(255,255,255,0.15);color:#fff;text-decoration:none;padding:4px 10px;border-radius:6px;font-size:11px;white-space:nowrap;">🌐 Visit</a>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;" id="srcWebsiteTotal">0</div>
+                  <div style="font-size:10px;opacity:0.7;">Total Orders</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;" id="srcWebsiteNew">0</div>
+                  <div style="font-size:10px;opacity:0.7;">New / Pending</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:14px;font-weight:800;" id="srcWebsiteRev">৳ 0</div>
+                  <div style="font-size:10px;opacity:0.7;">Revenue</div>
+                </div>
+              </div>
+
+              <button onclick="filterOrdersBySource('baby-fashion-storefront'); switchView('orders');" style="width:100%;background:#E040FB;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">
+                📦 View Website Orders →
+              </button>
+            </div>
+
+            <!-- LANDING PAGES -->
+            <div style="background:linear-gradient(135deg,#1b2838 0%,#1e3a5f 60%,#0d7377 100%); border-radius:14px; padding:20px 24px; color:#fff; position:relative; overflow:hidden;">
+              <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,0.05);border-radius:50%;"></div>
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                <div style="width:44px;height:44px;background:#00B4D8;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🚀</div>
+                <div>
+                  <div style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:1px;">Product Landing Pages</div>
+                  <div style="font-size:15px;font-weight:700;">Chicken Booster & Others</div>
+                </div>
+                <a href="http://127.0.0.1:3000" target="_blank" style="margin-left:auto;background:rgba(255,255,255,0.15);color:#fff;text-decoration:none;padding:4px 10px;border-radius:6px;font-size:11px;white-space:nowrap;">🌐 Visit</a>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;" id="srcLandingTotal">0</div>
+                  <div style="font-size:10px;opacity:0.7;">Total Orders</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;" id="srcLandingNew">0</div>
+                  <div style="font-size:10px;opacity:0.7;">New / Pending</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:14px;font-weight:800;" id="srcLandingRev">৳ 0</div>
+                  <div style="font-size:10px;opacity:0.7;">Revenue</div>
+                </div>
+              </div>
+
+              <button onclick="filterOrdersBySource('landing'); switchView('orders');" style="width:100%;background:#00B4D8;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">
+                🚀 View Landing Page Orders →
+              </button>
+            </div>
+          </div>
+
+          <!-- 12 STATUS CARDS -->
+          <div class="tiles-grid">
+            <div class="status-card" onclick="setOrderFilterTab('New'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countNewOrder">0</span> New Order</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountNewOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill">🔒</div>
+            </div>
+
+            <div class="status-card" onclick="setOrderFilterTab('Pending'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countPendingOrder">0</span> Pending Order</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountPendingOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill">⚙️</div>
+            </div>
+
+            <div class="status-card" onclick="setOrderFilterTab('Approved'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countApprovedOrder">0</span> Approved Order</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountApprovedOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill blue">👍</div>
+            </div>
+
+            <div class="status-card" onclick="setOrderFilterTab('Packaging'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countPackagingOrder">0</span> Packaging Order</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountPackagingOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill">📦</div>
+            </div>
+
+            <div class="status-card cyan-theme" onclick="setOrderFilterTab('Shipment'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countShipmentOrder">0</span> Shipment Order</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountShipmentOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill blue">🚚</div>
+            </div>
+
+            <div class="status-card" onclick="setOrderFilterTab('Delivered'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countDeliveredOrder">0</span> Delivered Order</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountDeliveredOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill success">✓</div>
+            </div>
+
+            <div class="status-card" onclick="setOrderFilterTab('Return'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countReturnOrder">0</span> Return Order</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountReturnOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill blue">🔄</div>
+            </div>
+
+            <div class="status-card danger-theme" onclick="setOrderFilterTab('Cancel'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countCancelOrder">0</span> Cancel Order</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountCancelOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill danger">✕</div>
+            </div>
+
+            <div class="status-card" onclick="setOrderFilterTab('WFP'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countWfpOrder">0</span> WFP</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountWfpOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill">🏬</div>
+            </div>
+
+            <div class="status-card" onclick="setOrderFilterTab('All'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countPartialOrder">0</span> Partial Delivered</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountPartialOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill">🏬</div>
+            </div>
+
+            <div class="status-card" onclick="setOrderFilterTab('Return'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countReturnPendingOrder">0</span> Return Pending</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountReturnPendingOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill">🏬</div>
+            </div>
+
+            <div class="status-card" onclick="setOrderFilterTab('All'); switchView('orders');">
+              <div class="card-stat-info">
+                <h3><span id="countAllOrder">0</span> All Orders</h3>
+                <div class="stat-amount"><span class="currency-sym">৳ </span><span id="amountAllOrder">0</span></div>
+              </div>
+              <div class="card-icon-pill">📊</div>
+            </div>
+          </div>
+
+          <!-- INCOME & EXPENSE TABLES -->
+          <div class="split-tables-grid">
+            <div class="panel-box">
+              <div class="panel-header">
+                <span class="panel-title">Income</span>
+                <a class="view-all-link" onclick="switchView('income')">View All</a>
+              </div>
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Purpose</th>
+                    <th>Paid By</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="incomeTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="panel-box">
+              <div class="panel-header">
+                <span class="panel-title">Expense</span>
+                <a class="view-all-link" onclick="switchView('expense')">View All</a>
+              </div>
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Purpose</th>
+                    <th>Paid By</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="expenseTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ACCOUNTS SECTION -->
+          <div class="section-headline">Accounts</div>
+          <div class="accounts-summary-grid">
+            <div class="account-kpi-card">
+              <div class="account-kpi-header">
+                <span>Total :</span>
+                <b id="statTodayCredit">৳ 0.00</b>
+              </div>
+              <button class="btn-account-pill" onclick="switchView('income')">TODAY CREDIT</button>
+            </div>
+
+            <div class="account-kpi-card">
+              <div class="account-kpi-header">
+                <span>Total :</span>
+                <b id="statTodayDebit">৳ 0.00</b>
+              </div>
+              <button class="btn-account-pill" onclick="switchView('expense')">TODAY DEBIT</button>
+            </div>
+
+            <div class="account-kpi-card">
+              <div class="account-kpi-header">
+                <span>In Total :</span>
+                <b id="statTotalBalance">৳ 0.00</b>
+              </div>
+              <button class="btn-account-pill" onclick="switchView('balance')">TOTAL BALANCE</button>
+            </div>
+          </div>
+
+          <!-- MONTHLY ACTIVITIES CHART -->
+          <div class="chart-container-card">
+            <h3 class="chart-title">Monthly Activities</h3>
+            <div class="chart-canvas-wrap">
+              <canvas id="monthlyChart" height="220" style="width:100%;height:220px;"></canvas>
+            </div>
+          </div>
+
+          <!-- QUICK ACCESS SECTION -->
+          <div class="section-headline">Quick Access</div>
+          <div class="quick-access-grid">
+            <div class="quick-access-card" onclick="switchView('products')">
+              <div class="quick-access-icon-circle red">🛍️</div>
+              <span class="quick-access-label">Product</span>
+            </div>
+
+            <div class="quick-access-card" onclick="switchView('customers')">
+              <div class="quick-access-icon-circle purple">👥</div>
+              <span class="quick-access-label">Customer</span>
+            </div>
+
+            <div class="quick-access-card" onclick="switchView('orders')">
+              <div class="quick-access-icon-circle blue">🛒</div>
+              <span class="quick-access-label">Order</span>
+            </div>
+
+            <div class="quick-access-card" onclick="switchView('balance')">
+              <div class="quick-access-icon-circle cyan">💼</div>
+              <span class="quick-access-label">Account</span>
+            </div>
+          </div>
+
+        </div>
+
+
+
+        
+        <!-- VIEW 2: ORDERS MANAGEMENT VIEW -->
+        <div id="view-orders" class="view-panel" style="display:none;">
+          <div class="orders-top-row">
+            <h1 class="orders-page-heading">Orders</h1>
+            <div class="orders-top-actions">
+              <button class="btn-teal-action" onclick="exportOrdersCSV()" title="Export Filtered Orders">
+                📥 Export CSV
+              </button>
+              <select class="form-control no-icon" style="width:140px;padding:6px 10px;font-size:12px;" onchange="handleBulkAction(this.value); this.value='';">
+                <option value="">Bulk Actions</option>
+                <option value="Approved">Mark Approved</option>
+                <option value="Packaging">Mark Packaging</option>
+                <option value="Shipment">Mark Shipment</option>
+                <option value="Delivered">Mark Delivered</option>
+                <option value="Cancel">Mark Cancelled</option>
+                <option value="delete">Bulk Delete</option>
+              </select>
+              <button class="btn-create-order" onclick="openAddOrderModal()">+ Create Order</button>
+            </div>
+          </div>
+
+          <!-- ORDER STATUS TABS BAR -->
+          <div class="order-tabs-bar">
+            <button class="tab-pill active" data-tab="All" onclick="setOrderFilterTab('All')">
+              All <span id="tabCountAll">0</span>
+            </button>
+            <button class="tab-pill" data-tab="New" onclick="setOrderFilterTab('New')">
+              New <span id="tabCountNew">0</span>
+            </button>
+            <button class="tab-pill" data-tab="Pending" onclick="setOrderFilterTab('Pending')">
+              Pending <span id="tabCountPending">0</span>
+            </button>
+            <button class="tab-pill" data-tab="Approved" onclick="setOrderFilterTab('Approved')">
+              Approved <span id="tabCountApproved">0</span>
+            </button>
+            <button class="tab-pill" data-tab="WFP" onclick="setOrderFilterTab('WFP')">
+              WFP <span id="tabCountWFP">0</span>
+            </button>
+            <button class="tab-pill" data-tab="Packaging" onclick="setOrderFilterTab('Packaging')">
+              Packaging <span id="tabCountPackaging">0</span>
+            </button>
+            <button class="tab-pill" data-tab="Shipment" onclick="setOrderFilterTab('Shipment')">
+              Shipment <span id="tabCountShipment">0</span>
+            </button>
+            <button class="tab-pill" data-tab="Delivered" onclick="setOrderFilterTab('Delivered')">
+              Delivered <span id="tabCountDelivered">0</span>
+            </button>
+            <button class="tab-pill" data-tab="Return" onclick="setOrderFilterTab('Return')">
+              Return <span id="tabCountReturn">0</span>
+            </button>
+            <button class="tab-pill" data-tab="Cancel" onclick="setOrderFilterTab('Cancel')">
+              Cancel <span id="tabCountCancel">0</span>
+            </button>
+          </div>
+
+          <!-- TABLE TOOLBAR -->
+          <div class="table-bar-row">
+            <div class="table-bar-left">
+              <span style="cursor:pointer;" onclick="renderOrdersTable()" title="Reload">🔄</span>
+              <span>Show</span>
+              <select>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+
+            <div class="table-bar-right">
+              <input type="text" id="orderSearchInput" class="order-search-box" placeholder="type invoice or customer phone">
+              <button class="btn-order-search" onclick="renderOrdersTable()">Order</button>
+            </div>
+          </div>
+
+          <!-- ORDERS DATA TABLE CONTAINER -->
+          <div class="orders-table-container">
+            <table class="orders-table">
+              <thead>
+                <tr>
+                  <th style="width:30px;"><input type="checkbox" onchange="toggleSelectAllOrders(this.checked)"></th>
+                  <th>Invoice</th>
+                  <th>Customer</th>
+                  <th>Product</th>
+                  <th>Total</th>
+                  <th>Activities</th>
+                  <th>Courier</th>
+                  <th>Note</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="entries-footer" id="entriesCountText">
+            Showing 1 to 19 of total 19 entries
+          </div>
+        </div>
+
+        <!-- VIEW 3: ORDER PROCESSING REPORT -->
+        <div id="view-report" class="view-panel" style="display:none;">
+          <div class="report-view-container">
+            <button class="btn-back-teal" onclick="switchView('orders')">
+              ← Back
+            </button>
+
+            <div class="report-filter-tabs-row">
+              <button class="report-tab-pill active" onclick="setReportTab(this)">Today</button>
+              <button class="report-tab-pill" onclick="setReportTab(this)">Yesterday</button>
+              <button class="report-tab-pill" onclick="setReportTab(this)">This Week</button>
+              <button class="report-tab-pill" onclick="setReportTab(this)">This Month</button>
+              <button class="report-tab-pill" onclick="setReportTab(this)">Custom Date</button>
+            </div>
+
+            <!-- Report Card Table -->
+            <div class="report-card-box" style="background:#fff;border:1px solid #E2E8F0;border-radius:6px;overflow:hidden;">
+              <table class="report-table" style="width:100%;border-collapse:collapse;">
+                <thead>
+                  <tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+                    <th style="width:50px;padding:12px 18px;text-align:left;font-size:13px;color:#4A5568;">#</th>
+                    <th style="width:180px;padding:12px 18px;text-align:left;font-size:13px;color:#4A5568;">Name</th>
+                    <th style="padding:12px 18px;text-align:left;font-size:13px;color:#4A5568;">Reports</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom:1px solid #F1F5F9;">
+                    <td style="padding:20px 18px;vertical-align:middle;font-size:13px;">1</td>
+                    <td style="padding:20px 18px;vertical-align:middle;">
+                      <div class="report-user-cell" style="display:flex;flex-direction:column;align-items:center;gap:6px;width:fit-content;">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" alt="User" class="report-user-avatar" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid #E2E8F0;display:block;">
+                        <span class="report-user-name" style="color:#0284C7;font-size:13px;font-weight:500;">Unknown</span>
+                      </div>
+                    </td>
+                    <td style="padding:20px 18px;vertical-align:middle;">
+                      <ul class="report-metrics-list" style="display:flex;flex-direction:column;gap:5px;list-style:none;margin:0;padding:0;">
+                        <li class="report-metric-item" style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1A202C;"><span class="green-arrow" style="color:#10B981;font-size:10px;">▶</span> created : <b>0</b></li>
+                        <li class="report-metric-item" style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1A202C;"><span class="green-arrow" style="color:#10B981;font-size:10px;">▶</span> pending : <b>0</b></li>
+                        <li class="report-metric-item" style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1A202C;"><span class="green-arrow" style="color:#10B981;font-size:10px;">▶</span> approved : <b>0</b></li>
+                        <li class="report-metric-item" style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1A202C;"><span class="green-arrow" style="color:#10B981;font-size:10px;">▶</span> shipment : <b>0</b></li>
+                        <li class="report-metric-item" style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1A202C;"><span class="green-arrow" style="color:#10B981;font-size:10px;">▶</span> delivered : <b>0</b></li>
+                        <li class="report-metric-item" style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1A202C;"><span class="green-arrow" style="color:#10B981;font-size:10px;">▶</span> returned : <b>0</b></li>
+                        <li class="report-metric-item" style="display:flex;align-items:center;gap:6px;font-size:13px;color:#1A202C;"><span class="green-arrow" style="color:#10B981;font-size:10px;">▶</span> canceled : <b>0</b></li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="report-footer-right" style="text-align:right;padding:12px 18px;font-size:12px;color:#718096;border-top:1px solid #F1F5F9;">
+                Showing 1 to 1 of total 1 entries
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 4: ACCOUNTS -> INCOME (Credit/Income Records) -->
+        <div id="view-income" class="view-panel" style="display:none;">
+          <div class="accounts-top-actions-row">
+            <button class="btn-add-credit" onclick="openAddCreditModal()">
+              + Add Credit
+            </button>
+            <button class="btn-debit-cyan" onclick="switchView('expense')">
+              Debit
+            </button>
+          </div>
+
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Credit/Income Records</h2>
+            <div class="filter-inputs-row">
+              <input type="text" class="credit-input-comment form-control no-icon" placeholder="comments....." style="flex:2;">
+              <input type="date" class="form-control no-icon" style="flex:1;">
+              <input type="date" class="form-control no-icon" style="flex:1;">
+              <select class="form-control no-icon" style="flex:1;">
+                <option value="">Select One</option>
+                <option value="bKash">bKash</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+              </select>
+              <select class="form-control no-icon" style="width:80px;">
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <button class="btn-primary-teal" onclick="renderCreditTable()" style="padding:8px 12px;">🔄</button>
+            </div>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Invoice</th>
+                    <th>Credit In</th>
+                    <th>Amount</th>
+                    <th>Comment</th>
+                    <th>Inserted</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="creditTableBody"></tbody>
+                <tfoot>
+                  <tr style="font-weight:700;">
+                    <td colspan="4" style="text-align:right;padding-right:20px;">Total =</td>
+                    <td colspan="4" id="creditTotalAmountDisplay">0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div class="entries-footer" id="creditEntriesCountText">
+              Showing to of total 0 entries
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 5: ACCOUNTS -> EXPENSE (Debit/Expense: Exact Screenshot Match) -->
+        <div id="view-expense" class="view-panel" style="display:none;">
+          <div class="accounts-top-actions-row">
+            <button class="btn-primary-teal" onclick="openAddCreditModal()">
+              + Add Debit
+            </button>
+            <button class="btn-cyan-action" onclick="switchView('income')">
+              Credit
+            </button>
+          </div>
+
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Debit/Expense</h2>
+            <div class="filter-inputs-row">
+              <input type="text" class="form-control no-icon" placeholder="comments....." style="flex:2;">
+              <input type="date" class="form-control no-icon" style="flex:1;">
+              <input type="date" class="form-control no-icon" style="flex:1;">
+              <select class="form-control no-icon" style="flex:1;">
+                <option value="">Select Balance</option>
+                <option value="Main Balance">Main Balance</option>
+                <option value="Petty Cash">Petty Cash</option>
+              </select>
+              <select class="form-control no-icon" style="width:80px;">
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Debit From</th>
+                    <th>Amount</th>
+                    <th>Comment</th>
+                    <th>Inserted</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Empty placeholder or populated -->
+                </tbody>
+              </table>
+            </div>
+            <div class="entries-footer">
+              Showing to of total 0 entries
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 6: ACCOUNTS -> BALANCE (Exact Screenshot Match) -->
+        <div id="view-balance" class="view-panel" style="display:none;">
+          <div style="margin-bottom:18px;">
+            <button class="btn-primary-teal" onclick="showToast('Add Balance Clicked')">
+              + Add Balance
+            </button>
+          </div>
+
+          <!-- Accounts KPI -->
+          <div class="white-box-card">
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">Accounts</h3>
+            <div class="accounts-summary-grid" style="margin-bottom:0;">
+              <div class="account-kpi-card">
+                <div class="account-kpi-header"><span>Total :</span><b>0.00</b></div>
+                <button class="btn-account-pill">TODAY CREDIT</button>
+              </div>
+              <div class="account-kpi-card">
+                <div class="account-kpi-header"><span>Total :</span><b>0.00</b></div>
+                <button class="btn-account-pill">TODAY DEBIT</button>
+              </div>
+              <div class="account-kpi-card">
+                <div class="account-kpi-header"><span>In Total :</span><b>0.00</b></div>
+                <button class="btn-account-pill">TOTAL BALANCE</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Balances Table -->
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Balances</h2>
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th style="width:60px;">#</th>
+                    <th>Name</th>
+                    <th style="text-align:right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td><b>Main Account Balance (bKash & Bank)</b></td>
+                    <td style="text-align:right;"><button class="action-dots-btn">•••</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 7: PRODUCTS -> MANAGE PRODUCTS (Exact Screenshot Match: babyfashionbd.com/admin/products/1) -->
+        <div id="view-products" class="view-panel" style="display:none;">
+          <div class="top-action-row">
+            <button class="btn-primary-teal" onclick="openAddOrderModal()">
+              + Add
+            </button>
+            <button class="btn-primary-teal">
+              ▼ Filter
+            </button>
+          </div>
+
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Product Manage</h2>
+
+            <!-- Search Toolbar -->
+            <div class="table-bar-row" style="margin-bottom:14px;border-bottom:1px solid #E2E8F0;border-radius:4px;">
+              <div class="table-bar-left">
+                <span>🔄</span>
+                <span>Show</span>
+                <select>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+              <div class="table-bar-right">
+                <input type="text" class="order-search-box" placeholder="search by product name || code">
+                <button class="btn-order-search">Search</button>
+              </div>
+            </div>
+
+            <!-- Products Table -->
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Product Name</th>
+                    <th>Status</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th style="text-align:center;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="productsTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="entries-footer">
+              Showing 1 to 2 of total 2 entries
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 8: WEBSITE SETUP -> HEADER (Exact Screenshot Match: babyfashionbd.com/admin/header/setting) -->
+        <div id="view-header-setting" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Header Information</h2>
+            
+            <form onsubmit="event.preventDefault(); showToast('হেডার তথ্য সফলভাবে আপডেট হয়েছে!');">
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Logo(160 x 60)</label>
+                <input type="file" class="form-control no-icon" style="padding:6px 10px;">
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Favicon(32 x 32)</label>
+                <input type="file" class="form-control no-icon" style="padding:6px 10px;">
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Title *</label>
+                <input type="text" class="form-horizontal-input" value="babyfashionbd.com" required>
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Meta Title</label>
+                <input type="text" class="form-horizontal-input" value="Baby Fashion BD | Baby & Kids Clothing Online in Bangladesh">
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Meta Key</label>
+                <textarea class="form-horizontal-input" rows="3">Baby Fashion BD, BabyFashionBD.com, Baby Clothing Bangladesh, Kids Fashion, Baby Dress, Baby T-Shirt, Baby Romper, Girls Dress, Boys Clothing, Kids Wear, Baby Accessories, Online Shopping B</textarea>
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Meta Description</label>
+                <textarea class="form-horizontal-input" rows="3">Buy baby dresses, kids clothing, rompers and stylish kidswear online from Baby Fashion BD. Quality products with fast delivery across Bangladesh.</textarea>
+              </div>
+
+              <div style="margin-top:20px;padding-left:220px;">
+                <button type="submit" class="btn-primary-teal" style="padding:10px 24px;">
+                  Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- VIEW 9: WEBSITE SETUP -> THEME COLOR (Exact Screenshot Match: babyfashionbd.com/admin/theme/setting) -->
+        <div id="view-theme-setting" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Set Theme Color</h2>
+
+            <form onsubmit="event.preventDefault(); showToast('থিম কালার সফলভাবে পরিবর্তন হয়েছে!');" style="max-width:650px;margin:0 auto;">
+              
+              <div style="border:1px dashed #CBD5E0;padding:24px;border-radius:6px;margin-bottom:20px;">
+                
+                <div class="theme-color-row">
+                  <span style="font-weight:600;color:#4A5568;">Primary Color</span>
+                  <div class="color-preview-box" style="background:#C5A059;"></div>
+                  <input type="text" class="form-horizontal-input" value="#c5a059">
+                </div>
+
+                <div class="theme-color-row">
+                  <span style="font-weight:600;color:#4A5568;">Primary Text Color</span>
+                  <div class="color-preview-box" style="background:#ffffff;border:1px solid #CBD5E0;"></div>
+                  <input type="text" class="form-horizontal-input" value="#ffffff">
+                </div>
+
+                <div class="theme-color-row">
+                  <span style="font-weight:600;color:#4A5568;">Primary Hover Color</span>
+                  <div class="color-preview-box" style="background:#ae373a;"></div>
+                  <input type="text" class="form-horizontal-input" value="#ae373a">
+                </div>
+
+              </div>
+
+              <div style="border:1px dashed #CBD5E0;padding:24px;border-radius:6px;margin-bottom:24px;">
+                <div class="theme-color-row">
+                  <span style="font-weight:600;color:#4A5568;">Default Border Color</span>
+                  <div class="color-preview-box" style="background:#eeeeee;"></div>
+                  <input type="text" class="form-horizontal-input" value="#eeeeee">
+                </div>
+              </div>
+
+              <div style="text-align:center;">
+                <button type="submit" class="btn-primary-teal" style="padding:10px 28px;">
+                  Change Theme
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+        <!-- VIEW 10: MARKETING INFORMATION (Exact Match) -->
+        <div id="view-marketing" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Marketing Information</h2>
+
+            <form onsubmit="event.preventDefault(); showToast('মার্কেটিং সেটিংস সফলভাবে সেভ হয়েছে!');">
+              <div class="grid-2-col-form">
+                <!-- Column 1 -->
+                <div>
+                  <div class="form-group">
+                    <label>Facebook Pixel Code</label>
+                    <textarea class="marketing-textarea" rows="3">1793041018387711</textarea>
+                  </div>
+                  <div class="form-group">
+                    <label>Google Analytics (For Header)</label>
+                    <textarea class="marketing-textarea" rows="3"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label>Google (Body Tag)</label>
+                    <textarea class="marketing-textarea" rows="3"></textarea>
+                  </div>
+                </div>
+
+                <!-- Column 2 -->
+                <div>
+                  <div class="form-group">
+                    <label>Facebook Domain Verification</label>
+                    <textarea class="marketing-textarea" rows="3"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label>Google Domain Verification</label>
+                    <textarea class="marketing-textarea" rows="3"></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top:20px;text-align:center;">
+                <button type="submit" class="btn-primary-teal" style="padding:10px 32px;">Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- VIEW 11: COURIER API SETUP (Exact Match: Pathao, Steadfast, RedX) -->
+        <div id="view-courier-api" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Courier API Setup</h2>
+
+            <form onsubmit="event.preventDefault(); showToast('কুরিয়ার এপিআই সফলভাবে সংরক্ষিত হয়েছে!');">
+              
+              <!-- 1. PATHAO -->
+              <div class="courier-section-card">
+                <h3 class="courier-brand-title">PATHAO</h3>
+                <div class="grid-3-col-courier">
+                  <div class="form-group">
+                    <label>Pathao API Base URL</label>
+                    <input type="text" class="form-control no-icon" value="https://api-hermes.pathao.com/aladdin/api/v1">
+                  </div>
+                  <div class="form-group">
+                    <label>Store ID</label>
+                    <input type="text" class="form-control no-icon" value="439772">
+                  </div>
+                  <div class="form-group">
+                    <label>Client ID</label>
+                    <input type="text" class="form-control no-icon" value="l9avR8rsG1">
+                  </div>
+                </div>
+                <div class="grid-3-col-courier">
+                  <div class="form-group">
+                    <label>Client Secret</label>
+                    <input type="text" class="form-control no-icon" value="AVBslDeN60xtr1tdaP7Ny6E95i3iuTvDDSehacEn">
+                  </div>
+                  <div class="form-group">
+                    <label>Client Email</label>
+                    <input type="email" class="form-control no-icon" value="info.forkanshagor@gmail.com">
+                  </div>
+                  <div class="form-group">
+                    <label>Client Password</label>
+                    <input type="text" class="form-control no-icon" value="Forkan@2k24">
+                  </div>
+                </div>
+                <div class="form-group" style="margin-top:10px;">
+                  <label>Access Token</label>
+                  <div style="display:flex;gap:12px;">
+                    <input type="text" class="form-control no-icon" value="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOi..." style="flex:1;">
+                    <button type="button" class="btn-primary-teal" onclick="showToast('New Access Token Generated!')">Generate Access Token</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. STEADFAST -->
+              <div class="courier-section-card">
+                <h3 class="courier-brand-title">STEADFAST</h3>
+                <div class="grid-3-col-courier">
+                  <div class="form-group">
+                    <label>API Base URL</label>
+                    <input type="text" class="form-control no-icon" value="https://portal.packzy.com/api/v1">
+                  </div>
+                  <div class="form-group">
+                    <label>API Key</label>
+                    <input type="text" class="form-control no-icon" value="szjhfonyqxhxbnpacdiw0wlvdpz4gezo">
+                  </div>
+                  <div class="form-group">
+                    <label>Secret Key</label>
+                    <input type="text" class="form-control no-icon" value="d5lc6ilv5w6qwfp7vh1g36yg">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. REDX -->
+              <div class="courier-section-card">
+                <h3 class="courier-brand-title">REDX</h3>
+                <div class="grid-3-col-courier">
+                  <div class="form-group">
+                    <label>API Base URL</label>
+                    <input type="text" class="form-control no-icon" placeholder="https://openapi.redx.com.bd/v1.0.0-beta">
+                  </div>
+                  <div class="form-group">
+                    <label>Store ID</label>
+                    <input type="text" class="form-control no-icon" placeholder="Store ID">
+                  </div>
+                  <div class="form-group">
+                    <label>API Token</label>
+                    <input type="text" class="form-control no-icon" placeholder="API Token">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. BD COURIER (Fraud & Delivery Ratio Checker) -->
+              <div class="courier-section-card" style="border: 1.5px solid #00796B; background: #F0FDF4;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                  <h3 class="courier-brand-title" style="color:#004D40;margin:0;">🛡️ BD COURIER (Delivery Ratio & Fraud Check)</h3>
+                  <span style="background:#10B981;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;">ACTIVE</span>
+                </div>
+                <p style="font-size:12.5px;color:#4A5568;margin-bottom:12px;">গ্রাহকের ফোন নম্বর দিয়ে সব কুরিয়ারের (Steadfast, Pathao, RedX, Paperfly ইত্যাদি) পূর্বের ডেলিভারি রেশিও ও ফ্রড হিস্টোরি স্বয়ংক্রিয়ভাবে যাচাই করুন।</p>
+                <div class="grid-3-col-courier">
+                  <div class="form-group" style="grid-column: span 1;">
+                    <label>API Base URL</label>
+                    <input type="text" class="form-control no-icon" value="https://api.bdcourier.com/courier-check" readonly>
+                  </div>
+                  <div class="form-group" style="grid-column: span 2;">
+                    <label>API Bearer Key</label>
+                    <div style="display:flex;gap:8px;">
+                      <input type="password" id="bdCourierApiKeyInput" class="form-control no-icon" placeholder="•••••••••••••••••••• (Configured via .env)" style="flex:1;">
+                      <button type="button" class="btn-primary-teal" onclick="testBdCourierConnection()" style="padding:6px 14px;font-size:12px;">🔍 Test Connection</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="text-align:center;margin-top:20px;">
+                <button type="submit" class="btn-primary-teal" style="padding:10px 36px;">Save Courier Configuration</button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+        <!-- VIEW 12: INVOICE ADDRESS (Exact Match: Rich Text & Submit) -->
+        <div id="view-invoice-address" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <h2 class="centered-card-title">General Information</h2>
+
+            <form onsubmit="event.preventDefault(); showToast('ইনভয়েস ঠিকানা সফলভাবে সংরক্ষিত হয়েছে!');">
+              <div class="form-group">
+                <label style="margin-bottom:8px;font-size:13.5px;">Invoice Address Details</label>
+                <div class="richtext-toolbar">
+                  <select><option>Paragraph</option><option>Heading 1</option><option>Heading 2</option></select>
+                  <button type="button"><b>B</b></button>
+                  <button type="button"><i>I</i></button>
+                  <button type="button">🔗</button>
+                  <button type="button">≡</button>
+                  <button type="button">≡</button>
+                  <button type="button">🖼️</button>
+                  <button type="button">📊</button>
+                  <button type="button">▶</button>
+                  <button type="button">↺</button>
+                  <button type="button">↻</button>
+                </div>
+                <textarea class="richtext-content-box" rows="5">unknown</textarea>
+              </div>
+
+              <div style="text-align:center;margin-top:20px;">
+                <button type="submit" class="btn-primary-teal" style="padding:10px 32px;">Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- VIEW 13: DELIVERY CHARGE (Exact Match Table) -->
+        <div id="view-delivery-charge" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Delivery Charge</h2>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:70px;">#</th>
+                    <th>Name</th>
+                    <th>Delivery Charge</th>
+                    <th style="text-align:right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>240</td>
+                    <td><b>Inside Dhaka (70Tk)</b></td>
+                    <td>70 Tk</td>
+                    <td style="text-align:right;">
+                      <button class="action-btn-circle-blue">🚫</button>
+                      <button class="action-btn-square-teal">📝</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>241</td>
+                    <td><b>Dhaka Sub Area (150 Tk)</b></td>
+                    <td>150 Tk</td>
+                    <td style="text-align:right;">
+                      <button class="action-btn-circle-blue">🚫</button>
+                      <button class="action-btn-square-teal">📝</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>242</td>
+                    <td><b>Outside Dhaka (130 Tk)</b></td>
+                    <td>130 Tk</td>
+                    <td style="text-align:right;">
+                      <button class="action-btn-circle-blue">🚫</button>
+                      <button class="action-btn-square-teal">📝</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 14: CITIES (Exact Match: 50 BD Cities with Search & Pagination) -->
+        <div id="view-cities" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+              <h2 style="font-size:17px;font-weight:700;color:#2D3748;margin:0;">Cities</h2>
+              <input type="text" id="citySearchBox" class="order-search-box" placeholder="search here" oninput="filterCities(this.value)">
+            </div>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:60px;">#</th>
+                    <th>Name</th>
+                    <th>Delivery Charge</th>
+                    <th style="text-align:right;padding-right:20px;">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="citiesTableBody">
+                  <tr>
+                    <td>1</td>
+                    <td><b>Thakurgaon</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td><b>Tangail</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td><b>Sylhet</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td><b>Sunamganj</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td><b>Sirajganj</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td><b>Sherpur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>7</td>
+                    <td><b>Shariatpur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>8</td>
+                    <td><b>Satkhira</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>9</td>
+                    <td><b>Rangpur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>10</td>
+                    <td><b>Rangamati</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>11</td>
+                    <td><b>Rajshahi</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>12</td>
+                    <td><b>Rajbari</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>13</td>
+                    <td><b>Pirojpur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>14</td>
+                    <td><b>Patuakhali</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>15</td>
+                    <td><b>Panchagarh</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>16</td>
+                    <td><b>Pabna</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>17</td>
+                    <td><b>Noakhali</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>18</td>
+                    <td><b>Nilphamari</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>19</td>
+                    <td><b>Netrokona</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>20</td>
+                    <td><b>Natore</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>21</td>
+                    <td><b>Narshingdi</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>22</td>
+                    <td><b>Narayanganj</b></td>
+                    <td>100</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>23</td>
+                    <td><b>Narail</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>24</td>
+                    <td><b>Naogaon</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>25</td>
+                    <td><b>Mymensingh</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>26</td>
+                    <td><b>Munshiganj</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>27</td>
+                    <td><b>Moulvibazar</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>28</td>
+                    <td><b>Meherpur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>29</td>
+                    <td><b>Manikganj</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>30</td>
+                    <td><b>Magura</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>31</td>
+                    <td><b>Madaripur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>32</td>
+                    <td><b>Lalmonirhat</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>33</td>
+                    <td><b>Lakshmipur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>34</td>
+                    <td><b>Kushtia</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>35</td>
+                    <td><b>Kurigram</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>36</td>
+                    <td><b>Kishoreganj</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>37</td>
+                    <td><b>Khulna</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>38</td>
+                    <td><b>Khagrachari</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>39</td>
+                    <td><b>Joypurhat</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>40</td>
+                    <td><b>Jhenaidah</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>41</td>
+                    <td><b>Jhalokathi</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>42</td>
+                    <td><b>Jashore</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>43</td>
+                    <td><b>Jamalpur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>44</td>
+                    <td><b>Habiganj</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>45</td>
+                    <td><b>Gopalganj</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>46</td>
+                    <td><b>Gazipur</b></td>
+                    <td>100</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>47</td>
+                    <td><b>Gaibandha</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>48</td>
+                    <td><b>Feni</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>49</td>
+                    <td><b>Faridpur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>50</td>
+                    <td><b>Dinajpur</b></td>
+                    <td>120</td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12px;color:#718096;">
+              <div class="pagination-pills">
+                <span class="page-pill active">1</span>
+                <span class="page-pill">2</span>
+                <span class="page-pill">»</span>
+              </div>
+              <div id="citiesEntriesCount">
+                Showing 1 to 50 of total 64 entries
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+        <!-- VIEW: SUB CITY (Exact Match) -->
+        <div id="view-sub-city" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+              <h2 style="font-size:16.5px;font-weight:700;color:#2D3748;margin:0;">Courier</h2>
+              <input type="text" class="order-search-box" placeholder="search here">
+            </div>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:80px;">Serial</th>
+                    <th>City Name</th>
+                    <th>Sub City Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>Thakurgaon</td>
+                    <td>Thakurgaon Sadar</td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>Thakurgaon</td>
+                    <td>Ruhia</td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td>Thakurgaon</td>
+                    <td>Ranisankail</td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td>Thakurgaon</td>
+                    <td>Pirganj</td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td>Thakurgaon</td>
+                    <td>Haripur</td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td>Thakurgaon</td>
+                    <td>Baliadangi</td>
+                  </tr>
+                  <tr>
+                    <td>7</td>
+                    <td>Tangail</td>
+                    <td>Tangail Sadar</td>
+                  </tr>
+                  <tr>
+                    <td>8</td>
+                    <td>Tangail</td>
+                    <td>Sakhipur</td>
+                  </tr>
+                  <tr>
+                    <td>9</td>
+                    <td>Tangail</td>
+                    <td>Nagarpur</td>
+                  </tr>
+                  <tr>
+                    <td>10</td>
+                    <td>Tangail</td>
+                    <td>Mirzapur</td>
+                  </tr>
+                  <tr>
+                    <td>11</td>
+                    <td>Tangail</td>
+                    <td>Madhupur</td>
+                  </tr>
+                  <tr>
+                    <td>12</td>
+                    <td>Tangail</td>
+                    <td>Kalihati</td>
+                  </tr>
+                  <tr>
+                    <td>13</td>
+                    <td>Tangail</td>
+                    <td>Gopalpur</td>
+                  </tr>
+                  <tr>
+                    <td>14</td>
+                    <td>Tangail</td>
+                    <td>Ghatail</td>
+                  </tr>
+                  <tr>
+                    <td>15</td>
+                    <td>Tangail</td>
+                    <td>Dhanbari</td>
+                  </tr>
+                  <tr>
+                    <td>16</td>
+                    <td>Tangail</td>
+                    <td>Delduar</td>
+                  </tr>
+                  <tr>
+                    <td>17</td>
+                    <td>Tangail</td>
+                    <td>Bhuapur</td>
+                  </tr>
+                  <tr>
+                    <td>18</td>
+                    <td>Tangail</td>
+                    <td>Bashail</td>
+                  </tr>
+                  <tr>
+                    <td>19</td>
+                    <td>Sylhet</td>
+                    <td>Zakiganj</td>
+                  </tr>
+                  <tr>
+                    <td>20</td>
+                    <td>Sylhet</td>
+                    <td>Ward No-01</td>
+                  </tr>
+                  <tr>
+                    <td>21</td>
+                    <td>Sylhet</td>
+                    <td>Sylhet Sadar</td>
+                  </tr>
+                  <tr>
+                    <td>22</td>
+                    <td>Sylhet</td>
+                    <td>Osmani Nagar</td>
+                  </tr>
+                  <tr>
+                    <td>23</td>
+                    <td>Sylhet</td>
+                    <td>Kanaighat</td>
+                  </tr>
+                  <tr>
+                    <td>24</td>
+                    <td>Sylhet</td>
+                    <td>Jaintiapur</td>
+                  </tr>
+                  <tr>
+                    <td>25</td>
+                    <td>Sylhet</td>
+                    <td>Gowainghat</td>
+                  </tr>
+                  <tr>
+                    <td>26</td>
+                    <td>Sylhet</td>
+                    <td>Golapganj</td>
+                  </tr>
+                  <tr>
+                    <td>27</td>
+                    <td>Sylhet</td>
+                    <td>Fenchuganj</td>
+                  </tr>
+                  <tr>
+                    <td>28</td>
+                    <td>Sylhet</td>
+                    <td>Dakshin Surma</td>
+                  </tr>
+                  <tr>
+                    <td>29</td>
+                    <td>Sylhet</td>
+                    <td>Companiganj</td>
+                  </tr>
+                  <tr>
+                    <td>30</td>
+                    <td>Sylhet</td>
+                    <td>Bishwanath</td>
+                  </tr>
+                  <tr>
+                    <td>31</td>
+                    <td>Sylhet</td>
+                    <td>Beanibazar</td>
+                  </tr>
+                  <tr>
+                    <td>32</td>
+                    <td>Sylhet</td>
+                    <td>Balaganj</td>
+                  </tr>
+                  <tr>
+                    <td>33</td>
+                    <td>Sunamganj</td>
+                    <td>Tahirpur</td>
+                  </tr>
+                  <tr>
+                    <td>34</td>
+                    <td>Sunamganj</td>
+                    <td>Sunamganj Sadar</td>
+                  </tr>
+                  <tr>
+                    <td>35</td>
+                    <td>Sunamganj</td>
+                    <td>Shantinagar</td>
+                  </tr>
+                  <tr>
+                    <td>36</td>
+                    <td>Sunamganj</td>
+                    <td>Salla</td>
+                  </tr>
+                  <tr>
+                    <td>37</td>
+                    <td>Sunamganj</td>
+                    <td>Jamalganj</td>
+                  </tr>
+                  <tr>
+                    <td>38</td>
+                    <td>Sunamganj</td>
+                    <td>Jagannathpur</td>
+                  </tr>
+                  <tr>
+                    <td>39</td>
+                    <td>Sunamganj</td>
+                    <td>Dowarabazar</td>
+                  </tr>
+                  <tr>
+                    <td>40</td>
+                    <td>Sunamganj</td>
+                    <td>Dharmapasha</td>
+                  </tr>
+                  <tr>
+                    <td>41</td>
+                    <td>Sunamganj</td>
+                    <td>Derai</td>
+                  </tr>
+                  <tr>
+                    <td>42</td>
+                    <td>Sunamganj</td>
+                    <td>Chhatak</td>
+                  </tr>
+                  <tr>
+                    <td>43</td>
+                    <td>Sunamganj</td>
+                    <td>Bishwamvarpur</td>
+                  </tr>
+                  <tr>
+                    <td>44</td>
+                    <td>Sirajganj</td>
+                    <td>Ullapara</td>
+                  </tr>
+                  <tr>
+                    <td>45</td>
+                    <td>Sirajganj</td>
+                    <td>Tarash</td>
+                  </tr>
+                  <tr>
+                    <td>46</td>
+                    <td>Sirajganj</td>
+                    <td>Sirajganj Sadar</td>
+                  </tr>
+                  <tr>
+                    <td>47</td>
+                    <td>Sirajganj</td>
+                    <td>Shahjadpur - Shahjadpur</td>
+                  </tr>
+                  <tr>
+                    <td>48</td>
+                    <td>Sirajganj</td>
+                    <td>Salonga</td>
+                  </tr>
+                  <tr>
+                    <td>49</td>
+                    <td>Sirajganj</td>
+                    <td>Rayganj</td>
+                  </tr>
+                  <tr>
+                    <td>50</td>
+                    <td>Sirajganj</td>
+                    <td>Kazipur</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12px;color:#718096;">
+              <div class="pagination-pills">
+                <span class="page-pill active">1</span>
+                <span class="page-pill">2</span>
+                <span class="page-pill">3</span>
+                <span class="page-pill">...</span>
+                <span class="page-pill">21</span>
+                <span class="page-pill">»</span>
+              </div>
+              <div>
+                Showing 1 to 50 of total 1012 entries
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: COURIER LIST (Exact Match: steadfast, RedX, Pathao) -->
+        <div id="view-couriers" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:60px;">#</th>
+                    <th>Name</th>
+                    <th>Image</th>
+                    <th style="text-align:right;padding-right:20px;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td><b>steadfast</b></td>
+                    <td>
+                      <div class="courier-logo-img courier-logo-steadfast">F</div>
+                    </td>
+                    <td style="text-align:right;padding-right:20px;">
+                      <span class="city-status-active">Active</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td><b>RedX</b></td>
+                    <td>
+                      <div class="courier-logo-img courier-logo-redx">X</div>
+                    </td>
+                    <td style="text-align:right;padding-right:20px;">
+                      <span class="city-status-active">Active</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td><b>Pathao</b></td>
+                    <td>
+                      <div class="courier-logo-img courier-logo-pathao">P</div>
+                    </td>
+                    <td style="text-align:right;padding-right:20px;">
+                      <span class="city-status-active">Active</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="text-align:right;margin-top:14px;font-size:12px;color:#718096;">
+              Showing 1 to 3 of total 3 entries
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: ORDER SOURCE (Exact Match: Landing Page, Whatsapp, FB, Web Site) -->
+        <div id="view-order-source" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Source</h2>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:60px;">#</th>
+                    <th>Name</th>
+                    <th style="text-align:right;padding-right:20px;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td><b>Landing Page</b></td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td><b>Whatsapp</b></td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td><b>FB</b></td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td><b>Web Site</b></td>
+                    <td style="text-align:right;padding-right:20px;"><span class="city-status-active">Active</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="text-align:right;margin-top:14px;font-size:12px;color:#718096;">
+              Showing 1 to 4 of total 4 entries
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: COMMENTS (Exact Match: 6 items + Add Comment) -->
+        <div id="view-comments" class="view-panel" style="display:none;">
+          <div style="margin-bottom:16px;">
+            <button class="btn-primary-teal" onclick="showToast('Add Comment Modal')">
+              + Add Comment
+            </button>
+          </div>
+
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Comments</h2>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:60px;">#</th>
+                    <th>Name</th>
+                    <th>status</th>
+                    <th style="text-align:right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>Product Return</td>
+                    <td><span class="city-status-active">Active</span></td>
+                    <td style="text-align:right;">
+                      <button class="action-btn-square-teal">📝</button>
+                      <button class="action-btn-circle-blue">🚫</button>
+                      <button class="action-btn-orange-del">🗑️</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>others</td>
+                    <td><span class="city-status-active">Active</span></td>
+                    <td style="text-align:right;">
+                      <button class="action-btn-square-teal">📝</button>
+                      <button class="action-btn-circle-blue">🚫</button>
+                      <button class="action-btn-orange-del">🗑️</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td>Fraud Customer</td>
+                    <td><span class="city-status-active">Active</span></td>
+                    <td style="text-align:right;">
+                      <button class="action-btn-square-teal">📝</button>
+                      <button class="action-btn-circle-blue">🚫</button>
+                      <button class="action-btn-orange-del">🗑️</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td>পরে জানাবেন</td>
+                    <td><span class="city-status-active">Active</span></td>
+                    <td style="text-align:right;">
+                      <button class="action-btn-square-teal">📝</button>
+                      <button class="action-btn-circle-blue">🚫</button>
+                      <button class="action-btn-orange-del">🗑️</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td>অফিসে আসবেন</td>
+                    <td><span class="city-status-active">Active</span></td>
+                    <td style="text-align:right;">
+                      <button class="action-btn-square-teal">📝</button>
+                      <button class="action-btn-circle-blue">🚫</button>
+                      <button class="action-btn-orange-del">🗑️</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td>আবার কল দিতে হবে</td>
+                    <td><span class="city-status-active">Active</span></td>
+                    <td style="text-align:right;">
+                      <button class="action-btn-square-teal">📝</button>
+                      <button class="action-btn-circle-blue">🚫</button>
+                      <button class="action-btn-orange-del">🗑️</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="text-align:right;margin-top:14px;font-size:12px;color:#718096;">
+              Showing 1 to 6 of total 6 entries
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: ADD ADMIN (Exact Match) -->
+        <div id="view-add-admin" class="view-panel" style="display:none;">
+          <div style="margin-bottom:16px;">
+            <button class="btn-back-teal" onclick="switchView('dashboard')">
+              ← Back
+            </button>
+          </div>
+
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Add Admin</h2>
+
+            <form onsubmit="event.preventDefault(); showToast('নতুন অ্যাডমিন সফলভাবে যুক্ত হয়েছে!');" style="max-width:700px;margin:0 auto;">
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Name</label>
+                <input type="text" class="form-horizontal-input" placeholder="name" required>
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Email</label>
+                <input type="email" class="form-horizontal-input" placeholder="email" required>
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Password</label>
+                <input type="password" class="form-horizontal-input" placeholder="password" required>
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label">Image</label>
+                <input type="file" class="form-control no-icon" style="padding:6px 10px;">
+              </div>
+
+              <div style="margin-top:20px;padding-left:198px;">
+                <button type="submit" class="btn-primary-teal" style="padding:9px 24px;">
+                  Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        
+        <!-- VIEW: ADMIN MANAGE (Exact Match: babyfashionbd.com/admin/listAdmin) -->
+        <div id="view-manage-admin" class="view-panel" style="display:none;">
+          <div style="margin-bottom:16px;">
+            <button class="btn-primary-teal" onclick="switchView('add-admin')">
+              + Add Admin
+            </button>
+          </div>
+
+          <div class="white-box-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+              <h2 style="font-size:16.5px;font-weight:700;color:#2D3748;margin:0;">Admin</h2>
+              <div style="display:flex;gap:8px;">
+                <input type="text" class="order-search-box" placeholder="type name or email">
+                <select class="form-control no-icon" style="width:100px;padding:6px 8px;">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:50px;">#</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Image</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTableBody"></tbody>
+              </table>
+            </div>
+
+            <div style="text-align:right;margin-top:14px;font-size:12px;color:#718096;">
+              Showing 1 to 1 of total 1 entries
+            </div>
+          </div>
+        </div>
+
+
+        <!-- VIEW: CUSTOMERS (Exact Match: babyfashionbd.com/admin/customer/list) -->
+        <div id="view-customers" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Customers</h2>
+
+            <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;">
+              <input type="text" class="order-search-box" style="width:340px;" placeholder="customer name or 01xxxxxxxxx">
+              <button class="btn-order-search" style="padding:7px 18px;">search</button>
+            </div>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:40px;">#</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Behavior</th>
+                    <th>Total Order</th>
+                    <th>City</th>
+                    <th>Address</th>
+                    <th style="text-align:right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="customersTableBody"></tbody>
+              </table>
+            </div>
+
+            <div style="text-align:right;margin-top:14px;font-size:12px;color:#718096;">
+              Showing 1 to 7 of total 7 entries
+            </div>
+          </div>
+        </div>
+
+
+        <!-- VIEW: LOSS/PROFIT REPORT (Exact Match: babyfashionbd.com/admin/profit/report) -->
+        <div id="view-profit-report" class="view-panel" style="display:none;">
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Gross & Net Profit</h2>
+
+            <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+              <input type="date" class="form-control no-icon" style="flex:1;">
+              <input type="date" class="form-control no-icon" style="flex:1;">
+              <select class="form-control no-icon" style="flex:1;">
+                <option>Filter By Days</option>
+                <option>Today</option>
+                <option>This Week</option>
+                <option>This Month</option>
+              </select>
+              <button class="btn-primary-teal">▼ Filter By Date</button>
+            </div>
+
+            <div class="orders-table-container" style="margin-bottom:24px;">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th>Source</th>
+                    <th>Order Revenue</th>
+                    <th>Production Cost (~45%)</th>
+                    <th>Gross Profit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Landing Pages & Direct Orders</td>
+                    <td id="profitOrderAmount">৳ 0</td>
+                    <td id="profitProdCost">৳ 0</td>
+                    <td id="profitGross">৳ 0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="font-size:15px;font-weight:700;color:#1A202C;margin-bottom:18px;">
+              Total Ad & Operating Expenses: <span id="profitExpense" style="color:#E53E3E;">৳ 0</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;background:#F8FAFC;padding:18px;border-radius:6px;border:1px solid #E2E8F0;">
+              <div>
+                <h4 style="font-size:15px;font-weight:700;color:#1A202C;">Gross Profit: <span id="profitGrossCard">৳ 0</span></h4>
+                <p style="font-size:12px;color:#718096;">Total Order Revenue − Product Cost</p>
+              </div>
+              <div>
+                <h4 style="font-size:15px;font-weight:700;color:#004D40;">Net Profit: <span id="profitNet">৳ 0</span></h4>
+                <p style="font-size:12px;color:#718096;">Gross Profit − All Expenses</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- VIEW: LANDING PAGES TABLE (Exact Match: babyfashionbd.com/admin/landing/page-list) -->
+        <div id="view-landing-pages-list" class="view-panel" style="display:none;">
+          <div style="margin-bottom:16px;">
+            <button class="btn-primary-teal" onclick="showToast('Create new landing page modal')">
+              + Add Page
+            </button>
+          </div>
+
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Pages</h2>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:40px;">#</th>
+                    <th>Category</th>
+                    <th>Title</th>
+                    <th>Authoritative</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="landingPagesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 15: LANDING PAGE HUB -->
+        <div id="view-landingpages" class="view-panel" style="display:none;">
+          <div class="panel-box" style="margin-bottom:20px;">
+            <div class="panel-header">
+              <span class="panel-title">Landing Page Hub (১১টি সক্রিয় ল্যান্ডিং পেজ)</span>
+            </div>
+            <p style="color:#718096;font-size:14px;">আপনার সবগুলো ল্যান্ডিং পেজ সরাসরি প্রিভিউ ও এলিমেন্টর রেডি কোড কপি করুন।</p>
+          </div>
+          <div class="lp-grid" id="landingPagesGrid"></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / CREATE ORDER -->
+  <div class="modal-overlay" id="addOrderModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size:16px;font-weight:700;">Create New Order</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Customer Name *</label>
+          <input type="text" id="newOrdName" class="form-control no-icon" placeholder="e.g. alamin hossain">
+        </div>
+        <div class="form-group">
+          <label>Phone Number *</label>
+          <input type="text" id="newOrdPhone" class="form-control no-icon" placeholder="017XXXXXXXX">
+        </div>
+        <div class="form-group">
+          <label>Select Product *</label>
+          <select id="newOrdProduct" class="form-control no-icon">
+            <option value="Cotton T Shirt... - 1542">Cotton T Shirt... - 1542 (৳১,০৭০)</option>
+            <option value="Baby Putol... - 1535">Baby Putol... - 1535 (৳১,০৫৯)</option>
+            <option value="Velour Perfume">Velour Perfume (৳১,৯৯০)</option>
+            <option value="UrbanCarry Bag">UrbanCarry Bag (৳১,৬৫০)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Total Price (৳) *</label>
+          <input type="number" id="newOrdPrice" class="form-control no-icon" value="1070">
+        </div>
+        <div class="form-group">
+          <label>Address</label>
+          <textarea id="newOrdAddress" class="form-control no-icon" rows="2" placeholder="e.g. uttara, dhaka"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-create-order btn-close-modal">Cancel</button>
+        <button class="btn-teal-action" onclick="saveNewOrder()">Save Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD CREDIT / INCOME -->
+  <div class="modal-overlay" id="addCreditModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size:16px;font-weight:700;">+ Add New Credit Record</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="creditDate" class="form-control no-icon" value="2026-08-29">
+        </div>
+        <div class="form-group">
+          <label>Invoice Number</label>
+          <input type="text" id="creditInvoice" class="form-control no-icon" placeholder="e.g. 9335735">
+        </div>
+        <div class="form-group">
+          <label>Credit In (Account / Gateway) *</label>
+          <select id="creditMethod" class="form-control no-icon">
+            <option value="bKash">bKash</option>
+            <option value="Cash / COD">Cash / COD</option>
+            <option value="Nagad">Nagad</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Amount (৳) *</label>
+          <input type="number" id="creditAmount" class="form-control no-icon" placeholder="1070" value="1070">
+        </div>
+        <div class="form-group">
+          <label>Comment</label>
+          <input type="text" id="creditComment" class="form-control no-icon" placeholder="e.g. Order payment received">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-create-order btn-close-modal">Cancel</button>
+        <button class="btn-teal-action" onclick="saveNewCredit()">Save Credit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GENERIC (INVOICE & EDIT MODAL) -->
+  <div class="modal-overlay" id="genericModal">
+    <div class="modal-content" style="max-width:680px;">
+      <div class="modal-header">
+        <h3 id="genericModalTitle" style="font-size:16px;font-weight:700;">Details</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <div class="modal-body" id="genericModalBody"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: LIVE PREVIEW OF LANDING PAGE WITH RESPONSIVE SWITCHER -->
+  <div class="modal-overlay" id="lpPreviewModal">
+    <div class="modal-content" style="max-width:1050px;height:90vh;display:flex;flex-direction:column;">
+      <div class="modal-header">
+        <h3 id="lpPreviewTitle" style="font-size:16px;font-weight:700;">Landing Page Preview</h3>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;" onclick="setPreviewDevice('desktop')">🖥️ Desktop</button>
+          <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;" onclick="setPreviewDevice('tablet')">📱 Tablet</button>
+          <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;" onclick="setPreviewDevice('mobile')">📱 Mobile</button>
+          <button class="btn-close-modal" style="margin-left:8px;">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:0;flex:1;background:#F1F5F9;display:flex;align-items:center;justify-content:center;">
+        <iframe id="lpPreviewIframe" style="width:100%;height:100%;border:none;background:#fff;transition:width 0.2s;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-box" id="toastBox">Action Completed</div>
+
+  <script src="/admin/app.js?v=6.0"></script>
+</body>
+</html>

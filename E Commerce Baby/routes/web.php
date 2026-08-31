@@ -37,5 +37,11 @@ Route::get('/order/success/{orderNumber}', [FrontendController::class, 'orderSuc
 Route::get('/about-us', [FrontendController::class, 'about'])->name('about');
 Route::get('/contact-us', [FrontendController::class, 'contact'])->name('contact');
 Route::get('/policy/{type?}', [FrontendController::class, 'policy'])->name('policy');
+// Central Growth Agro Admin Panel
+Route::get('/admin', function () {
+    return response()->file(public_path('admin/index.html'));
+});
 
-
+Route::get('/admin/login', function () {
+    return response()->file(public_path('admin/index.html'));
+});
