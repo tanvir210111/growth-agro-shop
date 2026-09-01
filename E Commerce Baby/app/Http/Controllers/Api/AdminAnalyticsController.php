@@ -1123,8 +1123,9 @@ class AdminAnalyticsController extends Controller
 
         if (!$result['success']) {
             return response()->json([
-                'success' => false,
-                'message' => $result['message'] ?? 'Courier check failed.',
+                'success'     => false,
+                'status_code' => $result['status_code'] ?? 400,
+                'message'     => $result['message'] ?? 'Courier check failed.',
             ]);
         }
 

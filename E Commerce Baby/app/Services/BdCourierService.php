@@ -50,14 +50,35 @@ class BdCourierService
 
         // Validate phone before making the API call
         if (empty($phone)) {
-            return $this->failureResult('Phone number is empty — skipping courier check.');
+            return $this->failureResult('ফোন নম্বর প্রদান করা হয়নি (Phone number is empty).');
         }
 
         // Normalize: strip country code prefix if present
         $normalized = preg_replace('/^(?:\+88|88)/', '', $phone);
         if (!preg_match('/^01[3-9]\d{8}$/', $normalized)) {
-            return $this->failureResult('Invalid Bangladeshi phone number format — skipping courier check.');
+            return $this->failureResult('সঠিক বাংলাদেশি ফোন নম্বর নয় (Invalid Bangladeshi phone number format).');
         }
+
+        // 1. Cache lookup to prevent duplicate requests for the same phone within short window (10 minutes)
+        $cacheKey = 'bdcourier_check_' . $normalized;
+        try {
+            $cached = \Illuminate\Support\Facades\Cache::get($cacheKey);
+            if ($cached && is_array($cached) && !empty($cached['success'])) {
+                $cached['cached'] = true;
+                return $cached;
+            }
+        } catch (\Throwable $ce) {}
+
+        // 2. Check if API quota is temporarily known to be exhausted to prevent hammering
+        try {
+            $quotaBlocked = \Illuminate\Support\Facades\Cache::get('bdcourier_quota_exhausted');
+            if ($quotaBlocked) {
+                return $this->failureResult(
+                    'BD Courier একাউন্ট লিমিট শেষ: Both paid and free search limits have been reached. (অনুগ্রহ করে বিডি কুরিয়ার একাউন্টে রিচার্জ/প্যাকেজ রিনিউ করুন)',
+                    429
+                );
+            }
+        } catch (\Throwable $ce) {}
 
         // Resolve API key from server-side config only; never expose the key
         $apiKey = config('services.bdcourier.key');
@@ -78,11 +99,63 @@ class BdCourierService
                 $client = $client->withoutVerifying();
             }
 
-            $response = $client->post(self::API_ENDPOINT, [
-                'phone' => $normalized,
-            ]);
+            $attempt = 0;
+            $maxAttempts = 2;
+            $response = null;
 
-            if ($response->successful()) {
+            while ($attempt < $maxAttempts) {
+                $attempt++;
+                $response = $client->post(self::API_ENDPOINT, [
+                    'phone' => $normalized,
+                ]);
+
+                if ($response->successful()) {
+                    break;
+                }
+
+                // Handle HTTP 429 Rate Limiting
+                if ($response->status() === 429) {
+                    $json = $response->json();
+                    $msg = is_array($json) ? ($json['message'] ?? '') : '';
+
+                    // Quota exhausted on BD Courier account
+                    if (stripos($msg, 'limit') !== false || stripos($msg, 'reach') !== false) {
+                        try {
+                            \Illuminate\Support\Facades\Cache::put('bdcourier_quota_exhausted', true, 60);
+                        } catch (\Throwable $ce) {}
+
+                        return $this->failureResult(
+                            'BD Courier একাউন্ট লিমিট শেষ: ' . ($msg ?: 'Both paid and free search limits have been reached.') . ' (অনুগ্রহ করে বিডি কুরিয়ার ড্যাশবোর্ড থেকে একাউন্ট রিচার্জ করুন)',
+                            429
+                        );
+                    }
+
+                    // Transient rate limit with Retry-After header
+                    $retryAfter = (int) ($response->header('Retry-After') ?: 0);
+                    if ($attempt < $maxAttempts && $retryAfter > 0 && $retryAfter <= 2) {
+                        sleep($retryAfter);
+                        continue;
+                    } elseif ($attempt < $maxAttempts && $retryAfter === 0) {
+                        usleep(500000); // 500ms backoff
+                        continue;
+                    }
+
+                    return $this->failureResult(
+                        'BD Courier API সাময়িকভাবে ব্যস্ত (Rate Limit 429)। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।',
+                        429
+                    );
+                }
+
+                // Retry once on server 5xx error with backoff
+                if ($response->serverError() && $attempt < $maxAttempts) {
+                    usleep(500000);
+                    continue;
+                }
+
+                break;
+            }
+
+            if ($response && $response->successful()) {
                 $json = $response->json();
                 if (!is_array($json)) {
                     Log::warning('[BdCourierService] Malformed response — not a JSON object.', [
@@ -92,15 +165,31 @@ class BdCourierService
                     return $this->failureResult('BD Courier API returned a malformed response.');
                 }
 
-                return $this->normalizeResponse($normalized, $json);
+                $result = $this->normalizeResponse($normalized, $json);
+                if (!empty($result['success'])) {
+                    try {
+                        \Illuminate\Support\Facades\Cache::put($cacheKey, $result, 600);
+                    } catch (\Throwable $ce) {}
+                }
+                return $result;
             }
 
             // Non-2xx HTTP status
+            $errMsg = 'BD Courier API returned HTTP ' . ($response ? $response->status() : 'unknown') . '.';
+            if ($response) {
+                $json = $response->json();
+                if (is_array($json) && !empty($json['message'])) {
+                    $errMsg = 'BD Courier API: ' . $json['message'];
+                }
+            }
+
             Log::warning('[BdCourierService] Non-2xx HTTP status from BD Courier API.', [
                 'phone_masked' => $this->maskPhone($normalized),
-                'status'       => $response->status(),
+                'status'       => $response ? $response->status() : null,
+                'message'      => $errMsg
             ]);
-            return $this->failureResult('BD Courier API returned HTTP ' . $response->status() . '.');
+
+            return $this->failureResult($errMsg, $response ? $response->status() : 500);
 
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             // Timeout or connection refused
@@ -116,7 +205,7 @@ class BdCourierService
                 'phone_masked' => $this->maskPhone($normalized),
                 'error'        => $e->getMessage(),
             ]);
-            return $this->failureResult('Unexpected error during courier check.');
+            return $this->failureResult('Unexpected error during courier check: ' . $e->getMessage());
         }
     }
 
@@ -227,10 +316,11 @@ class BdCourierService
     /**
      * Standardized failure result — never exposes the API key.
      */
-    private function failureResult(string $message): array
+    private function failureResult(string $message, int $statusCode = 400): array
     {
         return [
             'success'           => false,
+            'status_code'       => $statusCode,
             'total_parcels'     => 0,
             'success_parcels'   => 0,
             'cancelled_parcels' => 0,

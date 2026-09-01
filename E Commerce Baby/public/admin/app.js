@@ -717,7 +717,7 @@ function renderOrdersTable() {
           </div>
           <div style="display:flex;align-items:center;gap:6px;margin:3px 0;">
             <a href="tel:${ord.phone}" class="phone-tag" style="text-decoration:none;">📞 ${ord.phone}</a>
-            <button type="button" onclick="checkCourierRatio('${ord.phone}', '${ord.customer}', '${ord.invoice}')" style="cursor:pointer;background:#004D40;color:#fff;border:none;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:600;display:inline-flex;align-items:center;gap:2px;" title="BD Courier Ratio & Fraud Check">🛡️ Check</button>
+            <button type="button" onclick="checkCourierRatio('${ord.phone}', '${ord.customer}', '${ord.invoice}', this)" style="cursor:pointer;background:#004D40;color:#fff;border:none;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:600;display:inline-flex;align-items:center;gap:2px;" title="BD Courier Ratio & Fraud Check">🛡️ Check</button>
           </div>
           <div class="address-text">${ord.address}</div>
         </div>
@@ -3171,7 +3171,17 @@ window.showToast = function(msg) {
 // ==============================================================================
 // 13. BD COURIER FRAUD & DELIVERY RATIO INTEGRATION (Hardened)
 // ==============================================================================
-window.checkCourierRatio = function(phone, customerName, invoice) {
+let isCheckingCourier = false;
+
+window.checkCourierRatio = function(phone, customerName, invoice, btnEl) {
+  if (isCheckingCourier) return;
+  isCheckingCourier = true;
+
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = '⏳ Checking...';
+  }
+
   let targetPhone = phone ? String(phone).trim() : '';
   if ((!targetPhone || targetPhone === 'undefined' || targetPhone === 'null') && invoice) {
     const found = APP_STATE.orders.find(o => o.invoice === invoice);
@@ -3186,7 +3196,14 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
   const modal = document.getElementById('genericModal');
   const modalTitle = document.getElementById('genericModalTitle');
   const modalBody = document.getElementById('genericModalBody');
-  if (!modal || !modalBody) return;
+  if (!modal || !modalBody) {
+    isCheckingCourier = false;
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.innerHTML = '🛡️ Check';
+    }
+    return;
+  }
 
   const displayTitle = customerName && customerName !== 'undefined' ? customerName : 'Customer';
   modalTitle.textContent = `🛡️ BD Courier Verification: ${displayTitle} ${targetPhone ? '(' + targetPhone + ')' : ''}`;
@@ -3242,7 +3259,7 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <div>
                 <h4 style="margin:0;font-size:15px;color:#1A202C;">${customerName}</h4>
-                <div style="font-size:13px;color:#4A5568;">📞 ${d.phone || phone} | Order: <b>#${invoice || 'N/A'}</b> ${d.cached ? '<span style="background:#E2E8F0;font-size:10px;padding:2px 6px;border-radius:4px;color:#4A5568;">⚡ Cached</span>' : ''}</div>
+                <div style="font-size:13px;color:#4A5568;">📞 ${d.phone || targetPhone || phone} | Order: <b>#${invoice || 'N/A'}</b> ${d.cached ? '<span style="background:#E2E8F0;font-size:10px;padding:2px 6px;border-radius:4px;color:#4A5568;">⚡ Cached</span>' : ''}</div>
               </div>
               <div style="text-align:right;">
                 <span style="background:${badgeColor};color:#fff;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;">
@@ -3301,7 +3318,7 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
           </div>` : ''}
 
           <div style="text-align:right;">
-            <button class="btn-primary-teal btn-close-modal" style="padding:8px 20px;">ঠিক আছে (Close)</button>
+            <button class="btn-primary-teal btn-close-modal" style="padding:8px 20px;" onclick="closeAllModals()">ঠিক আছে (Close)</button>
           </div>
         </div>
       `;
@@ -3312,8 +3329,8 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
             <div style="display:flex;gap:10px;align-items:flex-start;">
               <span style="font-size:20px;">⚠️</span>
               <div>
-                <h4 style="margin:0 0 4px 0;font-size:14px;color:#92400E;">BD Courier API Message</h4>
-                <p style="margin:0;font-size:12.5px;color:#78350F;">
+                <h4 style="margin:0 0 4px 0;font-size:14px;color:#92400E;">BD Courier API Status</h4>
+                <p style="margin:0;font-size:12.5px;color:#78350F;line-height:1.5;">
                   ${res.message || res.error || 'Courier service response unavailable.'}
                 </p>
               </div>
@@ -3329,7 +3346,7 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
             <button class="btn-teal-action" onclick="switchView('courier-api'); closeAllModals();">
               ⚙️ View Courier Settings
             </button>
-            <button class="btn-primary-teal btn-close-modal" style="padding:8px 20px;">Close</button>
+            <button class="btn-primary-teal btn-close-modal" style="padding:8px 20px;" onclick="closeAllModals()">Close</button>
           </div>
         </div>
       `;
@@ -3343,9 +3360,16 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
         <div style="font-size:28px;color:#E53E3E;margin-bottom:8px;">❌</div>
         <h4 style="margin:0 0 6px 0;color:#1A202C;">সার্ভারের সাথে যোগাযোগ করা যায়নি</h4>
         <p style="font-size:12px;color:#718096;margin-bottom:16px;">${err.message}</p>
-        <button class="btn-primary-teal btn-close-modal" style="padding:6px 16px;">Close</button>
+        <button class="btn-primary-teal btn-close-modal" style="padding:6px 16px;" onclick="closeAllModals()">Close</button>
       </div>
     `;
+  })
+  .finally(() => {
+    isCheckingCourier = false;
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.innerHTML = '🛡️ Check';
+    }
   });
 };
 
