@@ -293,30 +293,55 @@ class FrontendController extends Controller
 
     public function orderSuccess(string $orderNumber)
     {
-        $order = $this->checkoutService->getOrder($orderNumber);
-        if (!$order) {
-            $dbOrder = \App\Models\Order::where('invoice_no', $orderNumber)->orWhere('id', $orderNumber)->with('items')->first();
-            if ($dbOrder) {
-                $order = [
-                    'order_number'        => $dbOrder->invoice_no ?: ('ORD-' . $dbOrder->id),
-                    'customer_name'       => $dbOrder->customer_name,
-                    'customer_phone'      => $dbOrder->customer_phone,
-                    'customer_address'    => $dbOrder->customer_address,
-                    'delivery_area_label' => $dbOrder->city_type === 'inside_dhaka' ? 'Inside Dhaka' : 'Outside Dhaka',
-                    'items'               => $dbOrder->items->map(fn($it) => [
-                        'title'    => $it->product_name,
-                        'price'    => $it->price,
-                        'quantity' => $it->quantity,
-                        'size'     => $it->size
-                    ])->toArray(),
-                    'subtotal'            => (float)$dbOrder->subtotal,
-                    'shipping'            => (float)$dbOrder->delivery_charge,
-                    'total'               => (float)$dbOrder->total_amount,
-                ];
-            }
+        $dbOrder = \App\Models\Order::where('invoice_no', $orderNumber)->orWhere('id', $orderNumber)->with('items')->first();
+        $order = null;
+
+        if ($dbOrder) {
+            $order = [
+                'order_number'        => $dbOrder->invoice_no ?: ('ORD-' . $dbOrder->id),
+                'customer_name'       => $dbOrder->customer_name,
+                'customer_phone'      => $dbOrder->customer_phone,
+                'customer_address'    => $dbOrder->customer_address,
+                'delivery_area_label' => ($dbOrder->city_type === 'inside_dhaka' || $dbOrder->city_type === 'inside') ? 'ঢাকার ভিতরে (Inside Dhaka)' : 'ঢাকার বাইরে (Outside Dhaka)',
+                'items'               => $dbOrder->items->map(fn($it) => [
+                    'title'    => $it->product_name,
+                    'price'    => (float)$it->price,
+                    'quantity' => (int)$it->quantity,
+                    'size'     => $it->size ?: 'Standard'
+                ])->toArray(),
+                'subtotal'            => (float)$dbOrder->subtotal,
+                'shipping'            => (float)$dbOrder->delivery_charge,
+                'total'               => (float)$dbOrder->total_amount,
+                'source_type'         => $dbOrder->source_type,
+                'landing_page'        => $dbOrder->landing_page,
+            ];
+        } else {
+            $order = $this->checkoutService->getOrder($orderNumber);
         }
+
         if (!$order) {
             abort(404, 'Order not found.');
+        }
+
+        // Check if this order originated from a Landing Page
+        $isLandingPage = ($dbOrder && $dbOrder->source_type === 'landing_page')
+            || !empty($order['landing_page'])
+            || ($order['source_type'] ?? '') === 'landing_page';
+
+        if ($isLandingPage) {
+            $rawLanding = $dbOrder->landing_page ?? ($order['landing_page'] ?? '');
+            $parsedPath = parse_url($rawLanding, PHP_URL_PATH) ?: $rawLanding;
+            $slug = trim(preg_replace('#^/?(product|products)/#', '', trim($parsedPath, '/')));
+            $landingPage = null;
+            if ($slug) {
+                $landingPage = \App\Models\LandingPage::where('slug', $slug)->first();
+            }
+            $landingPageUrl = $slug ? ('/product/' . $slug) : '/';
+            $landingPageTitle = $landingPage
+                ? ($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name))
+                : ($order['items'][0]['title'] ?? 'Chicken Booster');
+
+            return view('pages.landing-success', compact('order', 'landingPage', 'landingPageUrl', 'landingPageTitle'));
         }
 
         return view('pages.order-success', compact('order'));

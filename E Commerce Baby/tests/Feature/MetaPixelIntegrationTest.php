@@ -309,5 +309,9 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertSee("num_items: 1", false);
         $response->assertSee("meta_tracked_purchase_", false);
         $response->assertSee("Broiler Booster (১ কেজি)", false);
+        // Landing page success must NOT contain Baby Fashion navigation/header/footer elements
+        $response->assertDontSee("site-header", false);
+        $response->assertDontSee("cart-drawer", false);
+        $response->assertSee("পণ্য পেজে ফিরে যান", false);
     }
 }

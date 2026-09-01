@@ -142,7 +142,10 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   assert.ok(cbSuccessRes.body.includes("window.fbq('track', 'Purchase', {"), 'Purchase event must fire on dedicated success page');
   assert.ok(cbSuccessRes.body.includes("currency: 'BDT'"), 'Currency must be BDT');
   assert.ok(cbSuccessRes.body.includes("meta_tracked_purchase_"), 'Must have deduplication guard');
-  console.log('✅ Chicken Booster dedicated success page renders cleanly with database order info and Meta Pixel Purchase tracking.');
+  assert.ok(cbSuccessRes.body.includes('href="/product/chicken-booster"'), 'Must have dynamic return CTA link to /product/chicken-booster');
+  assert.ok(!cbSuccessRes.body.includes('site-header'), 'Must NOT have main website Baby Fashion header');
+  assert.ok(!cbSuccessRes.body.includes('cart-drawer'), 'Must NOT have main website cart drawer');
+  console.log('✅ Chicken Booster dedicated success page renders standalone without main website header/navigation and with dynamic return link to /product/chicken-booster.');
 
   // Test 6: MediaScope IT Landing Page Order & Dedicated Success Page
   console.log('\n--- Test 6: MediaScope IT Order Placement & Dedicated Success Page ---');
@@ -177,7 +180,9 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   assert.strictEqual(msSuccessRes.status, 200);
   assert.ok(msSuccessRes.body.includes(msOrder.order_number));
   assert.ok(msSuccessRes.body.includes("window.fbq('track', 'Purchase', {"));
-  console.log('✅ MediaScope IT dedicated success page renders cleanly with Meta Pixel Purchase tracking.');
+  assert.ok(msSuccessRes.body.includes('href="/product/mediascope-it"'), 'Must have dynamic return CTA link to /product/mediascope-it');
+  assert.ok(!msSuccessRes.body.includes('site-header'), 'Must NOT have main website header');
+  console.log('✅ MediaScope IT dedicated success page renders cleanly with dynamic return link to /product/mediascope-it.');
 
   // Test 7: Future Dynamic Landing Page Order & Dedicated Success Page
   console.log('\n--- Test 7: Dynamic Future Landing Page Order & Dedicated Success Page ---');
@@ -230,7 +235,9 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   assert.strictEqual(dynamicSuccessRes.status, 200);
   assert.ok(dynamicSuccessRes.body.includes(dynamicOrder.order_number));
   assert.ok(dynamicSuccessRes.body.includes("window.fbq('track', 'Purchase', {"));
-  console.log('✅ Dynamic future landing page dedicated success page verified without hardcoded slugs.');
+  assert.ok(dynamicSuccessRes.body.includes(`href="/product/${futureSlug}"`), `Must have dynamic return CTA link to /product/${futureSlug}`);
+  assert.ok(!dynamicSuccessRes.body.includes('site-header'));
+  console.log('✅ Dynamic future landing page dedicated success page verified with dynamic return link without hardcoded slugs.');
 
   // Clean up dynamic page
   await sendReq(8000, `/api/admin/landing-pages/${tempPageId}`, 'DELETE', null, authHeaders);
