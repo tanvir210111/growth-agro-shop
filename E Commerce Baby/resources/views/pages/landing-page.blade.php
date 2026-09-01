@@ -1330,7 +1330,29 @@
       });
     }
 
-    // 2. Catalog & Delivery Configuration
+    // 2. Meta Pixel: ViewContent Event
+    if (typeof window.fbq === 'function') {
+      @php
+        $firstPkgPrice = 0;
+        if (!empty($pkgs) && is_array($pkgs)) {
+            $firstPkg = reset($pkgs);
+            $firstPkgPrice = (float)($firstPkg['price'] ?? 0);
+        }
+      @endphp
+      window.fbq('track', 'ViewContent', {
+        content_ids: ['{{ addslashes($landingPage->product_id ?: $landingPage->slug) }}'],
+        content_name: '{{ addslashes($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name)) }}',
+        content_type: 'product',
+        @if(!empty($firstPkgPrice) && $firstPkgPrice > 0)
+        value: {{ (float)$firstPkgPrice }},
+        currency: 'BDT'
+        @else
+        currency: 'BDT'
+        @endif
+      });
+    }
+
+    // 3. Catalog & Delivery Configuration
     const CATALOG = {
       @foreach($content['packages'] ?? [] as $pkg)
         "{{ $pkg['id'] }}": {

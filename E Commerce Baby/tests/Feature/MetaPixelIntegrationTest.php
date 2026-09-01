@@ -137,4 +137,47 @@ class MetaPixelIntegrationTest extends TestCase
         // Restore for subsequent runs
         Setting::set('facebook_pixel', '1793041018387711');
     }
+
+    public function test_main_ecommerce_product_page_fires_viewcontent()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/product/girls-red-butterfly-printed-t-shirt-floral-shorts-set');
+        $response->assertStatus(200);
+        // PageView in head
+        $response->assertSee("fbq('track', 'PageView');", false);
+        // ViewContent in body script with dynamic parameters
+        $response->assertSee("fbq('track', 'ViewContent', {", false);
+        $response->assertSee("content_ids: ['girls-red-butterfly-printed-t-shirt-floral-shorts-set']", false);
+        $response->assertSee("content_type: 'product'", false);
+        $response->assertSee("value: 790", false);
+        $response->assertSee("currency: 'BDT'", false);
+    }
+
+    public function test_landing_page_fires_viewcontent()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/product/chicken-booster');
+        $response->assertStatus(200);
+        // PageView in head
+        $response->assertSee("fbq('track', 'PageView');", false);
+        // ViewContent in body script
+        $response->assertSee("fbq('track', 'ViewContent', {", false);
+        $response->assertSee("content_ids: ['chicken-booster']", false);
+        $response->assertSee("content_type: 'product'", false);
+        $response->assertSee("currency: 'BDT'", false);
+    }
+
+    public function test_viewcontent_is_not_fired_on_homepage()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/');
+        $response->assertStatus(200);
+        // PageView should fire on home
+        $response->assertSee("fbq('track', 'PageView');", false);
+        // ViewContent should NOT fire on home
+        $response->assertDontSee("ViewContent");
+    }
 }

@@ -171,6 +171,17 @@
             event_value: {{ (float)$product["price"] }}
         });
     }
+
+    // Meta Pixel: ViewContent Event
+    if (typeof window.fbq === 'function') {
+        window.fbq('track', 'ViewContent', {
+            content_ids: ['{{ $product["slug"] }}'],
+            content_name: '{{ addslashes($product["title"]) }}',
+            content_type: 'product',
+            value: {{ (float)$product["price"] }},
+            currency: 'BDT'
+        });
+    }
 </script>
 @endpush
 @endsection
