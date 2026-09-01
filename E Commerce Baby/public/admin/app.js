@@ -2855,6 +2855,7 @@ window.openLivePreviewModal = function() {
   const iframe = document.getElementById('lpPreviewIframe');
   const title = document.getElementById('lpPreviewTitle');
   const loader = document.getElementById('lpPreviewLoading');
+  const directLink = document.getElementById('lpPreviewOpenDirect');
 
   if (modal && iframe) {
     let slug = slugInput;
@@ -2868,22 +2869,27 @@ window.openLivePreviewModal = function() {
     if (title) title.textContent = `${pageName} — Live Device Preview`;
 
     const previewUrl = `/product/${encodeURIComponent(slug)}?preview=true`;
+    if (directLink) directLink.href = previewUrl;
 
     if (loader) {
       loader.innerHTML = '<span>⏳ Loading live preview...</span>';
       loader.style.display = 'flex';
     }
-    iframe.style.opacity = '0';
 
+    let loaded = false;
     iframe.onload = () => {
+      loaded = true;
       if (loader) loader.style.display = 'none';
-      iframe.style.opacity = '1';
     };
     iframe.onerror = () => {
       if (loader) {
-        loader.innerHTML = `<div style="color:#DC2626;text-align:center;">⚠️ Failed to load preview for <code>${slug}</code>.</div>`;
+        loader.innerHTML = `<div style="color:#DC2626;text-align:center;">⚠️ Failed to load preview for <code>${slug}</code>. <a href="${previewUrl}" target="_blank" style="color:#0284C7;text-decoration:underline;">Click to open directly ↗</a></div>`;
       }
     };
+
+    setTimeout(() => {
+      if (loader && !loaded) loader.style.display = 'none';
+    }, 2500);
 
     iframe.src = previewUrl;
     modal.classList.add('active');
@@ -2896,6 +2902,7 @@ window.previewLandingPageById = function(id, name) {
   const iframe = document.getElementById('lpPreviewIframe');
   const title = document.getElementById('lpPreviewTitle');
   const loader = document.getElementById('lpPreviewLoading');
+  const directLink = document.getElementById('lpPreviewOpenDirect');
 
   if (modal && iframe) {
     const page = (APP_STATE.liveLandingPages || []).find(p => String(p.id) === String(id));
@@ -2905,22 +2912,27 @@ window.previewLandingPageById = function(id, name) {
     if (title) title.textContent = `${pageName} — Live Device Preview`;
 
     const previewUrl = `/product/${encodeURIComponent(slug)}?preview=true`;
+    if (directLink) directLink.href = previewUrl;
 
     if (loader) {
       loader.innerHTML = '<span>⏳ Loading live preview...</span>';
       loader.style.display = 'flex';
     }
-    iframe.style.opacity = '0';
 
+    let loaded = false;
     iframe.onload = () => {
+      loaded = true;
       if (loader) loader.style.display = 'none';
-      iframe.style.opacity = '1';
     };
     iframe.onerror = () => {
       if (loader) {
-        loader.innerHTML = `<div style="color:#DC2626;text-align:center;">⚠️ Failed to load preview for <code>${slug}</code>.</div>`;
+        loader.innerHTML = `<div style="color:#DC2626;text-align:center;">⚠️ Failed to load preview for <code>${slug}</code>. <a href="${previewUrl}" target="_blank" style="color:#0284C7;text-decoration:underline;">Click to open directly ↗</a></div>`;
       }
     };
+
+    setTimeout(() => {
+      if (loader && !loaded) loader.style.display = 'none';
+    }, 2500);
 
     iframe.src = previewUrl;
     modal.classList.add('active');
@@ -2948,14 +2960,16 @@ window.setPreviewDevice = function(device) {
   const iframe = document.getElementById('lpPreviewIframe');
   if (!iframe) return;
 
-  const buttons = document.querySelectorAll('#lpPreviewModal .modal-header button');
-  buttons.forEach(btn => {
-    if (btn.textContent.toLowerCase().includes(device)) {
-      btn.style.background = '#03363d';
-      btn.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
-    } else if (btn.classList.contains('btn-primary-teal')) {
-      btn.style.background = '#004D40';
-      btn.style.boxShadow = 'none';
+  ['desktop', 'tablet', 'mobile'].forEach(dev => {
+    const btn = document.getElementById('btnPreview' + dev.charAt(0).toUpperCase() + dev.slice(1));
+    if (btn) {
+      if (dev === device) {
+        btn.style.background = '#03363d';
+        btn.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
+      } else {
+        btn.style.background = '#004D40';
+        btn.style.boxShadow = 'none';
+      }
     }
   });
 

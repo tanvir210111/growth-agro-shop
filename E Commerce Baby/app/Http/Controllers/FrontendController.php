@@ -99,7 +99,7 @@ class FrontendController extends Controller
         ));
     }
 
-    public function product(string $slug, Request $request): View
+    public function product(string $slug, Request $request)
     {
         // 1. Check if a Landing Page exists with this slug
         $landingPage = LandingPage::where('slug', $slug)->first();
@@ -142,7 +142,10 @@ class FrontendController extends Controller
                 $themeConfig = $landingPage->theme_config ?: LandingPage::getDefaultThemeConfig();
                 $sectionOrder = $landingPage->section_order ?: LandingPage::getDefaultSectionOrder();
 
-                return view('pages.landing-page', compact('landingPage', 'content', 'deliveryConfig', 'themeConfig', 'sectionOrder'));
+                return response()
+                    ->view('pages.landing-page', compact('landingPage', 'content', 'deliveryConfig', 'themeConfig', 'sectionOrder'))
+                    ->header('X-Frame-Options', 'SAMEORIGIN')
+                    ->header('Content-Security-Policy', "frame-ancestors 'self'");
             }
 
             // Draft or Unpublished without preview

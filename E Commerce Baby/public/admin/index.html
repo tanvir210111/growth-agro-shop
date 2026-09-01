@@ -3482,21 +3482,22 @@
 
   <!-- MODAL: LIVE PREVIEW OF LANDING PAGE WITH RESPONSIVE SWITCHER -->
   <div class="modal-overlay" id="lpPreviewModal">
-    <div class="modal-content" style="max-width:1050px;height:90vh;display:flex;flex-direction:column;">
-      <div class="modal-header">
-        <h3 id="lpPreviewTitle" style="font-size:16px;font-weight:700;">Landing Page Preview</h3>
+    <div class="modal-content" style="max-width:1100px;width:95vw;height:90vh;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);">
+      <div class="modal-header" style="background:#fff;padding:12px 18px;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <h3 id="lpPreviewTitle" style="font-size:15px;font-weight:700;color:#1A202C;margin:0;">Landing Page Preview</h3>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;" onclick="setPreviewDevice('desktop')">🖥️ Desktop</button>
-          <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;" onclick="setPreviewDevice('tablet')">📱 Tablet</button>
-          <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;" onclick="setPreviewDevice('mobile')">📱 Mobile</button>
+          <button class="btn-primary-teal" id="btnPreviewDesktop" style="padding:4px 10px;font-size:11.5px;" onclick="setPreviewDevice('desktop')">🖥️ Desktop</button>
+          <button class="btn-primary-teal" id="btnPreviewTablet" style="padding:4px 10px;font-size:11.5px;" onclick="setPreviewDevice('tablet')">📱 Tablet</button>
+          <button class="btn-primary-teal" id="btnPreviewMobile" style="padding:4px 10px;font-size:11.5px;" onclick="setPreviewDevice('mobile')">📱 Mobile</button>
+          <a id="lpPreviewOpenDirect" href="#" target="_blank" class="btn-primary-teal" style="background:#0284C7;text-decoration:none;padding:4px 10px;font-size:11.5px;display:inline-flex;align-items:center;gap:4px;" title="Open in new browser tab">🌐 Open New Tab ↗</a>
           <button class="btn-close-modal" style="margin-left:8px;" onclick="closeLivePreviewModal()">✕</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0;flex:1;background:#F1F5F9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
-        <div id="lpPreviewLoading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:600;color:#64748B;display:none;align-items:center;gap:8px;z-index:2;background:rgba(255,255,255,0.9);padding:10px 18px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+      <div class="modal-body" style="padding:0;flex:1;min-height:0;height:calc(90vh - 60px);background:#F1F5F9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+        <div id="lpPreviewLoading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:600;color:#64748B;display:none;align-items:center;gap:8px;z-index:2;background:rgba(255,255,255,0.95);padding:10px 18px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);border:1px solid #E2E8F0;">
           <span>⏳ Loading live preview...</span>
         </div>
-        <iframe id="lpPreviewIframe" style="width:100%;height:100%;border:none;background:#fff;transition:width 0.25s ease, opacity 0.2s ease;"></iframe>
+        <iframe id="lpPreviewIframe" style="width:100%;height:100%;min-height:100%;border:none;background:#fff;transition:width 0.25s ease;display:block;"></iframe>
       </div>
     </div>
   </div>

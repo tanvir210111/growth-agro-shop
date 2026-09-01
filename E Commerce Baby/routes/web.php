@@ -191,7 +191,10 @@ Route::get('/admin/landing-pages/{id}/preview', function ($id, \Illuminate\Http\
     $deliveryConfig = $landingPage->delivery_config ?: \App\Models\LandingPage::getDefaultDeliveryConfig();
     $themeConfig = $landingPage->theme_config ?: \App\Models\LandingPage::getDefaultThemeConfig();
     $sectionOrder = $landingPage->section_order ?: \App\Models\LandingPage::getDefaultSectionOrder();
-    return view('pages.landing-page', compact('landingPage', 'content', 'deliveryConfig', 'themeConfig', 'sectionOrder'));
+    return response()
+        ->view('pages.landing-page', compact('landingPage', 'content', 'deliveryConfig', 'themeConfig', 'sectionOrder'))
+        ->header('X-Frame-Options', 'SAMEORIGIN')
+        ->header('Content-Security-Policy', "frame-ancestors 'self'");
 })->name('admin.landing-pages.preview');
 
 // Internal Node.js to Laravel Landing Order Sync Bridge & Config Lookup
