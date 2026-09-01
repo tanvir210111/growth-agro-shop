@@ -93,24 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initAuthCheck() {
   const loginSection = document.getElementById('loginSection');
   const appSection = document.getElementById('appSection');
-
-  // If user is visiting /admin/login explicitly, ALWAYS show login form and clear any stale local state
-  if (window.location.pathname.includes('/login')) {
-    APP_STATE.currentUser = null;
-    localStorage.removeItem('admin_user');
-    localStorage.removeItem('admin_token');
-    if (loginSection) loginSection.style.display = 'flex';
-    if (appSection) appSection.style.display = 'none';
-    return;
-  }
-
-  // If no current user in state, force login form
-  if (!APP_STATE.currentUser || !APP_STATE.currentUser.email) {
-    APP_STATE.currentUser = null;
-    if (loginSection) loginSection.style.display = 'flex';
-    if (appSection) appSection.style.display = 'none';
-    return;
-  }
+  const isLoginPage = window.location.pathname.includes('/login');
 
   // Verify server-side session with backend API
   fetch('/api/admin/me', {
@@ -121,8 +104,16 @@ function initAuthCheck() {
   .then(data => {
     if (data && data.authenticated && data.user) {
       APP_STATE.currentUser = data.user;
+      localStorage.setItem('admin_user', JSON.stringify(data.user));
+
+      if (isLoginPage) {
+        window.location.href = '/admin';
+        return;
+      }
+
       if (loginSection) loginSection.style.display = 'none';
       if (appSection) appSection.style.display = 'flex';
+      renderDashboardData();
     } else {
       throw new Error('Not authenticated');
     }
@@ -131,8 +122,13 @@ function initAuthCheck() {
     APP_STATE.currentUser = null;
     localStorage.removeItem('admin_user');
     localStorage.removeItem('admin_token');
+
     if (loginSection) loginSection.style.display = 'flex';
     if (appSection) appSection.style.display = 'none';
+
+    if (!isLoginPage && window.location.pathname === '/admin') {
+      window.history.replaceState(null, '', '/admin/login');
+    }
   });
 }
 
@@ -144,6 +140,8 @@ window.handleLogin = function(email, pass) {
 
   const errorAlert = document.getElementById('loginErrorAlert');
   const submitBtn = document.getElementById('loginSubmitBtn');
+  const loginSection = document.getElementById('loginSection');
+  const appSection = document.getElementById('appSection');
 
   if (errorAlert) {
     errorAlert.style.display = 'none';
@@ -186,9 +184,17 @@ window.handleLogin = function(email, pass) {
     localStorage.setItem('admin_user', JSON.stringify(data.user));
 
     if (errorAlert) errorAlert.style.display = 'none';
-    initAuthCheck();
-    loadServerOrders();
     showToast('লগইন সফল হয়েছে! স্বাগতম ' + (data.user.name || 'Admin'));
+
+    if (window.location.pathname.includes('/login')) {
+      window.location.href = '/admin';
+      return;
+    }
+
+    if (loginSection) loginSection.style.display = 'none';
+    if (appSection) appSection.style.display = 'flex';
+    renderDashboardData();
+    loadServerOrders();
   })
   .catch((err) => {
     // Crucial: Reject invalid credentials and NEVER open dashboard
@@ -214,13 +220,13 @@ window.handleLogout = function() {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Accept': 'application/json' }
-  }).catch(() => {});
-
-  localStorage.removeItem('admin_user');
-  localStorage.removeItem('admin_token');
-  APP_STATE.currentUser = null;
-  showToast('লগআউট করা হয়েছে।');
-  initAuthCheck();
+  }).finally(() => {
+    localStorage.removeItem('admin_user');
+    localStorage.removeItem('admin_token');
+    APP_STATE.currentUser = null;
+    showToast('লগআউট করা হয়েছে।');
+    window.location.href = '/admin/login';
+  });
 };
 
 // ==============================================================================

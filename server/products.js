@@ -10,41 +10,122 @@
 const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
 
 let _cachedDb = null;
 let _cachedDbPath = null;
+const _landingPageCache = new Map();
 
 /**
  * Open connection to the authoritative Laravel SQLite database
  */
 function getLaravelDb() {
+  if (_cachedDb && _cachedDbPath && fs.existsSync(_cachedDbPath)) {
+    return _cachedDb;
+  }
+
   const possiblePaths = [
     process.env.DB_DATABASE,
     path.join(__dirname, '..', 'E Commerce Baby', 'database', 'database.sqlite'),
     path.join(__dirname, 'E Commerce Baby', 'database', 'database.sqlite'),
     path.join(process.cwd(), 'E Commerce Baby', 'database', 'database.sqlite'),
-    path.join(process.cwd(), 'database', 'database.sqlite')
+    path.join(process.cwd(), 'database', 'database.sqlite'),
+    '/home/growthagro/htdocs/growthagro.shop/E Commerce Baby/database/database.sqlite',
+    '/home/growthagro/htdocs/growthagro.shop/database/database.sqlite'
   ].filter(Boolean);
+
+  // Also check if .env has DB_DATABASE
+  const envPaths = [
+    path.join(__dirname, '..', 'E Commerce Baby', '.env'),
+    path.join(process.cwd(), 'E Commerce Baby', '.env'),
+    path.join(process.cwd(), '.env'),
+    '/home/growthagro/htdocs/growthagro.shop/E Commerce Baby/.env'
+  ];
+
+  for (const envFile of envPaths) {
+    try {
+      if (fs.existsSync(envFile)) {
+        const envContent = fs.readFileSync(envFile, 'utf8');
+        const match = envContent.match(/DB_DATABASE=(.+)/);
+        if (match && match[1]) {
+          const rawDb = match[1].trim().replace(/^['"]|['"]$/g, '');
+          if (rawDb && !possiblePaths.includes(rawDb)) {
+            possiblePaths.unshift(rawDb);
+          }
+        }
+      }
+    } catch (e) {}
+  }
 
   for (const p of possiblePaths) {
     if (fs.existsSync(p)) {
-      if (_cachedDb && _cachedDbPath === p) {
-        return _cachedDb;
-      }
       try {
-        _cachedDb = new DatabaseSync(p, { readOnly: true });
+        const dbInstance = new DatabaseSync(p);
+        try {
+          dbInstance.exec('PRAGMA query_only = ON;');
+        } catch (e) {}
+        _cachedDb = dbInstance;
         _cachedDbPath = p;
         return _cachedDb;
-      } catch (err) {
-        try {
-          _cachedDb = new DatabaseSync(p);
-          _cachedDbPath = p;
-          return _cachedDb;
-        } catch (e) {}
-      }
+      } catch (err) {}
     }
   }
   return null;
+}
+
+/**
+ * Fetch Landing Page Configuration from Laravel Internal HTTP Bridge (Fallback)
+ */
+function fetchLandingPageFromLaravel(slug) {
+  return new Promise((resolve) => {
+    const laravelHost = process.env.LARAVEL_HOST || '127.0.0.1';
+    const laravelPort = parseInt(process.env.LARAVEL_PORT || '8000', 10);
+    const internalSecret = process.env.INTERNAL_API_SECRET || 'baby-fashion-internal-2024-secret';
+
+    const req = http.request({
+      hostname: laravelHost,
+      port: laravelPort,
+      path: `/api/internal/landing-page-config/${encodeURIComponent(slug)}`,
+      method: 'GET',
+      timeout: 2500,
+      headers: {
+        'Accept': 'application/json',
+        'X-Internal-Secret': internalSecret
+      }
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed && parsed.success && parsed.landing_page) {
+            const lp = parsed.landing_page;
+            const content = typeof lp.content === 'string' ? JSON.parse(lp.content || '{}') : (lp.content || {});
+            const delivery_config = typeof lp.delivery_config === 'string' ? JSON.parse(lp.delivery_config || '{}') : (lp.delivery_config || {});
+            resolve({
+              id: lp.id,
+              name: lp.name,
+              slug: lp.slug,
+              status: lp.status,
+              product_id: lp.product_id,
+              product_name: lp.product_name,
+              content,
+              delivery_config
+            });
+            return;
+          }
+        } catch (e) {}
+        resolve(null);
+      });
+    });
+
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(null);
+    });
+    req.end();
+  });
 }
 
 /**
@@ -88,6 +169,40 @@ function findLandingPageInDb(slug) {
   } catch (err) {
     return null;
   }
+}
+
+/**
+ * Authoritative Landing Page Config Resolver (Cache -> SQLite -> Internal Bridge)
+ */
+async function resolveLandingPageConfig(slug) {
+  if (!slug) return null;
+  const cleanSlug = String(slug).trim()
+    .replace(/^\/product\//, '')
+    .replace(/^\/products\//, '')
+    .replace(/\/$/, '')
+    .toLowerCase();
+
+  // 1. In-memory cache (TTL 60s)
+  const cached = _landingPageCache.get(cleanSlug);
+  if (cached && (Date.now() - cached.timestamp < 60000)) {
+    return cached.data;
+  }
+
+  // 2. Direct SQLite database lookup
+  const dbData = findLandingPageInDb(cleanSlug);
+  if (dbData) {
+    _landingPageCache.set(cleanSlug, { timestamp: Date.now(), data: dbData });
+    return dbData;
+  }
+
+  // 3. Fallback to Laravel Internal Bridge
+  const bridgeData = await fetchLandingPageFromLaravel(cleanSlug);
+  if (bridgeData) {
+    _landingPageCache.set(cleanSlug, { timestamp: Date.now(), data: bridgeData });
+    return bridgeData;
+  }
+
+  return null;
 }
 
 const PRODUCTS = {
@@ -294,12 +409,12 @@ const PRODUCTS = {
  * 2. For legacy storefront / hardcoded products:
  *    - Resolves from PRODUCTS catalogue with authoritative variant pricing.
  */
-function calculateOrderTotals(productId, variantId, quantity, deliveryZone, items, options = {}) {
+async function calculateOrderTotals(productId, variantId, quantity, deliveryZone, items, options = {}) {
   const targetSlug = String(options.slug || options.landingPage || options.landing_page || productId || '').trim();
   const isInside = (deliveryZone === 'inside' || deliveryZone === 'inside_dhaka');
 
-  // Step 1: Attempt to resolve from the authoritative Laravel landing_pages Database
-  const lp = findLandingPageInDb(targetSlug) || (targetSlug !== productId ? findLandingPageInDb(productId) : null);
+  // Step 1: Attempt to resolve from the authoritative Laravel landing_pages Database / Internal Bridge
+  const lp = (await resolveLandingPageConfig(targetSlug)) || (targetSlug !== productId ? await resolveLandingPageConfig(productId) : null);
 
   if (lp) {
     const rawPackages = Array.isArray(lp.content?.packages) ? lp.content.packages : [];

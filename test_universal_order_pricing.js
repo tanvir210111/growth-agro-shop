@@ -65,12 +65,13 @@ db.prepare(`
 
 console.log(`✅ Seeded temporary test landing page with slug: ${testSlug}`);
 
+(async () => {
 try {
   // --------------------------------------------------------------------------
   // Test A: Universal landing-page order resolves package price from DB
   // --------------------------------------------------------------------------
   console.log('\n--- Test A: Universal landing-page order resolves package price from DB ---');
-  const resA = calculateOrderTotals(testSlug, 'serum-30ml', 2, 'inside', null, { source: 'LANDING_PAGE' });
+  const resA = await calculateOrderTotals(testSlug, 'serum-30ml', 2, 'inside', null, { source: 'LANDING_PAGE' });
   assert.strictEqual(resA.product.id, testSlug);
   assert.strictEqual(resA.product.name, 'MediaScope Premium Serum');
   assert.strictEqual(resA.variant.id, 'serum-30ml');
@@ -95,7 +96,7 @@ try {
       price: 10 // Client attempts to buy 850 Tk serum for 10 Tk
     }
   ];
-  const resB = calculateOrderTotals(testSlug, 'serum-30ml', 1, 'outside', tamperedItems, { source: 'LANDING_PAGE' });
+  const resB = await calculateOrderTotals(testSlug, 'serum-30ml', 1, 'outside', tamperedItems, { source: 'LANDING_PAGE' });
   assert.strictEqual(resB.unitPrice, 850, 'Authoritative unit price must be 850, NOT tampered 10');
   assert.strictEqual(resB.subtotal, 850, 'Authoritative subtotal must be 850, NOT tampered 10');
   assert.strictEqual(resB.deliveryCharge, 130, 'Delivery charge for outside dhaka must be 130');
@@ -108,7 +109,7 @@ try {
   console.log('\n--- Test C: Invalid package ID is rejected with clean error ---');
   let errorCaughtC = false;
   try {
-    calculateOrderTotals(testSlug, 'invalid-package-id-999', 1, 'inside', null, { source: 'LANDING_PAGE' });
+    await calculateOrderTotals(testSlug, 'invalid-package-id-999', 1, 'inside', null, { source: 'LANDING_PAGE' });
   } catch (err) {
     errorCaughtC = true;
     assert.ok(err.message.includes('প্যাকেজ পাওয়া যায়নি') || err.message.includes('invalid-package-id-999'));
@@ -119,7 +120,7 @@ try {
   // Multi-item with one invalid package
   let errorCaughtC2 = false;
   try {
-    calculateOrderTotals(testSlug, 'serum-30ml', 2, 'inside', [
+    await calculateOrderTotals(testSlug, 'serum-30ml', 2, 'inside', [
       { variantId: 'serum-30ml', quantity: 1, price: 850 },
       { variantId: 'fake-hack-variant', quantity: 1, price: 1 }
     ], { source: 'LANDING_PAGE' });
@@ -136,7 +137,7 @@ try {
   console.log('\n--- Test D: Invalid landing-page slug is rejected with clean error ---');
   let errorCaughtD = false;
   try {
-    calculateOrderTotals('completely-unknown-landing-page-slug-xyz', 'default', 1, 'inside', null, { source: 'LANDING_PAGE' });
+    await calculateOrderTotals('completely-unknown-landing-page-slug-xyz', 'default', 1, 'inside', null, { source: 'LANDING_PAGE' });
   } catch (err) {
     errorCaughtD = true;
     assert.ok(err.message.includes('এই পণ্যের মূল্য বা প্যাকেজ তথ্য পাওয়া যায়নি') || err.message.includes('ল্যান্ডিং পেজ পাওয়া যায়নি') || err.message.includes('পণ্য পাওয়া যায়নি'));
@@ -150,7 +151,7 @@ try {
   console.log('\n--- Test E: Legacy chicken-booster & storefront pricing still works ---');
   
   // E1. Baby store product from hardcoded PRODUCTS
-  const resE1 = calculateOrderTotals('baby-butterfly-set', '6-12M', 2, 'inside');
+  const resE1 = await calculateOrderTotals('baby-butterfly-set', '6-12M', 2, 'inside');
   assert.strictEqual(resE1.product.name, PRODUCTS['baby-butterfly-set'].name);
   assert.strictEqual(resE1.unitPrice, 200);
   assert.strictEqual(resE1.subtotal, 400);
@@ -159,7 +160,7 @@ try {
   console.log('✅ Passed Test E1: Baby store storefront product calculated accurately (৳400 + ৳60 = ৳460)');
 
   // E2. Chicken booster product
-  const resE2 = calculateOrderTotals('chicken-booster', 'variant-2', 1, 'outside', null, { source: 'LANDING_PAGE' });
+  const resE2 = await calculateOrderTotals('chicken-booster', 'variant-2', 1, 'outside', null, { source: 'LANDING_PAGE' });
   assert.ok(resE2.subtotal >= 1850, `Subtotal ${resE2.subtotal} matches chicken booster 2-pack`);
   console.log(`✅ Passed Test E2: Chicken booster order calculated accurately (Total: ৳${resE2.total})`);
 
@@ -168,7 +169,7 @@ try {
   // --------------------------------------------------------------------------
   console.log('\n--- Test F: Custom Delivery threshold logic ---');
   // 2x Mega Combo = 1500 * 2 = 3000 >= threshold 2000 => free delivery
-  const resF = calculateOrderTotals(testSlug, 'serum-combo-2pack', 2, 'outside', null, { source: 'LANDING_PAGE' });
+  const resF = await calculateOrderTotals(testSlug, 'serum-combo-2pack', 2, 'outside', null, { source: 'LANDING_PAGE' });
   assert.strictEqual(resF.subtotal, 3000);
   assert.strictEqual(resF.deliveryCharge, 0, 'Should qualify for free delivery threshold above ৳2000');
   assert.strictEqual(resF.total, 3000);
@@ -181,3 +182,4 @@ try {
   // Clean up temporary database row
   db.prepare('DELETE FROM landing_pages WHERE slug = ?').run(testSlug);
 }
+})();

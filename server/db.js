@@ -274,16 +274,31 @@ function createOrder(orderInput = {}) {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    insertItem.run(
-      orderId,
-      pId,
-      pName,
-      vId,
-      vName,
-      qty,
-      uPrice,
-      sTotal
-    );
+    if (Array.isArray(orderInput.items) && orderInput.items.length > 0) {
+      for (const it of orderInput.items) {
+        insertItem.run(
+          orderId,
+          pId,
+          it.name || it.variant_name || pName,
+          it.id || it.variant_id || vId,
+          it.name || it.variant_name || vName,
+          Number(it.quantity || 1),
+          Number(it.price || it.unit_price || 0),
+          Number(it.total || ((it.price || 0) * (it.quantity || 1)))
+        );
+      }
+    } else {
+      insertItem.run(
+        orderId,
+        pId,
+        pName,
+        vId,
+        vName,
+        qty,
+        uPrice,
+        sTotal
+      );
+    }
 
     db.exec('COMMIT;');
 

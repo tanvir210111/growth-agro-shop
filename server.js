@@ -452,7 +452,7 @@ const server = http.createServer(async (req, res) => {
         // Resolve authoritative server-side pricing & product data (NEVER trust client price)
         let calculated;
         try {
-          calculated = calculateOrderTotals(productId, variantId, quantity, deliveryZone, body.items, {
+          calculated = await calculateOrderTotals(productId, variantId, quantity, deliveryZone, body.items, {
             source,
             slug: body.slug || body.landingPage || body.landing_page || productId
           });
