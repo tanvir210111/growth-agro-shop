@@ -3118,6 +3118,44 @@ function doSwitchView(viewName) {
 // ==============================================================================
 // 11B. MARKETING SETTINGS & META PIXEL MANAGEMENT
 // ==============================================================================
+function setMarketingToggleState(type, isEnabled) {
+  const hiddenInput = type === 'addToCart'
+    ? document.getElementById('marketingAddToCartEnabled')
+    : document.getElementById('marketingInitiateCheckoutEnabled');
+  const btn = type === 'addToCart'
+    ? document.getElementById('btnToggleAddToCart')
+    : document.getElementById('btnToggleInitiateCheckout');
+  const label = type === 'addToCart'
+    ? document.getElementById('labelToggleAddToCart')
+    : document.getElementById('labelToggleInitiateCheckout');
+
+  if (hiddenInput) hiddenInput.value = isEnabled ? '1' : '0';
+  if (btn) {
+    if (isEnabled) {
+      btn.classList.add('active');
+      btn.style.background = '#004D40';
+      btn.style.borderColor = '#004D40';
+      btn.style.color = '#FFFFFF';
+    } else {
+      btn.classList.remove('active');
+      btn.style.background = '#F1F5F9';
+      btn.style.borderColor = '#CBD5E1';
+      btn.style.color = '#64748B';
+    }
+  }
+  if (label) {
+    label.textContent = isEnabled ? 'ON' : 'OFF';
+  }
+}
+
+function toggleMarketingSwitch(type) {
+  const hiddenInput = type === 'addToCart'
+    ? document.getElementById('marketingAddToCartEnabled')
+    : document.getElementById('marketingInitiateCheckoutEnabled');
+  const currentState = hiddenInput ? (hiddenInput.value === '1') : true;
+  setMarketingToggleState(type, !currentState);
+}
+
 function loadMarketingSettings() {
   const token = localStorage.getItem('admin_token') || '';
   const pixelInput = document.getElementById('marketingPixelCode');
@@ -3144,6 +3182,11 @@ function loadMarketingSettings() {
       if (gBodyInput) gBodyInput.value = data.settings.google_body || '';
       if (fbDomainInput) fbDomainInput.value = data.settings.facebook_domain_verification || '';
       if (gDomainInput) gDomainInput.value = data.settings.google_domain_verification || '';
+
+      const isAddToCartActive = (data.settings.landing_meta_add_to_cart_enabled !== false && data.settings.landing_meta_add_to_cart_enabled !== '0' && data.settings.landing_meta_add_to_cart_enabled !== 0);
+      const isInitiateCheckoutActive = (data.settings.landing_meta_initiate_checkout_enabled !== false && data.settings.landing_meta_initiate_checkout_enabled !== '0' && data.settings.landing_meta_initiate_checkout_enabled !== 0);
+      setMarketingToggleState('addToCart', isAddToCartActive);
+      setMarketingToggleState('initiateCheckout', isInitiateCheckoutActive);
     }
   })
   .catch(err => {
@@ -3158,6 +3201,8 @@ function saveMarketingSettings() {
   const gBodyVal = document.getElementById('marketingGoogleBody')?.value || '';
   const fbDomainVal = document.getElementById('marketingFbDomain')?.value || '';
   const gDomainVal = document.getElementById('marketingGoogleDomain')?.value || '';
+  const addToCartVal = document.getElementById('marketingAddToCartEnabled')?.value === '1';
+  const initCheckoutVal = document.getElementById('marketingInitiateCheckoutEnabled')?.value === '1';
   const submitBtn = document.getElementById('marketingSubmitBtn');
   const alertBox = document.getElementById('marketingAlertBox');
 
@@ -3177,6 +3222,8 @@ function saveMarketingSettings() {
     },
     body: JSON.stringify({
       facebook_pixel: pixelVal,
+      landing_meta_add_to_cart_enabled: addToCartVal,
+      landing_meta_initiate_checkout_enabled: initCheckoutVal,
       google_analytics: gaVal,
       google_body: gBodyVal,
       facebook_domain_verification: fbDomainVal,
@@ -3193,9 +3240,17 @@ function saveMarketingSettings() {
     return data;
   })
   .then(data => {
-    if (data.settings && data.settings.facebook_pixel !== undefined) {
-      const pixelInput = document.getElementById('marketingPixelCode');
-      if (pixelInput) pixelInput.value = data.settings.facebook_pixel;
+    if (data.settings) {
+      if (data.settings.facebook_pixel !== undefined) {
+        const pixelInput = document.getElementById('marketingPixelCode');
+        if (pixelInput) pixelInput.value = data.settings.facebook_pixel;
+      }
+      if (data.settings.landing_meta_add_to_cart_enabled !== undefined) {
+        setMarketingToggleState('addToCart', data.settings.landing_meta_add_to_cart_enabled);
+      }
+      if (data.settings.landing_meta_initiate_checkout_enabled !== undefined) {
+        setMarketingToggleState('initiateCheckout', data.settings.landing_meta_initiate_checkout_enabled);
+      }
     }
     if (alertBox) {
       alertBox.style.display = 'block';
@@ -3225,6 +3280,8 @@ function saveMarketingSettings() {
   });
 }
 
+window.setMarketingToggleState = setMarketingToggleState;
+window.toggleMarketingSwitch = toggleMarketingSwitch;
 window.loadMarketingSettings = loadMarketingSettings;
 window.saveMarketingSettings = saveMarketingSettings;
 

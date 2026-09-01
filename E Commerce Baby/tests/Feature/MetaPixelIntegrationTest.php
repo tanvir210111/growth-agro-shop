@@ -414,4 +414,114 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertStatus(302);
         $response->assertRedirect('/product/chicken-booster/success/CB-20260901-MISMATCH');
     }
+
+    public function test_admin_can_toggle_landing_page_meta_add_to_cart_and_initiate_checkout_independently()
+    {
+        // 1. Initial default state: both active (true)
+        $getRes = $this->withHeaders(['x-admin-token' => 'adm_session'])->getJson('/api/admin/settings/marketing');
+        $getRes->assertStatus(200);
+        $getRes->assertJson([
+            'success'  => true,
+            'settings' => [
+                'landing_meta_add_to_cart_enabled'       => true,
+                'landing_meta_initiate_checkout_enabled' => true,
+            ]
+        ]);
+
+        // 2. Disable AddToCart, keep InitiateCheckout enabled
+        $postRes1 = $this->withHeaders(['x-admin-token' => 'adm_session'])->postJson('/api/admin/settings/marketing', [
+            'facebook_pixel'                         => '1793041018387711',
+            'landing_meta_add_to_cart_enabled'       => false,
+            'landing_meta_initiate_checkout_enabled' => true,
+        ]);
+        $postRes1->assertStatus(200);
+        $postRes1->assertJson([
+            'success'  => true,
+            'settings' => [
+                'landing_meta_add_to_cart_enabled'       => false,
+                'landing_meta_initiate_checkout_enabled' => true,
+            ]
+        ]);
+        $this->assertEquals('0', Setting::get('landing_meta_add_to_cart_enabled'));
+        $this->assertEquals('1', Setting::get('landing_meta_initiate_checkout_enabled'));
+
+        // 3. Disable InitiateCheckout, enable AddToCart
+        $postRes2 = $this->withHeaders(['x-admin-token' => 'adm_session'])->postJson('/api/admin/settings/marketing', [
+            'facebook_pixel'                         => '1793041018387711',
+            'landing_meta_add_to_cart_enabled'       => true,
+            'landing_meta_initiate_checkout_enabled' => false,
+        ]);
+        $postRes2->assertStatus(200);
+        $postRes2->assertJson([
+            'success'  => true,
+            'settings' => [
+                'landing_meta_add_to_cart_enabled'       => true,
+                'landing_meta_initiate_checkout_enabled' => false,
+            ]
+        ]);
+        $this->assertEquals('1', Setting::get('landing_meta_add_to_cart_enabled'));
+        $this->assertEquals('0', Setting::get('landing_meta_initiate_checkout_enabled'));
+
+        // 4. Disable both
+        $postRes3 = $this->withHeaders(['x-admin-token' => 'adm_session'])->postJson('/api/admin/settings/marketing', [
+            'facebook_pixel'                         => '1793041018387711',
+            'landing_meta_add_to_cart_enabled'       => false,
+            'landing_meta_initiate_checkout_enabled' => false,
+        ]);
+        $postRes3->assertStatus(200);
+        $postRes3->assertJson([
+            'success'  => true,
+            'settings' => [
+                'landing_meta_add_to_cart_enabled'       => false,
+                'landing_meta_initiate_checkout_enabled' => false,
+            ]
+        ]);
+        $this->assertEquals('0', Setting::get('landing_meta_add_to_cart_enabled'));
+        $this->assertEquals('0', Setting::get('landing_meta_initiate_checkout_enabled'));
+
+        // Restore defaults for subsequent tests
+        Setting::set('landing_meta_add_to_cart_enabled', '1');
+        Setting::set('landing_meta_initiate_checkout_enabled', '1');
+    }
+
+    public function test_landing_page_renders_toggle_constants_correctly()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        // State A: Both Enabled
+        Setting::set('landing_meta_add_to_cart_enabled', '1');
+        Setting::set('landing_meta_initiate_checkout_enabled', '1');
+        $resA = $this->get('/product/chicken-booster');
+        $resA->assertStatus(200);
+        $resA->assertSee('const META_ADD_TO_CART_ENABLED = true;', false);
+        $resA->assertSee('const META_INITIATE_CHECKOUT_ENABLED = true;', false);
+
+        // State B: AddToCart OFF, InitiateCheckout ON
+        Setting::set('landing_meta_add_to_cart_enabled', '0');
+        Setting::set('landing_meta_initiate_checkout_enabled', '1');
+        $resB = $this->get('/product/chicken-booster');
+        $resB->assertStatus(200);
+        $resB->assertSee('const META_ADD_TO_CART_ENABLED = false;', false);
+        $resB->assertSee('const META_INITIATE_CHECKOUT_ENABLED = true;', false);
+
+        // State C: AddToCart ON, InitiateCheckout OFF
+        Setting::set('landing_meta_add_to_cart_enabled', '1');
+        Setting::set('landing_meta_initiate_checkout_enabled', '0');
+        $resC = $this->get('/product/chicken-booster');
+        $resC->assertStatus(200);
+        $resC->assertSee('const META_ADD_TO_CART_ENABLED = true;', false);
+        $resC->assertSee('const META_INITIATE_CHECKOUT_ENABLED = false;', false);
+
+        // State D: Both OFF
+        Setting::set('landing_meta_add_to_cart_enabled', '0');
+        Setting::set('landing_meta_initiate_checkout_enabled', '0');
+        $resD = $this->get('/product/chicken-booster');
+        $resD->assertStatus(200);
+        $resD->assertSee('const META_ADD_TO_CART_ENABLED = false;', false);
+        $resD->assertSee('const META_INITIATE_CHECKOUT_ENABLED = false;', false);
+
+        // Restore defaults
+        Setting::set('landing_meta_add_to_cart_enabled', '1');
+        Setting::set('landing_meta_initiate_checkout_enabled', '1');
+    }
 }

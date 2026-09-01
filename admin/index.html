@@ -1406,6 +1406,16 @@
                     <textarea id="marketingPixelCode" class="marketing-textarea" rows="3" placeholder="Enter 14-18 digit Pixel ID or paste Meta Pixel Code"></textarea>
                     <small style="color:#64748B;font-size:11.5px;display:block;margin-top:4px;">Enter raw Meta Pixel ID (e.g. 1793041018387711) or full script snippet.</small>
                   </div>
+                  <div class="form-group" style="margin-top:14px;margin-bottom:14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;">
+                    <label style="display:block;margin-bottom:6px;font-weight:600;color:#1E293B;font-size:13px;">Landing Page AddToCart Tracking</label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <button type="button" id="btnToggleAddToCart" class="btn-toggle-switch active" onclick="toggleMarketingSwitch('addToCart')" style="padding:6px 18px;border-radius:20px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid #004D40;background:#004D40;color:#FFFFFF;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;">
+                        <span id="labelToggleAddToCart">ON</span>
+                      </button>
+                      <small style="color:#64748B;font-size:11.5px;">Enable/Disable Meta Pixel AddToCart on CTA button clicks.</small>
+                    </div>
+                    <input type="hidden" id="marketingAddToCartEnabled" value="1">
+                  </div>
                   <div class="form-group">
                     <label>Google Analytics (For Header)</label>
                     <textarea id="marketingGoogleAnalytics" class="marketing-textarea" rows="3" placeholder="G-XXXXXXXXXX or Google tag script"></textarea>
@@ -1421,6 +1431,16 @@
                   <div class="form-group">
                     <label>Facebook Domain Verification</label>
                     <textarea id="marketingFbDomain" class="marketing-textarea" rows="3" placeholder="Meta domain verification code"></textarea>
+                  </div>
+                  <div class="form-group" style="margin-top:14px;margin-bottom:14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;">
+                    <label style="display:block;margin-bottom:6px;font-weight:600;color:#1E293B;font-size:13px;">Landing Page InitiateCheckout Tracking</label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <button type="button" id="btnToggleInitiateCheckout" class="btn-toggle-switch active" onclick="toggleMarketingSwitch('initiateCheckout')" style="padding:6px 18px;border-radius:20px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid #004D40;background:#004D40;color:#FFFFFF;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;">
+                        <span id="labelToggleInitiateCheckout">ON</span>
+                      </button>
+                      <small style="color:#64748B;font-size:11.5px;">Enable/Disable Meta Pixel InitiateCheckout on CTA & Direct-Scroll.</small>
+                    </div>
+                    <input type="hidden" id="marketingInitiateCheckoutEnabled" value="1">
                   </div>
                   <div class="form-group">
                     <label>Google Domain Verification</label>

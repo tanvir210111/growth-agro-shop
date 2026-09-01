@@ -1308,7 +1308,16 @@
           $firstPkg = reset($pkgs);
           $firstPkgPrice = (float)($firstPkg['price'] ?? 0);
       }
+
+      $metaAddToCartSetting = \App\Models\Setting::get('landing_meta_add_to_cart_enabled', '1');
+      $isMetaAddToCartActive = ($metaAddToCartSetting === null || $metaAddToCartSetting === '' || ($metaAddToCartSetting !== '0' && $metaAddToCartSetting !== 0 && $metaAddToCartSetting !== false && $metaAddToCartSetting !== 'false'));
+
+      $metaInitiateCheckoutSetting = \App\Models\Setting::get('landing_meta_initiate_checkout_enabled', '1');
+      $isMetaInitiateCheckoutActive = ($metaInitiateCheckoutSetting === null || $metaInitiateCheckoutSetting === '' || ($metaInitiateCheckoutSetting !== '0' && $metaInitiateCheckoutSetting !== 0 && $metaInitiateCheckoutSetting !== false && $metaInitiateCheckoutSetting !== 'false'));
     @endphp
+
+    const META_ADD_TO_CART_ENABLED = {{ $isMetaAddToCartActive ? 'true' : 'false' }};
+    const META_INITIATE_CHECKOUT_ENABLED = {{ $isMetaInitiateCheckoutActive ? 'true' : 'false' }};
 
     // 2. Catalog & Delivery Configuration
     const CATALOG = {
@@ -1541,7 +1550,7 @@
       if (addToCartFired) return;
       addToCartFired = true;
 
-      if (typeof window.fbq === 'function') {
+      if (META_ADD_TO_CART_ENABLED && typeof window.fbq === 'function') {
         let subtotalVal = 0;
         let totalItems = 0;
         if (typeof variantQuantities === 'object') {
@@ -1609,7 +1618,7 @@
       }
 
       // 2. Meta Pixel: InitiateCheckout Event
-      if (typeof window.fbq === 'function') {
+      if (META_INITIATE_CHECKOUT_ENABLED && typeof window.fbq === 'function') {
         let subtotalVal = 0;
         let totalItems = 0;
         if (typeof variantQuantities === 'object') {

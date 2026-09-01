@@ -52,14 +52,22 @@ class AdminSettingsController extends Controller
         $fbDomain = Setting::get('facebook_domain_verification', '');
         $googleDomain = Setting::get('google_domain_verification', '');
 
+        $landingAddToCart = Setting::get('landing_meta_add_to_cart_enabled', '1');
+        $landingInitiateCheckout = Setting::get('landing_meta_initiate_checkout_enabled', '1');
+
+        $isAddToCartActive = ($landingAddToCart === null || $landingAddToCart === '' || $landingAddToCart === '1' || $landingAddToCart === 'true' || $landingAddToCart === true || $landingAddToCart === 1);
+        $isInitiateCheckoutActive = ($landingInitiateCheckout === null || $landingInitiateCheckout === '' || $landingInitiateCheckout === '1' || $landingInitiateCheckout === 'true' || $landingInitiateCheckout === true || $landingInitiateCheckout === 1);
+
         return response()->json([
             'success'  => true,
             'settings' => [
-                'facebook_pixel'                => $pixel,
-                'google_analytics'              => $googleAnalytics,
-                'google_body'                   => $googleBody,
-                'facebook_domain_verification'  => $fbDomain,
-                'google_domain_verification'    => $googleDomain,
+                'facebook_pixel'                         => $pixel,
+                'facebook_domain_verification'           => $fbDomain,
+                'landing_meta_add_to_cart_enabled'       => $isAddToCartActive,
+                'landing_meta_initiate_checkout_enabled' => $isInitiateCheckoutActive,
+                'google_analytics'                       => $googleAnalytics,
+                'google_body'                            => $googleBody,
+                'google_domain_verification'             => $googleDomain,
             ],
         ]);
     }
@@ -98,6 +106,18 @@ class AdminSettingsController extends Controller
 
         Setting::set('facebook_pixel', $normalizedPixel);
 
+        // Independent ON/OFF toggles for Landing Page Meta Pixel events
+        if ($request->has('landing_meta_add_to_cart_enabled')) {
+            $raw = $request->input('landing_meta_add_to_cart_enabled');
+            $enabled = filter_var($raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            Setting::set('landing_meta_add_to_cart_enabled', ($enabled !== false && $raw !== '0' && $raw !== 0) ? '1' : '0');
+        }
+        if ($request->has('landing_meta_initiate_checkout_enabled')) {
+            $raw = $request->input('landing_meta_initiate_checkout_enabled');
+            $enabled = filter_var($raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            Setting::set('landing_meta_initiate_checkout_enabled', ($enabled !== false && $raw !== '0' && $raw !== 0) ? '1' : '0');
+        }
+
         // Optional secondary marketing fields
         if ($request->has('google_analytics')) {
             Setting::set('google_analytics', trim($request->input('google_analytics', '')));
@@ -112,11 +132,20 @@ class AdminSettingsController extends Controller
             Setting::set('google_domain_verification', trim($request->input('google_domain_verification', '')));
         }
 
+        $savedAddToCart = Setting::get('landing_meta_add_to_cart_enabled', '1');
+        $savedInitiateCheckout = Setting::get('landing_meta_initiate_checkout_enabled', '1');
+
         return response()->json([
             'success'  => true,
             'message'  => 'Marketing settings saved successfully.',
             'settings' => [
-                'facebook_pixel' => $normalizedPixel,
+                'facebook_pixel'                         => $normalizedPixel,
+                'landing_meta_add_to_cart_enabled'       => $savedAddToCart !== '0' && $savedAddToCart !== 0 && $savedAddToCart !== false,
+                'landing_meta_initiate_checkout_enabled' => $savedInitiateCheckout !== '0' && $savedInitiateCheckout !== 0 && $savedInitiateCheckout !== false,
+                'facebook_domain_verification'           => Setting::get('facebook_domain_verification', ''),
+                'google_analytics'                       => Setting::get('google_analytics', ''),
+                'google_body'                            => Setting::get('google_body', ''),
+                'google_domain_verification'             => Setting::get('google_domain_verification', ''),
             ],
         ]);
     }
