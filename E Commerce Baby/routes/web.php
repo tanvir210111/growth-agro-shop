@@ -121,6 +121,7 @@ Route::get('/admin/landing-pages/{id}/preview', function ($id, \Illuminate\Http\
     return view('pages.landing-page', compact('landingPage', 'content', 'deliveryConfig', 'themeConfig', 'sectionOrder'));
 })->name('admin.landing-pages.preview');
 
-// Internal Node.js to Laravel Landing Order Sync Bridge
+// Internal Node.js to Laravel Landing Order Sync Bridge & Config Lookup
 use App\Http\Controllers\Api\InternalSyncController;
 Route::post('/api/internal/sync-landing-order', [InternalSyncController::class, 'syncLandingOrder'])->name('api.internal.sync-landing-order');
+Route::get('/api/internal/landing-page-config/{slug}', [InternalSyncController::class, 'getLandingPageConfig'])->name('api.internal.landing-page-config');

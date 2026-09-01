@@ -92,17 +92,40 @@ class InternalSyncController extends Controller
                 Log::warning('[InternalSync] Failed to attach order attribution: ' . $te->getMessage());
             }
 
-            // 5. Create Order Item
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => null,
-                'product_name' => $productName . ($variantName ? " ({$variantName})" : ''),
-                'product_image' => '',
-                'size' => $variantName ?: 'Standard',
-                'price' => $unitPrice,
-                'quantity' => $quantity,
-                'total' => $subtotal,
-            ]);
+            // 5. Create Order Item(s)
+            $rawItems = $request->input('items');
+            if (is_array($rawItems) && count($rawItems) > 0) {
+                foreach ($rawItems as $it) {
+                    $itQty = max(1, (int) ($it['quantity'] ?? 1));
+                    $itPrice = (float) ($it['price'] ?? $unitPrice);
+                    $itTotal = (float) ($it['total'] ?? ($itPrice * $itQty));
+                    $itName = $it['name'] ?? ($productName . ' (' . ($it['variant_name'] ?? $it['variant_id'] ?? 'Standard') . ')');
+                    $itSize = $it['variant_name'] ?? $it['variant_id'] ?? ($variantName ?: 'Standard');
+                    $itImg = $it['image'] ?? '';
+
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => null,
+                        'product_name' => $itName,
+                        'product_image' => $itImg,
+                        'size' => $itSize,
+                        'price' => $itPrice,
+                        'quantity' => $itQty,
+                        'total' => $itTotal,
+                    ]);
+                }
+            } else {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => null,
+                    'product_name' => $productName . ($variantName ? " ({$variantName})" : ''),
+                    'product_image' => '',
+                    'size' => $variantName ?: 'Standard',
+                    'price' => $unitPrice,
+                    'quantity' => $quantity,
+                    'total' => $subtotal,
+                ]);
+            }
 
             // 6. Record Deduplicated Purchase Event in Tracking Stream
             try {
@@ -134,14 +157,53 @@ class InternalSyncController extends Controller
             }
 
             return response()->json([
-                'success'    => true,
-                'order_id'   => $order->id,
+                'success' => true,
+                'order_id' => $order->id,
                 'invoice_no' => $order->invoice_no,
+                'visitor_id' => $order->visitor_id,
+                'session_id' => $order->session_id,
             ], 201);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('[InternalSync] Error syncing landing order: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('[InternalSync] Failed to sync order: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'payload' => $request->except(['customer_phone', 'customer_address'])
+            ]);
+            return response()->json(['success' => false, 'error' => 'Internal server error while syncing order.'], 500);
         }
+    }
+
+    /**
+     * Internal endpoint: Fetch authoritative Landing Page pricing and delivery configuration by slug.
+     */
+    public function getLandingPageConfig(Request $request, string $slug): JsonResponse
+    {
+        $expectedSecret = env('INTERNAL_API_SECRET', 'baby-fashion-internal-2024-secret');
+        $incomingSecret = $request->header('X-Internal-Secret');
+
+        if (!$incomingSecret || !hash_equals($expectedSecret, $incomingSecret)) {
+            return response()->json(['success' => false, 'error' => 'Forbidden: Invalid internal secret.'], 403);
+        }
+
+        $cleanSlug = trim($slug);
+        $landingPage = \App\Models\LandingPage::where('slug', $cleanSlug)->first();
+
+        if (!$landingPage) {
+            return response()->json(['success' => false, 'error' => 'Landing page not found.'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'landing_page' => [
+                'id' => $landingPage->id,
+                'name' => $landingPage->name,
+                'slug' => $landingPage->slug,
+                'status' => $landingPage->status,
+                'product_id' => $landingPage->product_id,
+                'product_name' => $landingPage->product_name,
+                'content' => $landingPage->content,
+                'delivery_config' => $landingPage->delivery_config,
+            ]
+        ]);
     }
 }

@@ -314,4 +314,79 @@ class UniversalProductLandingPageTest extends TestCase
         $page->delete();
         $order->delete();
     }
+
+    /**
+     * Test T: Server-to-server bridge correctly creates order and multiple order items for universal landing pages
+     */
+    public function test_internal_sync_creates_multi_item_order_for_universal_landing_page()
+    {
+        LandingPage::where('slug', 'organic-honey-combo')->delete();
+        Order::where('invoice_no', 'SYNC-HONEY-001')->delete();
+
+        $page = LandingPage::create([
+            'name'         => 'Pure Sundarban Honey',
+            'slug'         => 'organic-honey-combo',
+            'status'       => 'published',
+            'theme'        => 'universal',
+            'product_name' => 'Organic Raw Forest Honey',
+            'content'      => [
+                'packages' => [
+                    ['id' => 'honey-500g', 'name' => '৫০০ গ্রাম সুন্দরবনের মধু', 'price' => 650, 'old_price' => 850],
+                    ['id' => 'honey-1kg', 'name' => '১ কেজি সুন্দরবনের মধু', 'price' => 1200, 'old_price' => 1600],
+                ]
+            ],
+            'delivery_config' => [
+                'delivery_type'        => 'paid',
+                'charge_inside_dhaka'  => 60,
+                'charge_outside_dhaka' => 120,
+            ]
+        ]);
+
+        $internalSecret = env('INTERNAL_API_SECRET', 'baby-fashion-internal-2024-secret');
+
+        $syncPayload = [
+            'order_number'     => 'SYNC-HONEY-001',
+            'customer_name'    => 'মাহমুদুল হাসান',
+            'customer_phone'   => '01812345678',
+            'customer_address' => 'মিরপুর ১০, ঢাকা',
+            'delivery_zone'    => 'inside_dhaka',
+            'delivery_charge'  => 60,
+            'subtotal'         => 1850,
+            'total'            => 1910,
+            'payment_method'   => 'Cash on Delivery',
+            'product_name'     => 'Organic Raw Forest Honey',
+            'variant_name'     => '৫০০ গ্রাম + ১ কেজি',
+            'quantity'         => 2,
+            'unit_price'       => 925,
+            'landing_page'     => '/product/organic-honey-combo',
+            'items'            => [
+                ['id' => 'honey-500g', 'name' => '৫০০ গ্রাম সুন্দরবনের মধু', 'variant_id' => 'honey-500g', 'price' => 650, 'quantity' => 1, 'total' => 650],
+                ['id' => 'honey-1kg', 'name' => '১ কেজি সুন্দরবনের মধু', 'variant_id' => 'honey-1kg', 'price' => 1200, 'quantity' => 1, 'total' => 1200]
+            ]
+        ];
+
+        $res = $this->postJson('/api/internal/sync-landing-order', $syncPayload, [
+            'X-Internal-Secret' => $internalSecret
+        ]);
+
+        $res->assertSuccessful()
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('orders', [
+            'invoice_no'   => 'SYNC-HONEY-001',
+            'subtotal'     => 1850,
+            'delivery_charge' => 60,
+            'total_amount' => 1910,
+            'source_type'  => 'landing_page',
+            'landing_page' => '/product/organic-honey-combo',
+        ]);
+
+        $createdOrder = Order::where('invoice_no', 'SYNC-HONEY-001')->first();
+        $this->assertNotNull($createdOrder);
+        $this->assertCount(2, $createdOrder->items);
+
+        $page->delete();
+        $createdOrder->items()->delete();
+        $createdOrder->delete();
+    }
 }

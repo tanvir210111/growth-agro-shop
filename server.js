@@ -452,7 +452,10 @@ const server = http.createServer(async (req, res) => {
         // Resolve authoritative server-side pricing & product data (NEVER trust client price)
         let calculated;
         try {
-          calculated = calculateOrderTotals(productId, variantId, quantity, deliveryZone, body.items);
+          calculated = calculateOrderTotals(productId, variantId, quantity, deliveryZone, body.items, {
+            source,
+            slug: body.slug || body.landingPage || body.landing_page || productId
+          });
         } catch (err) {
           return sendJson(res, 400, { success: false, error: err.message });
         }
@@ -517,7 +520,7 @@ const server = http.createServer(async (req, res) => {
           total: calculated.total,
           currency: calculated.currency,
           idempotencyKey,
-          landingPage: calculated.product.landingPage || '/products/chicken-booster/',
+          landingPage: calculated.product.landingPage || (source === 'LANDING_PAGE' ? `/product/${calculated.product.id}` : '/products/chicken-booster/'),
           source,
           fraudLevel,
           fraudScore,
@@ -548,6 +551,7 @@ const server = http.createServer(async (req, res) => {
             quantity: newOrder.quantity,
             unit_price: newOrder.unit_price,
             landing_page: newOrder.landing_page,
+            items: calculated.items || [],
             visitor_uuid: visitorUuid,
             session_uuid: sessionUuid,
             idempotency_key: newOrder.idempotency_key

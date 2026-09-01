@@ -1679,9 +1679,14 @@
             body: JSON.stringify(orderPayload)
           });
 
-          const data = await res.json();
+          let data = null;
+          try {
+            data = await res.json();
+          } catch (jsonErr) {
+            data = null;
+          }
 
-          if (res.ok && data.success) {
+          if (res.ok && data && data.success) {
             const order = data.order || {};
             const orderNo = order.order_number || data.order_number || ('CB-' + Date.now().toString().slice(-6));
             const totalVal = order.total || 0;
@@ -1711,11 +1716,14 @@
             if (badge) badge.style.display = 'none';
             recalculate();
           } else {
-            alert('অর্ডার সম্পন্ন করা যায়নি: ' + (data.error || 'অনুগ্রহ করে আবার চেষ্টা করুন।'));
+            const serverMsg = (data && (data.error || data.message || (Array.isArray(data.errors) && data.errors[0])))
+              ? (data.error || data.message || data.errors[0])
+              : 'অনুগ্রহ করে আপনার তথ্য ও প্যাকেজ সিলেক্ট করে আবার চেষ্টা করুন।';
+            alert('অর্ডার সম্পন্ন করা যায়নি: ' + serverMsg);
           }
         } catch (err) {
           console.error('[Order Error]', err);
-          alert('সার্ভারের সাথে সংযোগ স্থাপন করা সম্ভব হয়নি।');
+          alert('অর্ডার সাবমিট করতে সমস্যা হয়েছে: ' + (err.message || 'সার্ভারের সাথে সংযোগ স্থাপন করা সম্ভব হয়নি।'));
         } finally {
           btnSubmit.disabled = false;
           if (orderSpinner) orderSpinner.style.display = 'none';
