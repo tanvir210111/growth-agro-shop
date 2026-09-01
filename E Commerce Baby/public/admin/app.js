@@ -227,7 +227,7 @@ window.handleLogout = function() {
 // 2. LIVE DATABASE SYNCHRONIZATION (GET /api/orders & PATCH /api/orders/:id/status)
 // ==============================================================================
 function loadServerOrders() {
-  const token = localStorage.getItem('admin_token') || 'adm_session';
+  const token = localStorage.getItem('admin_token') || '';
   fetch('/api/orders', {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -878,7 +878,7 @@ window.openOrderActionsModal = function(invoice) {
 };
 
 function updateServerOrderStatus(orderNumber, status) {
-  const token = localStorage.getItem('admin_token') || 'adm_session';
+  const token = localStorage.getItem('admin_token') || '';
   fetch(`/api/orders/${orderNumber}/status`, {
     method: 'PATCH',
     headers: {
@@ -1462,7 +1462,7 @@ APP_STATE.currentEditingLandingPage = null;
 APP_STATE.isBuilderDirty = false;
 
 function getAdminAuthHeaders() {
-  const token = localStorage.getItem('admin_token') || 'adm_session';
+  const token = localStorage.getItem('admin_token') || '';
   return {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -2137,7 +2137,7 @@ window.uploadLpImage = async function(fileInput, inputId, imgId) {
   showToast('Uploading image...');
 
   try {
-    const token = localStorage.getItem('admin_token') || 'adm_session';
+    const token = localStorage.getItem('admin_token') || '';
     const res = await fetch('/api/admin/landing-pages/upload-media', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'x-admin-token': token },
@@ -2510,7 +2510,7 @@ window.uploadDynamicImage = async function(fileInput, classTargetInput, classTar
   showToast('Uploading image...');
 
   try {
-    const token = localStorage.getItem('admin_token') || 'adm_session';
+    const token = localStorage.getItem('admin_token') || '';
     const res = await fetch('/api/admin/landing-pages/upload-media', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'x-admin-token': token },
@@ -3313,7 +3313,7 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
 
 window.testBdCourierConnection = function() {
   showToast('BD Courier API এর সাথে সার্ভার কানেকশন পরীক্ষা করা হচ্ছে...');
-  const token = localStorage.getItem('admin_token') || 'adm_session';
+  const token = localStorage.getItem('admin_token') || '';
 
   fetch('/api/courier/check', {
     method: 'POST',
