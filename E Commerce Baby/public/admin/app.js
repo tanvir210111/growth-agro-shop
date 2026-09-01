@@ -90,17 +90,35 @@ document.addEventListener('DOMContentLoaded', () => {
   loadServerOrders();
 });
 
+function updateSidebarUser(user) {
+  if (!user) return;
+  const nameEl = document.querySelector('.sidebar-user-name');
+  const roleEl = document.querySelector('.sidebar-user-role');
+  if (nameEl) nameEl.textContent = user.name || 'Admin';
+  if (roleEl) roleEl.textContent = '● ' + (user.role || 'Online');
+}
+
 function initAuthCheck() {
   const loginSection = document.getElementById('loginSection');
   const appSection = document.getElementById('appSection');
   const isLoginPage = window.location.pathname.includes('/login');
+
+  // If already authenticated in local state and on /admin, display dashboard immediately
+  if (APP_STATE.currentUser && APP_STATE.currentUser.email && !isLoginPage) {
+    if (loginSection) loginSection.style.display = 'none';
+    if (appSection) appSection.style.display = 'flex';
+    updateSidebarUser(APP_STATE.currentUser);
+  }
 
   // Verify server-side session with backend API
   fetch('/api/admin/me', {
     credentials: 'same-origin',
     headers: { 'Accept': 'application/json' }
   })
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error('Not authenticated');
+    return res.json();
+  })
   .then(data => {
     if (data && data.authenticated && data.user) {
       APP_STATE.currentUser = data.user;
@@ -113,6 +131,7 @@ function initAuthCheck() {
 
       if (loginSection) loginSection.style.display = 'none';
       if (appSection) appSection.style.display = 'flex';
+      updateSidebarUser(data.user);
       renderDashboardData();
     } else {
       throw new Error('Not authenticated');
@@ -193,6 +212,7 @@ window.handleLogin = function(email, pass) {
 
     if (loginSection) loginSection.style.display = 'none';
     if (appSection) appSection.style.display = 'flex';
+    updateSidebarUser(data.user);
     renderDashboardData();
     loadServerOrders();
   })
