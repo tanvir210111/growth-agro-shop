@@ -1644,7 +1644,6 @@ function renderLandingPagesTableRows() {
     else if (page.status === 'unpublished') statusClass = 'unpublished';
 
     const statusLabel = page.status ? page.status.charAt(0).toUpperCase() + page.status.slice(1) : 'Draft';
-    const isMaster = (page.slug === 'chicken-booster');
     const updatedDate = page.updated_at || page.created_at || '-';
     const themeLabel = (page.theme === 'chicken-booster') ? 'Chicken Booster' : 'Universal Product';
 
@@ -1689,7 +1688,7 @@ function renderLandingPagesTableRows() {
           ? `<button class="btn-lp-draft" style="padding:5px 8px;font-size:11.5px;color:#DC2626;margin-right:3px;" onclick="promptToggleLandingPageStatus(${page.id}, 'unpublished', '${page.name.replace(/'/g, "\\'")}')" title="Unpublish">⏸️</button>`
           : `<button class="btn-lp-draft" style="padding:5px 8px;font-size:11.5px;color:#16A34A;margin-right:3px;" onclick="promptToggleLandingPageStatus(${page.id}, 'published', '${page.name.replace(/'/g, "\\'")}')" title="Publish Live">🚀</button>`
         }
-        ${!isMaster ? `<button class="lp-btn-remove" style="padding:5px 8px;font-size:11.5px;" onclick="promptDeleteLandingPage(${page.id}, '${page.name.replace(/'/g, "\\'")}')" title="Delete Permanently">🗑️</button>` : ''}
+        <button class="lp-btn-remove" style="padding:5px 8px;font-size:11.5px;" onclick="promptDeleteLandingPage(${page.id}, '${page.name.replace(/'/g, "\\'")}')" title="Delete Permanently">🗑️</button>
       </td>
     `;
     tbody.appendChild(tr);
