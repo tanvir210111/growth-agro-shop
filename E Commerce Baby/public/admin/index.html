@@ -1397,21 +1397,22 @@
           <div class="white-box-card">
             <h2 class="centered-card-title">Marketing Information</h2>
 
-            <form onsubmit="event.preventDefault(); showToast('মার্কেটিং সেটিংস সফলভাবে সেভ হয়েছে!');">
+            <form id="marketingForm" onsubmit="event.preventDefault(); saveMarketingSettings();">
               <div class="grid-2-col-form">
                 <!-- Column 1 -->
                 <div>
                   <div class="form-group">
                     <label>Facebook Pixel Code</label>
-                    <textarea class="marketing-textarea" rows="3">1793041018387711</textarea>
+                    <textarea id="marketingPixelCode" class="marketing-textarea" rows="3" placeholder="Enter 14-18 digit Pixel ID or paste Meta Pixel Code"></textarea>
+                    <small style="color:#64748B;font-size:11.5px;display:block;margin-top:4px;">Enter raw Meta Pixel ID (e.g. 1793041018387711) or full script snippet.</small>
                   </div>
                   <div class="form-group">
                     <label>Google Analytics (For Header)</label>
-                    <textarea class="marketing-textarea" rows="3"></textarea>
+                    <textarea id="marketingGoogleAnalytics" class="marketing-textarea" rows="3" placeholder="G-XXXXXXXXXX or Google tag script"></textarea>
                   </div>
                   <div class="form-group">
                     <label>Google (Body Tag)</label>
-                    <textarea class="marketing-textarea" rows="3"></textarea>
+                    <textarea id="marketingGoogleBody" class="marketing-textarea" rows="3" placeholder="GTM noscript body tag"></textarea>
                   </div>
                 </div>
 
@@ -1419,17 +1420,19 @@
                 <div>
                   <div class="form-group">
                     <label>Facebook Domain Verification</label>
-                    <textarea class="marketing-textarea" rows="3"></textarea>
+                    <textarea id="marketingFbDomain" class="marketing-textarea" rows="3" placeholder="Meta domain verification code"></textarea>
                   </div>
                   <div class="form-group">
                     <label>Google Domain Verification</label>
-                    <textarea class="marketing-textarea" rows="3"></textarea>
+                    <textarea id="marketingGoogleDomain" class="marketing-textarea" rows="3" placeholder="Google site verification code"></textarea>
                   </div>
                 </div>
               </div>
 
+              <div id="marketingAlertBox" style="display:none;margin-top:14px;padding:10px 16px;border-radius:6px;font-size:13px;font-weight:600;"></div>
+
               <div style="margin-top:20px;text-align:center;">
-                <button type="submit" class="btn-primary-teal" style="padding:10px 32px;">Submit</button>
+                <button type="submit" id="marketingSubmitBtn" class="btn-primary-teal" style="padding:10px 32px;">Submit</button>
               </div>
             </form>
           </div>

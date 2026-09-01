@@ -20,6 +20,9 @@
     <!-- Core E-Commerce Stylesheet -->
     <link rel="stylesheet" href="{{ asset('css/baby-fashion.css') }}?v={{ time() }}">
     
+    <!-- Centralized Meta/Facebook Pixel -->
+    @include('partials.meta-pixel')
+
     @stack('styles')
 </head>
 <body>

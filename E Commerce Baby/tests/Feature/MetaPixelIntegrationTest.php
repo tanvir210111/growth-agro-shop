@@ -1,0 +1,140 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Admin;
+use App\Models\LandingPage;
+use App\Models\Setting;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+class MetaPixelIntegrationTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \Illuminate\Support\Facades\Artisan::call('migrate');
+
+        Admin::firstOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name'     => 'Super Admin',
+                'password' => Hash::make('admin123'),
+                'role'     => 'super_admin',
+            ]
+        );
+    }
+
+    public function test_guest_cannot_access_marketing_settings_api()
+    {
+        $getRes = $this->getJson('/api/admin/settings/marketing');
+        $getRes->assertStatus(401);
+
+        $postRes = $this->postJson('/api/admin/settings/marketing', [
+            'facebook_pixel' => '1793041018387711'
+        ]);
+        $postRes->assertStatus(401);
+    }
+
+    public function test_admin_can_get_and_update_marketing_settings()
+    {
+        // 1. Update Pixel ID with raw numeric ID
+        $postRes = $this->withHeaders([
+            'x-admin-token' => 'adm_session'
+        ])->postJson('/api/admin/settings/marketing', [
+            'facebook_pixel' => '1793041018387711'
+        ]);
+
+        $postRes->assertStatus(200);
+        $postRes->assertJson([
+            'success'  => true,
+            'settings' => [
+                'facebook_pixel' => '1793041018387711'
+            ]
+        ]);
+
+        $this->assertEquals('1793041018387711', Setting::get('facebook_pixel'));
+
+        // 2. GET confirms the value
+        $getRes = $this->withHeaders([
+            'x-admin-token' => 'adm_session'
+        ])->getJson('/api/admin/settings/marketing');
+
+        $getRes->assertStatus(200);
+        $getRes->assertJson([
+            'success'  => true,
+            'settings' => [
+                'facebook_pixel' => '1793041018387711'
+            ]
+        ]);
+    }
+
+    public function test_normalization_extracts_numeric_pixel_id_from_snippet()
+    {
+        $snippet = "<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init', '1793041018387711');fbq('track', 'PageView');</script>";
+
+        $postRes = $this->withHeaders([
+            'x-admin-token' => 'adm_session'
+        ])->postJson('/api/admin/settings/marketing', [
+            'facebook_pixel' => $snippet
+        ]);
+
+        $postRes->assertStatus(200);
+        $this->assertEquals('1793041018387711', Setting::get('facebook_pixel'));
+    }
+
+    public function test_invalid_pixel_returns_validation_error()
+    {
+        $postRes = $this->withHeaders([
+            'x-admin-token' => 'adm_session'
+        ])->postJson('/api/admin/settings/marketing', [
+            'facebook_pixel' => 'invalid-pixel-string-xyz'
+        ]);
+
+        $postRes->assertStatus(422);
+        $postRes->assertJson([
+            'success' => false,
+        ]);
+    }
+
+    public function test_main_ecommerce_website_renders_meta_pixel()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/');
+        $response->assertStatus(200);
+        $response->assertSee('connect.facebook.net/en_US/fbevents.js', false);
+        $response->assertSee("fbq('init', '1793041018387711');", false);
+        $response->assertSee("fbq('track', 'PageView');", false);
+    }
+
+    public function test_landing_pages_render_meta_pixel()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/product/chicken-booster');
+        $response->assertStatus(200);
+        $response->assertSee('connect.facebook.net/en_US/fbevents.js', false);
+        $response->assertSee("fbq('init', '1793041018387711');", false);
+        $response->assertSee("fbq('track', 'PageView');", false);
+    }
+
+    public function test_empty_pixel_does_not_render_script()
+    {
+        Setting::set('facebook_pixel', '');
+
+        $homeRes = $this->get('/');
+        $homeRes->assertStatus(200);
+        $homeRes->assertDontSee('connect.facebook.net/en_US/fbevents.js');
+        $homeRes->assertDontSee("fbq('init'");
+
+        $lpRes = $this->get('/product/chicken-booster');
+        $lpRes->assertStatus(200);
+        $lpRes->assertDontSee('connect.facebook.net/en_US/fbevents.js');
+        $lpRes->assertDontSee("fbq('init'");
+
+        // Restore for subsequent runs
+        Setting::set('facebook_pixel', '1793041018387711');
+    }
+}

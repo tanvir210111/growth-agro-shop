@@ -197,6 +197,11 @@ Route::get('/admin/landing-pages/{id}/preview', function ($id, \Illuminate\Http\
         ->header('Content-Security-Policy', "frame-ancestors 'self'");
 })->name('admin.landing-pages.preview');
 
+// Central Settings / Marketing Configuration Endpoints
+use App\Http\Controllers\Api\AdminSettingsController;
+Route::get('/api/admin/settings/marketing', [AdminSettingsController::class, 'getMarketing'])->name('api.admin.settings.marketing.get');
+Route::match(['post', 'put'], '/api/admin/settings/marketing', [AdminSettingsController::class, 'updateMarketing'])->name('api.admin.settings.marketing.update');
+
 // Internal Node.js to Laravel Landing Order Sync Bridge & Config Lookup
 use App\Http\Controllers\Api\InternalSyncController;
 Route::post('/api/internal/sync-landing-order', [InternalSyncController::class, 'syncLandingOrder'])->name('api.internal.sync-landing-order');

@@ -33,6 +33,9 @@
   <meta property="og:image" content="{{ $landingPage->seo_config['og_image'] ?? $hdr['logo_image'] ?? '' }}">
   <meta property="og:type" content="product">
 
+  <!-- Centralized Meta/Facebook Pixel -->
+  @include('partials.meta-pixel')
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

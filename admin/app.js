@@ -3112,7 +3112,121 @@ function doSwitchView(viewName) {
   if (viewName === 'landing-pages-list') renderLandingPagesList();
   if (viewName === 'profit-report') renderProfitReport();
   if (viewName === 'cities') renderCitiesTable();
+  if (viewName === 'marketing') loadMarketingSettings();
 }
+
+// ==============================================================================
+// 11B. MARKETING SETTINGS & META PIXEL MANAGEMENT
+// ==============================================================================
+function loadMarketingSettings() {
+  const token = localStorage.getItem('admin_token') || '';
+  const pixelInput = document.getElementById('marketingPixelCode');
+  const gaInput = document.getElementById('marketingGoogleAnalytics');
+  const gBodyInput = document.getElementById('marketingGoogleBody');
+  const fbDomainInput = document.getElementById('marketingFbDomain');
+  const gDomainInput = document.getElementById('marketingGoogleDomain');
+  const alertBox = document.getElementById('marketingAlertBox');
+
+  if (alertBox) alertBox.style.display = 'none';
+
+  fetch('/api/admin/settings/marketing', {
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'x-admin-token': token
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data && data.success && data.settings) {
+      if (pixelInput) pixelInput.value = data.settings.facebook_pixel || '';
+      if (gaInput) gaInput.value = data.settings.google_analytics || '';
+      if (gBodyInput) gBodyInput.value = data.settings.google_body || '';
+      if (fbDomainInput) fbDomainInput.value = data.settings.facebook_domain_verification || '';
+      if (gDomainInput) gDomainInput.value = data.settings.google_domain_verification || '';
+    }
+  })
+  .catch(err => {
+    console.warn('Could not load marketing settings:', err);
+  });
+}
+
+function saveMarketingSettings() {
+  const token = localStorage.getItem('admin_token') || '';
+  const pixelVal = document.getElementById('marketingPixelCode')?.value || '';
+  const gaVal = document.getElementById('marketingGoogleAnalytics')?.value || '';
+  const gBodyVal = document.getElementById('marketingGoogleBody')?.value || '';
+  const fbDomainVal = document.getElementById('marketingFbDomain')?.value || '';
+  const gDomainVal = document.getElementById('marketingGoogleDomain')?.value || '';
+  const submitBtn = document.getElementById('marketingSubmitBtn');
+  const alertBox = document.getElementById('marketingAlertBox');
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+  }
+  if (alertBox) alertBox.style.display = 'none';
+
+  fetch('/api/admin/settings/marketing', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'x-admin-token': token
+    },
+    body: JSON.stringify({
+      facebook_pixel: pixelVal,
+      google_analytics: gaVal,
+      google_body: gBodyVal,
+      facebook_domain_verification: fbDomainVal,
+      google_domain_verification: gDomainVal
+    })
+  })
+  .then(async r => {
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !data.success) {
+      const errMsg = (data && (data.message || (data.errors && data.errors.facebook_pixel && data.errors.facebook_pixel[0])))
+        || 'মার্কেটিং সেটিংস সংরক্ষণ করা সম্ভব হয়নি।';
+      throw new Error(errMsg);
+    }
+    return data;
+  })
+  .then(data => {
+    if (data.settings && data.settings.facebook_pixel !== undefined) {
+      const pixelInput = document.getElementById('marketingPixelCode');
+      if (pixelInput) pixelInput.value = data.settings.facebook_pixel;
+    }
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#ECFDF5';
+      alertBox.style.color = '#065F46';
+      alertBox.style.border = '1px solid #10B981';
+      alertBox.textContent = '✓ ' + (data.message || 'মার্কেটিং সেটিংস সফলভাবে সেভ হয়েছে!');
+    }
+    if (typeof showToast === 'function') {
+      showToast('মার্কেটিং সেটিংস সফলভাবে সেভ হয়েছে!');
+    }
+  })
+  .catch(err => {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#FEF2F2';
+      alertBox.style.color = '#991B1B';
+      alertBox.style.border = '1px solid #EF4444';
+      alertBox.textContent = '⚠️ ' + err.message;
+    }
+  })
+  .finally(() => {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit';
+    }
+  });
+}
+
+window.loadMarketingSettings = loadMarketingSettings;
+window.saveMarketingSettings = saveMarketingSettings;
 
 // Bangladesh Cities
 const BD_CITIES = [
