@@ -420,22 +420,66 @@ async function calculateOrderTotals(productId, variantId, quantity, deliveryZone
     const rawPackages = Array.isArray(lp.content?.packages) ? lp.content.packages : [];
     const packageMap = {};
 
-    for (const pkg of rawPackages) {
-      const key = String(pkg.id || '').trim();
-      if (key) {
-        const pObj = {
-          id: key,
-          name: pkg.name || `${lp.product_name || lp.name} (${key})`,
-          price: typeof pkg.price === 'number' ? pkg.price : (parseFloat(pkg.price) || 0),
-          regularPrice: typeof pkg.old_price === 'number' ? pkg.old_price : (parseFloat(pkg.old_price) || (typeof pkg.price === 'number' ? pkg.price : parseFloat(pkg.price) || 0)),
-          weight: pkg.weight || '',
-          image: pkg.image || '',
-          is_active: pkg.is_active !== false
-        };
-        packageMap[key] = pObj;
-        packageMap[key.toLowerCase()] = pObj;
+    rawPackages.forEach((pkg, idx) => {
+      const num = idx + 1;
+      const key = String(pkg.id || `pkg-${num}`).trim();
+      const pObj = {
+        id: key,
+        name: pkg.name || `${lp.product_name || lp.name} (${key})`,
+        price: typeof pkg.price === 'number' ? pkg.price : (parseFloat(pkg.price) || 0),
+        regularPrice: typeof pkg.old_price === 'number' ? pkg.old_price : (parseFloat(pkg.old_price) || (typeof pkg.price === 'number' ? pkg.price : parseFloat(pkg.price) || 0)),
+        weight: pkg.weight || '',
+        image: pkg.image || '',
+        is_active: pkg.is_active !== false
+      };
+
+      // 1. Direct ID & lowercase
+      packageMap[key] = pObj;
+      packageMap[key.toLowerCase()] = pObj;
+
+      // 2. Map standard landing page naming patterns (e.g. pkg-1 <-> pkg-1pc <-> pkg-1pcs <-> 1pc <-> 1)
+      const aliases = new Set();
+
+      const matchNum = key.match(/\d+/);
+      const digit = matchNum ? matchNum[0] : String(num);
+
+      aliases.add(`pkg-${digit}`);
+      aliases.add(`pkg-${digit}pc`);
+      aliases.add(`pkg-${digit}pcs`);
+      aliases.add(`pkg_${digit}`);
+      aliases.add(`pkg_${digit}pc`);
+      aliases.add(`pkg_${digit}pcs`);
+      aliases.add(`package-${digit}`);
+      aliases.add(`package_${digit}`);
+      aliases.add(`variant-${digit}`);
+      aliases.add(`variant_${digit}`);
+      aliases.add(`${digit}pc`);
+      aliases.add(`${digit}pcs`);
+      aliases.add(`${digit}p`);
+      aliases.add(digit);
+
+      if (num === 1) {
+        aliases.add('default');
+        aliases.add('standard');
       }
-    }
+
+      if (pkg.weight) {
+        const cleanWeight = String(pkg.weight).trim().toLowerCase().replace(/\s+/g, '');
+        if (cleanWeight) {
+          aliases.add(cleanWeight);
+          aliases.add(`pkg-${cleanWeight}`);
+        }
+      }
+
+      aliases.forEach(alias => {
+        if (!packageMap[alias]) {
+          packageMap[alias] = pObj;
+        }
+        if (!packageMap[alias.toLowerCase()]) {
+          packageMap[alias.toLowerCase()] = pObj;
+        }
+      });
+    });
 
     // Merge legacy aliases if this slug exists in PRODUCTS (e.g. chicken-booster legacy variant aliases)
     if (PRODUCTS[lp.slug] && PRODUCTS[lp.slug].variants) {
