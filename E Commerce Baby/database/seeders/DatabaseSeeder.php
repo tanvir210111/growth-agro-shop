@@ -450,5 +450,8 @@ class DatabaseSeeder extends Seeder
                 'total' => 1050
             ]
         );
+
+        // 8. Default Master Landing Pages
+        $this->call(LandingPageSeeder::class);
     }
 }
