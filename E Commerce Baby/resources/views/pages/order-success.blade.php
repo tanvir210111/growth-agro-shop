@@ -1,83 +1,110 @@
 @extends('layouts.app')
 
-@section('title', 'Order Confirmed #' . $order['order_number'] . ' | Baby Fashion BD')
+@section('title', 'অর্ডার কনফার্মেশন #' . $order['order_number'] . ' | Growth Agro')
 
 @section('content')
-<div class="container" style="padding: 3rem 1rem 5rem; max-width: 760px;">
-    <div style="background: #ffffff; border-radius: var(--radius-lg); border: 1px solid var(--color-border); padding: 2.5rem; box-shadow: var(--shadow-md); text-align: center;">
+<div class="container" style="padding: 2.5rem 1rem 4.5rem; max-width: 740px;">
+    <div style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 2.5rem 2rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04); text-align: center;">
         
-        <!-- Checkmark badge -->
-        <div style="width: 72px; height: 72px; background: #E8F8F5; color: #00B894; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 1.5rem;">
+        <!-- Large Success Checkmark Badge -->
+        <div style="width: 76px; height: 76px; background: #ecfdf5; color: #10b981; border: 2px solid #a7f3d0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.4rem; font-weight: bold; margin: 0 auto 1.25rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
             ✓
         </div>
 
-        <span class="hero-tag" style="background: var(--color-primary-light); color: var(--color-primary);">Order Placed Successfully!</span>
-        <h1 style="font-family: var(--font-heading); font-size: 2rem; margin: 0.5rem 0;">Thank You, {{ $order['customer_name'] }}!</h1>
-        <p style="color: var(--color-text-muted); font-size: 0.95rem; margin-bottom: 2rem;">
-            Your order <strong>#{{ $order['order_number'] }}</strong> has been received and is now pending confirmation. Our customer service team will call you shortly on <strong>{{ $order['customer_phone'] }}</strong>.
+        <span style="display: inline-block; background: #f0fdf4; color: #166534; font-size: 0.85rem; font-weight: 700; padding: 0.35rem 0.9rem; border-radius: 9999px; border: 1px solid #bbf7d0; margin-bottom: 0.75rem;">
+            অর্ডার সফল হয়েছে • Order Confirmed
+        </span>
+        <h1 style="font-family: var(--font-heading, sans-serif); font-size: 1.85rem; font-weight: 800; color: #0f172a; margin: 0.3rem 0 0.6rem;">
+            ধন্যবাদ, {{ $order['customer_name'] }}!
+        </h1>
+        <p style="color: #475569; font-size: 0.98rem; line-height: 1.6; margin-bottom: 2rem; max-width: 580px; margin-left: auto; margin-right: auto;">
+            আপনার অর্ডার <strong>#{{ $order['order_number'] }}</strong> সফলভাবে গ্রহণ করা হয়েছে। অর্ডারটি নিশ্চিত করতে আমাদের প্রতিনিধি শীঘ্রই <strong>{{ $order['customer_phone'] }}</strong> নম্বরে আপনার সাথে ফোনে যোগাযোগ করবেন।
         </p>
 
         <!-- Order Summary Card -->
-        <div style="background: var(--color-bg-gray); border-radius: var(--radius-md); padding: 1.5rem; text-align: left; margin-bottom: 2rem;">
-            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; margin-bottom: 1rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem;">Order Invoice Details</h3>
+        <div style="background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; text-align: left; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem;">
+                <h3 style="font-family: var(--font-heading, sans-serif); font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">
+                    অর্ডারের বিবরণ (Order Invoice)
+                </h3>
+                <span style="font-size: 0.85rem; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 0.2rem 0.6rem; border-radius: 6px;">
+                    #{{ $order['order_number'] }}
+                </span>
+            </div>
 
-            <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.9rem;">
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--color-text-muted);">Order Number:</span>
-                    <strong>#{{ $order['order_number'] }}</strong>
+            <!-- Customer & Delivery Info -->
+            <div style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.92rem; color: #334155;">
+                <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                    <span style="color: #64748b;">গ্রাহকের নাম:</span>
+                    <strong style="color: #0f172a; text-align: right;">{{ $order['customer_name'] }}</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--color-text-muted);">Delivery Address:</span>
-                    <span>{{ $order['customer_address'] }}</span>
+                <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                    <span style="color: #64748b;">মোবাইল নম্বর:</span>
+                    <strong style="color: #0f172a; text-align: right;">{{ $order['customer_phone'] }}</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--color-text-muted);">Delivery Region:</span>
-                    <span>{{ $order['delivery_area_label'] }}</span>
+                <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                    <span style="color: #64748b;">ডেলিভারি ঠিকানা:</span>
+                    <span style="color: #0f172a; text-align: right; max-width: 65%;">{{ $order['customer_address'] }}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--color-text-muted);">Payment Method:</span>
-                    <span>Cash on Delivery</span>
+                <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                    <span style="color: #64748b;">ডেলিভারি অঞ্চল:</span>
+                    <span style="color: #0f172a; text-align: right;">{{ $order['delivery_area_label'] }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                    <span style="color: #64748b;">পেমেন্ট পদ্ধতি:</span>
+                    <span style="color: #166534; font-weight: 600; text-align: right;">ক্যাশ অন ডেলিভারি (Cash on Delivery)</span>
                 </div>
             </div>
 
-            <!-- Items -->
-            <div style="margin-top: 1.2rem; border-top: 1px dashed var(--color-border); padding-top: 1rem;">
-                <h4 style="font-size: 0.92rem; margin-bottom: 0.8rem;">Ordered Items:</h4>
-                @foreach($order['items'] as $it)
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; font-size: 0.88rem;">
-                        <div>
-                            <strong>{{ $it['title'] }}</strong> ({{ $it['size'] }}) &times; {{ $it['quantity'] }}
+            <!-- Ordered Items List -->
+            <div style="margin-top: 1.25rem; border-top: 1px dashed #cbd5e1; padding-top: 1rem;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 0.85rem;">
+                    অর্ডারকৃত পণ্যসমূহ:
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                    @foreach($order['items'] as $it)
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.92rem; padding: 0.4rem 0; border-bottom: 1px solid #f1f5f9;">
+                            <div>
+                                <strong style="color: #0f172a;">{{ $it['title'] ?? $it['name'] ?? 'Product' }}</strong>
+                                @if(!empty($it['size']) && $it['size'] !== 'Default' && $it['size'] !== 'Standard')
+                                    <span style="color: #64748b; font-size: 0.85rem;">({{ $it['size'] }})</span>
+                                @endif
+                                <span style="color: #64748b; margin-left: 0.35rem;">&times; {{ $it['quantity'] }} টি</span>
+                            </div>
+                            <div style="font-weight: 700; color: #0f172a;">
+                                ৳ {{ number_format($it['price'] * $it['quantity']) }}
+                            </div>
                         </div>
-                        <div style="font-weight: 700; color: var(--color-primary);">
-                            ৳ {{ number_format($it['price'] * $it['quantity']) }}
-                        </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             </div>
 
-            <!-- Totals -->
-            <div style="border-top: 2px solid #ddd; margin-top: 1rem; padding-top: 0.8rem;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.9rem;">
-                    <span>Subtotal:</span>
+            <!-- Financial Totals -->
+            <div style="border-top: 2px solid #e2e8f0; margin-top: 1.25rem; padding-top: 0.9rem; font-size: 0.93rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.45rem; color: #475569;">
+                    <span>সাবটোটাল (Subtotal):</span>
                     <span>৳ {{ number_format($order['subtotal']) }}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.9rem;">
-                    <span>Shipping:</span>
-                    <span>{{ $order['shipping'] === 0 ? 'FREE' : '৳ ' . number_format($order['shipping']) }}</span>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.45rem; color: #475569;">
+                    <span>ডেলিভারি চার্জ (Delivery):</span>
+                    <span style="{{ (float)$order['shipping'] === 0.0 ? 'color:#16a34a; font-weight:700;' : '' }}">
+                        {{ (float)$order['shipping'] === 0.0 ? 'ফ্রি (FREE)' : '৳ ' . number_format($order['shipping']) }}
+                    </span>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 800; color: var(--color-primary); margin-top: 0.6rem;">
-                    <span>Total Payable:</span>
+                <div style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800; color: #dc2626; margin-top: 0.75rem; padding-top: 0.6rem; border-top: 1px solid #e2e8f0;">
+                    <span>সর্বমোট বিল (Total Payable):</span>
                     <span>৳ {{ number_format($order['total']) }}</span>
                 </div>
             </div>
         </div>
 
+        <!-- Action CTAs -->
         <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-            <a href="{{ route('home') }}" class="btn-primary">
-                Return to Home &rarr;
+            <a href="{{ route('home') }}" class="btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.6rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
+                মূল ওয়েবসাইটে ফিরে যান &rarr;
             </a>
-            <a href="https://wa.me/8801560016740?text=Hi%20Baby%20Fashion%20BD,%20I%20have%20an%20inquiry%20regarding%20Order%20{{ $order['order_number'] }}" class="btn-primary" style="background:#25D366;">
-                Need Help on WhatsApp
+            <a href="https://wa.me/8801560016740?text=Hi%20Growth%20Agro,%20I%20have%20an%20inquiry%20regarding%20Order%20{{ $order['order_number'] }}" class="btn-primary" style="background:#25D366; border-color:#25D366; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
+                💬 হোয়াটসঅ্যাপে যোগাযোগ
             </a>
         </div>
     </div>

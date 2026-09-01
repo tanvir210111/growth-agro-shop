@@ -1279,34 +1279,6 @@
     </a>
   @endif
 
-  <!-- SUCCESS MODAL -->
-  <div class="order-modal-backdrop" id="success-modal" role="dialog" aria-modal="true">
-    <div class="order-modal-card">
-      <div class="success-checkmark">✓</div>
-      <h3 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">{{ $content['checkout']['success_title'] ?? 'আপনার অর্ডারটি সফল হয়েছে!' }}</h3>
-      <p style="font-size: 14.5px; color: #475569; margin-bottom: 20px;">{{ $content['checkout']['success_message'] ?? 'অর্ডারটি নিশ্চিত করতে আমাদের প্রতিনিধি শীঘ্রই আপনার সাথে ফোনে যোগাযোগ করবেন।' }}</p>
-
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: left; font-size: 13.5px; margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-          <span>অর্ডার নাম্বার:</span>
-          <b id="modal-order-number" style="color:var(--brand-teal);">CB-2026-XXXX</b>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-          <span>পণ্য:</span>
-          <span id="modal-product-name">-</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-          <span>সর্বমোট বিল:</span>
-          <b id="modal-total-amount" style="color:var(--btn-red);">-</b>
-        </div>
-      </div>
-
-      <button type="button" class="btn-red-cta" style="width: 100%; font-size: 16px; padding: 12px;" onclick="document.getElementById('success-modal').classList.remove('active')">
-        ঠিক আছে, ধন্যবাদ
-      </button>
-    </div>
-  </div>
-
   <!-- Growth Agro Unified Analytics Tracking -->
   <script src="/js/growth-agro-tracking.js"></script>
   <script>
@@ -1389,11 +1361,6 @@
     const nameInput = document.getElementById('customer-name');
     const addressInput = document.getElementById('customer-address');
     const phoneInput = document.getElementById('customer-phone');
-
-    const successModal = document.getElementById('success-modal');
-    const modalOrderNumber = document.getElementById('modal-order-number');
-    const modalProductName = document.getElementById('modal-product-name');
-    const modalTotalAmount = document.getElementById('modal-total-amount');
 
     function sanitize(str) { return String(str || '').replace(/[<>]/g, '').trim(); }
     function validatePhone(phone) { return /^01[3-9]\d{8}$/.test(phone.replace(/[^0-9]/g, '')); }
@@ -1758,46 +1725,10 @@
           if (res.ok && data && data.success) {
             const order = data.order || {};
             const orderNo = order.order_number || data.order_number || ('CB-' + Date.now().toString().slice(-6));
-            const totalVal = order.total || 0;
 
-            if (window.GrowthAgroTracking) {
-              window.GrowthAgroTracking.track('purchase', {
-                entity_type: 'order',
-                entity_id: orderNo,
-                event_value: totalVal,
-                properties: {
-                  items_count: totalQuantity,
-                  currency: 'BDT',
-                  landing_page: window.location.pathname,
-                  landing_page_id: LANDING_PAGE_ID
-                }
-              });
-            }
-
-            // Meta Pixel: Purchase Event with Deduplication Guard
-            const metaOrderDedupeKey = 'meta_tracked_purchase_' + orderNo;
-            if (!sessionStorage.getItem(metaOrderDedupeKey) && typeof window.fbq === 'function') {
-              sessionStorage.setItem(metaOrderDedupeKey, '1');
-              window.fbq('track', 'Purchase', {
-                content_ids: ['{{ addslashes($landingPage->product_id ?: $landingPage->slug) }}'],
-                content_name: '{{ addslashes($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name)) }}',
-                content_type: 'product',
-                value: totalVal,
-                currency: 'BDT',
-                num_items: totalQuantity
-              });
-            }
-
-            if (modalOrderNumber) modalOrderNumber.textContent = orderNo;
-            if (modalProductName) modalProductName.textContent = primaryName;
-            if (modalTotalAmount) modalTotalAmount.textContent = "৳" + totalVal.toLocaleString('en-US');
-            if (successModal) successModal.classList.add('active');
-
-            if (form) form.reset();
-            customerRiskData = null;
-            const badge = document.getElementById('courier-risk-badge');
-            if (badge) badge.style.display = 'none';
-            recalculate();
+            // Redirect immediately to dedicated order success page
+            window.location.href = '/order/success/' + encodeURIComponent(orderNo);
+            return;
           } else {
             const serverMsg = (data && (data.error || data.message || (Array.isArray(data.errors) && data.errors[0])))
               ? (data.error || data.message || data.errors[0])

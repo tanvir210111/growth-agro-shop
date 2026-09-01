@@ -316,7 +316,7 @@ class FrontendController extends Controller
             }
         }
         if (!$order) {
-            return redirect()->route('home')->with('info', 'No active order found.');
+            abort(404, 'Order not found.');
         }
 
         return view('pages.order-success', compact('order'));

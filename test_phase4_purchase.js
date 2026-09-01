@@ -32,7 +32,7 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
 
 (async () => {
   console.log('================================================================');
-  console.log('🧪 TESTING PHASE 4 — META PIXEL PURCHASE EVENT');
+  console.log('🧪 TESTING PHASE 4 & DEDICATED SUCCESS PAGE — META PIXEL PURCHASE');
   console.log('================================================================\n');
 
   // Test 1: Admin Login & Setting Verification
@@ -76,14 +76,11 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   const successPageRes = await sendReq(8000, successPath, 'GET', null, { Cookie: sessionCookie });
   assert.strictEqual(successPageRes.status, 200);
 
-  const purchaseSnippet = successPageRes.body.slice(successPageRes.body.indexOf("window.fbq('track', 'Purchase'"), successPageRes.body.indexOf("window.fbq('track', 'Purchase'") + 300);
-  console.log('--- Rendered Purchase Snippet ---:\n', purchaseSnippet);
-
   assert.ok(successPageRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire on success page');
   assert.ok(successPageRes.body.includes("window.fbq('track', 'Purchase', {"), 'Purchase event must be fired on success page');
   assert.ok(successPageRes.body.includes("currency: 'BDT'"), 'Currency must be BDT');
   assert.ok(successPageRes.body.includes("meta_tracked_purchase_"), 'Must have sessionStorage deduplication guard');
-  console.log('✅ Main website /order/success page fires Purchase with exact server total (৳1650), quantity (2), currency (BDT), and deduplication guard.');
+  console.log('✅ Main website /order/success page fires Purchase with exact server total, quantity (2), currency (BDT), and deduplication guard.');
 
   // Test 3: Main Website Failed Order (No Purchase Trigger)
   console.log('\n--- Test 3: Main Website Failed Order (No Purchase) ---');
@@ -100,11 +97,21 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   assert.ok(!failedSubmitRes.headers['location'] || !failedSubmitRes.headers['location'].includes('/order/success/'), 'Failed order must NOT redirect to success page');
   console.log('✅ Failed order validation properly rejected without reaching success page or firing Purchase.');
 
-  // Test 4: Chicken Booster Landing Page Order & Purchase Event
-  console.log('\n--- Test 4: Chicken Booster Landing Page Successful Order & Purchase Tracking ---');
+  // Test 4: Landing Page JavaScript Redirect Logic
+  console.log('\n--- Test 4: Landing Page Source Code Inspection for Redirect ---');
+  const cbLandingRes = await sendReq(8000, '/product/chicken-booster');
+  assert.strictEqual(cbLandingRes.status, 200);
+  assert.ok(cbLandingRes.body.includes("window.location.href = '/order/success/' + encodeURIComponent(orderNo);"), 'Landing page must redirect to dedicated /order/success page');
+  assert.ok(!cbLandingRes.body.includes("successModal.classList.add('active')"), 'Modal must no longer be used');
+  console.log('✅ Landing page correctly configured to redirect to /order/success/{orderNumber} instead of showing modal.');
+
+  // Test 5: Chicken Booster Landing Page Order & Dedicated Success Page Resolution
+  console.log('\n--- Test 5: Chicken Booster Order Placement & Dedicated Success Page ---');
   const cbOrderRes = await sendReq(8000, '/api/orders', 'POST', {
     slug: 'chicken-booster',
     landing_page_slug: 'chicken-booster',
+    productId: 'chicken-booster',
+    product_id: 'chicken-booster',
     source: 'LANDING_PAGE',
     customer_name: 'Chicken Booster Farmer',
     name: 'Chicken Booster Farmer',
@@ -114,30 +121,36 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
     shipping_address: 'Gazipur Poultry Farm Road',
     deliveryZone: 'outside',
     delivery_zone: 'outside',
+    quantity: 1,
+    items: [
+      { productId: 'chicken-booster', variantId: 'broiler-1kg', quantity: 1, name: 'Broiler Booster (১ কেজি)', price: 2300 }
+    ],
     variantQuantities: {
-      'cb-1kg': 2
+      'broiler-1kg': 1
     }
   });
-  assert.ok(cbOrderRes.status === 200 || cbOrderRes.status === 201);
+  assert.ok(cbOrderRes.status === 200 || cbOrderRes.status === 201, `Status was ${cbOrderRes.status}`);
   assert.ok(cbOrderRes.json && cbOrderRes.json.success, 'Chicken booster order must succeed');
   const cbOrder = cbOrderRes.json.order;
   assert.ok(cbOrder && cbOrder.total > 0, 'Server must return calculated order total');
-  console.log(`✅ Chicken Booster order confirmed by server (Order #${cbOrder.order_number}, Subtotal: ৳${cbOrder.subtotal}, Total: ৳${cbOrder.total}).`);
+  console.log(`✅ Chicken Booster order confirmed by server (Order #${cbOrder.order_number}, Total: ৳${cbOrder.total}).`);
 
-  // Verify landing-page.blade.php client template contains the Purchase trigger
-  const cbLandingRes = await sendReq(8000, '/product/chicken-booster');
-  assert.strictEqual(cbLandingRes.status, 200);
-  assert.ok(cbLandingRes.body.includes("meta_tracked_purchase_"), 'Must contain sessionStorage deduplication logic');
-  assert.ok(cbLandingRes.body.includes("window.fbq('track', 'Purchase', {"), 'Must call Purchase on success');
-  assert.ok(cbLandingRes.body.includes("content_ids: ['chicken-booster']"), 'Must use chicken-booster product identifier');
-  assert.ok(cbLandingRes.body.includes("currency: 'BDT'"), 'Must use currency BDT');
-  console.log('✅ Chicken Booster landing page includes Meta Pixel Purchase hook inside backend success confirmation path.');
+  // Fetch dedicated success page for Chicken Booster order
+  const cbSuccessRes = await sendReq(8000, `/order/success/${cbOrder.order_number}`);
+  assert.strictEqual(cbSuccessRes.status, 200, 'Success page must load order from database');
+  assert.ok(cbSuccessRes.body.includes(cbOrder.order_number), 'Success page must contain the exact order number');
+  assert.ok(cbSuccessRes.body.includes("window.fbq('track', 'Purchase', {"), 'Purchase event must fire on dedicated success page');
+  assert.ok(cbSuccessRes.body.includes("currency: 'BDT'"), 'Currency must be BDT');
+  assert.ok(cbSuccessRes.body.includes("meta_tracked_purchase_"), 'Must have deduplication guard');
+  console.log('✅ Chicken Booster dedicated success page renders cleanly with database order info and Meta Pixel Purchase tracking.');
 
-  // Test 5: MediaScope IT Landing Page Order & Purchase Event
-  console.log('\n--- Test 5: MediaScope IT Landing Page Successful Order & Purchase Tracking ---');
+  // Test 6: MediaScope IT Landing Page Order & Dedicated Success Page
+  console.log('\n--- Test 6: MediaScope IT Order Placement & Dedicated Success Page ---');
   const msOrderRes = await sendReq(8000, '/api/orders', 'POST', {
     slug: 'mediascope-it',
     landing_page_slug: 'mediascope-it',
+    productId: 'mediascope-it',
+    product_id: 'mediascope-it',
     source: 'LANDING_PAGE',
     customer_name: 'MediaScope Customer',
     name: 'MediaScope Customer',
@@ -147,22 +160,27 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
     shipping_address: 'Chittagong GEC Circle',
     deliveryZone: 'outside',
     delivery_zone: 'outside',
+    quantity: 1,
+    items: [
+      { productId: 'mediascope-it', variantId: 'pkg-1pc', quantity: 1, name: '১ পিস স্মার্ট ডিভাইস', price: 500 }
+    ],
     variantQuantities: {
-      'ms-1pc': 1
+      'pkg-1pc': 1
     }
   });
-  assert.ok(msOrderRes.status === 200 || msOrderRes.status === 201);
+  assert.ok(msOrderRes.status === 200 || msOrderRes.status === 201, `Status was ${msOrderRes.status}`);
   assert.ok(msOrderRes.json && msOrderRes.json.success);
-  console.log('✅ MediaScope IT order confirmed by server.');
+  const msOrder = msOrderRes.json.order;
+  console.log(`✅ MediaScope IT order confirmed by server (Order #${msOrder.order_number}).`);
 
-  const msLandingRes = await sendReq(8000, '/product/mediascope-it');
-  assert.strictEqual(msLandingRes.status, 200);
-  assert.ok(msLandingRes.body.includes("content_ids: ['mediascope-it']"), 'Must use mediascope-it product identifier');
-  assert.ok(msLandingRes.body.includes("window.fbq('track', 'Purchase', {"), 'Must call Purchase on success');
-  console.log('✅ MediaScope IT landing page includes Meta Pixel Purchase hook.');
+  const msSuccessRes = await sendReq(8000, `/order/success/${msOrder.order_number}`);
+  assert.strictEqual(msSuccessRes.status, 200);
+  assert.ok(msSuccessRes.body.includes(msOrder.order_number));
+  assert.ok(msSuccessRes.body.includes("window.fbq('track', 'Purchase', {"));
+  console.log('✅ MediaScope IT dedicated success page renders cleanly with Meta Pixel Purchase tracking.');
 
-  // Test 6: Future Dynamic Landing Page Order & Purchase Event
-  console.log('\n--- Test 6: Dynamic Future Landing Page Order & Purchase Tracking ---');
+  // Test 7: Future Dynamic Landing Page Order & Dedicated Success Page
+  console.log('\n--- Test 7: Dynamic Future Landing Page Order & Dedicated Success Page ---');
   const futureSlug = 'dynamic-purchase-test-' + Date.now();
   const createRes = await sendReq(8000, '/api/admin/landing-pages', 'POST', {
     name: 'Future Dynamic Purchase Page',
@@ -179,12 +197,6 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   }, authHeaders);
   assert.strictEqual(createRes.status, 201);
   const tempPageId = createRes.json.page_id;
-
-  const dynamicPageRes = await sendReq(8000, `/product/${futureSlug}`);
-  assert.strictEqual(dynamicPageRes.status, 200);
-  assert.ok(dynamicPageRes.body.includes("content_ids: ['agro-sol-99']"), 'Dynamic page must use custom product_id');
-  assert.ok(dynamicPageRes.body.includes("content_name: 'Dynamic Agro Solution'"), 'Dynamic page must use custom product_name');
-  assert.ok(dynamicPageRes.body.includes("window.fbq('track', 'Purchase', {"), 'Must call Purchase on success');
 
   // Place order for dynamic page
   const dynamicOrderRes = await sendReq(8000, '/api/orders', 'POST', {
@@ -209,24 +221,35 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
       'sol-pkg-1': 1
     }
   });
-  assert.ok(dynamicOrderRes.status === 200 || dynamicOrderRes.status === 201, `Status must be 200/201 (got ${dynamicOrderRes.status})`);
+  assert.ok(dynamicOrderRes.status === 200 || dynamicOrderRes.status === 201);
   assert.ok(dynamicOrderRes.json && dynamicOrderRes.json.success);
-  assert.strictEqual(dynamicOrderRes.json.order.subtotal, 1850);
-  console.log('✅ Dynamic future landing page order placed and verified with dynamic product data.');
+  const dynamicOrder = dynamicOrderRes.json.order;
+  assert.strictEqual(dynamicOrder.subtotal, 1850);
+
+  const dynamicSuccessRes = await sendReq(8000, `/order/success/${dynamicOrder.order_number}`);
+  assert.strictEqual(dynamicSuccessRes.status, 200);
+  assert.ok(dynamicSuccessRes.body.includes(dynamicOrder.order_number));
+  assert.ok(dynamicSuccessRes.body.includes("window.fbq('track', 'Purchase', {"));
+  console.log('✅ Dynamic future landing page dedicated success page verified without hardcoded slugs.');
 
   // Clean up dynamic page
   await sendReq(8000, `/api/admin/landing-pages/${tempPageId}`, 'DELETE', null, authHeaders);
   console.log('✅ Cleaned up dynamic test page');
 
-  // Test 7: Deduplication Verification
-  console.log('\n--- Test 7: Deduplication Protection Verification ---');
+  // Test 8: Invalid Order Number (Security & 404 Check)
+  console.log('\n--- Test 8: Invalid Order Number 404 Check ---');
+  const invalidOrderRes = await sendReq(8000, '/order/success/NON-EXISTENT-ORDER-999999');
+  assert.strictEqual(invalidOrderRes.status, 404, 'Invalid order number must return 404');
+  assert.ok(!invalidOrderRes.body.includes("window.fbq('track', 'Purchase'"), 'Invalid order must not fire Purchase');
+  console.log('✅ Invalid order number returns 404 and does NOT fire Purchase.');
+
+  // Test 9: Deduplication Verification
+  console.log('\n--- Test 9: Deduplication Protection Verification ---');
   assert.ok(successPageRes.body.includes("const metaDedupeKey = 'meta_tracked_purchase_' + orderNo;"));
   assert.ok(successPageRes.body.includes("if (!sessionStorage.getItem(metaDedupeKey)"));
-  assert.ok(cbLandingRes.body.includes("const metaOrderDedupeKey = 'meta_tracked_purchase_' + orderNo;"));
-  assert.ok(cbLandingRes.body.includes("if (!sessionStorage.getItem(metaOrderDedupeKey)"));
-  console.log('✅ Deduplication key check in sessionStorage verified for both Main E-Commerce and Landing Pages.');
+  console.log('✅ Canonical sessionStorage deduplication key verified on dedicated success page.');
 
   console.log('\n================================================================');
-  console.log('🎉 ALL PHASE 4 PURCHASE INTEGRATION TESTS PASSED SUCCESSFULLY!');
+  console.log('🎉 ALL DEDICATED SUCCESS PAGE & PURCHASE INTEGRATION TESTS PASSED!');
   console.log('================================================================\n');
 })();
