@@ -211,4 +211,54 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertSee("fireCheckoutStarted()", false);
         $response->assertSee("window.fbq('track', 'InitiateCheckout'", false);
     }
+
+    public function test_main_ecommerce_order_success_page_fires_purchase_event()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $order = \App\Models\Order::create([
+            'invoice_no'       => 'TEST-ORD-999',
+            'customer_name'    => 'Test Customer',
+            'customer_phone'   => '01711000000',
+            'customer_address' => 'Dhaka Test Address',
+            'city_type'        => 'inside_dhaka',
+            'delivery_charge'  => 70,
+            'subtotal'         => 1580,
+            'discount'         => 0,
+            'total_amount'     => 1650,
+            'status'           => 'pending',
+            'payment_method'   => 'COD',
+            'source_type'      => 'main_website'
+        ]);
+
+        \App\Models\OrderItem::create([
+            'order_id'      => $order->id,
+            'product_name'  => 'Girls Red Butterfly Set',
+            'product_image' => '',
+            'size'          => 'Standard',
+            'price'         => 790,
+            'quantity'      => 2,
+            'total'         => 1580,
+        ]);
+
+        $response = $this->get('/order/success/TEST-ORD-999');
+        $response->assertStatus(200);
+        $response->assertSee("fbq('track', 'PageView');", false);
+        $response->assertSee("window.fbq('track', 'Purchase', {", false);
+        $response->assertSee("const totalVal = 1650;", false);
+        $response->assertSee("value: totalVal,", false);
+        $response->assertSee("currency: 'BDT'", false);
+        $response->assertSee("num_items: 2", false);
+        $response->assertSee("meta_tracked_purchase_", false);
+    }
+
+    public function test_landing_page_contains_purchase_event_hook_inside_success_block()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/product/chicken-booster');
+        $response->assertStatus(200);
+        $response->assertSee("meta_tracked_purchase_", false);
+        $response->assertSee("window.fbq('track', 'Purchase', {", false);
+    }
 }

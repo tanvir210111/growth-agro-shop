@@ -291,9 +291,30 @@ class FrontendController extends Controller
         return redirect()->route('order.success', ['orderNumber' => $result['order_number']]);
     }
 
-    public function orderSuccess(string $orderNumber): View
+    public function orderSuccess(string $orderNumber)
     {
         $order = $this->checkoutService->getOrder($orderNumber);
+        if (!$order) {
+            $dbOrder = \App\Models\Order::where('invoice_no', $orderNumber)->orWhere('id', $orderNumber)->with('items')->first();
+            if ($dbOrder) {
+                $order = [
+                    'order_number'        => $dbOrder->invoice_no ?: ('ORD-' . $dbOrder->id),
+                    'customer_name'       => $dbOrder->customer_name,
+                    'customer_phone'      => $dbOrder->customer_phone,
+                    'customer_address'    => $dbOrder->customer_address,
+                    'delivery_area_label' => $dbOrder->city_type === 'inside_dhaka' ? 'Inside Dhaka' : 'Outside Dhaka',
+                    'items'               => $dbOrder->items->map(fn($it) => [
+                        'title'    => $it->product_name,
+                        'price'    => $it->price,
+                        'quantity' => $it->quantity,
+                        'size'     => $it->size
+                    ])->toArray(),
+                    'subtotal'            => (float)$dbOrder->subtotal,
+                    'shipping'            => (float)$dbOrder->delivery_charge,
+                    'total'               => (float)$dbOrder->total_amount,
+                ];
+            }
+        }
         if (!$order) {
             return redirect()->route('home')->with('info', 'No active order found.');
         }

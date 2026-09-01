@@ -1774,6 +1774,20 @@
               });
             }
 
+            // Meta Pixel: Purchase Event with Deduplication Guard
+            const metaOrderDedupeKey = 'meta_tracked_purchase_' + orderNo;
+            if (!sessionStorage.getItem(metaOrderDedupeKey) && typeof window.fbq === 'function') {
+              sessionStorage.setItem(metaOrderDedupeKey, '1');
+              window.fbq('track', 'Purchase', {
+                content_ids: ['{{ addslashes($landingPage->product_id ?: $landingPage->slug) }}'],
+                content_name: '{{ addslashes($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name)) }}',
+                content_type: 'product',
+                value: totalVal,
+                currency: 'BDT',
+                num_items: totalQuantity
+              });
+            }
+
             if (modalOrderNumber) modalOrderNumber.textContent = orderNo;
             if (modalProductName) modalProductName.textContent = primaryName;
             if (modalTotalAmount) modalTotalAmount.textContent = "৳" + totalVal.toLocaleString('en-US');

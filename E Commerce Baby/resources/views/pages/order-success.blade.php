@@ -103,6 +103,20 @@
                 }
             });
         }
+
+        // Meta Pixel Purchase Event with Deduplication Guard
+        const metaDedupeKey = 'meta_tracked_purchase_' + orderNo;
+        if (!sessionStorage.getItem(metaDedupeKey) && typeof window.fbq === 'function') {
+            sessionStorage.setItem(metaDedupeKey, '1');
+            window.fbq('track', 'Purchase', {
+                content_ids: @json(collect($order['items'] ?? [])->pluck('title')->values()->toArray()),
+                content_name: '{{ addslashes($order["items"][0]["title"] ?? "Order #" . $order["order_number"]) }}',
+                content_type: 'product',
+                value: totalVal,
+                currency: 'BDT',
+                num_items: {{ array_sum(array_column($order['items'] ?? [], 'quantity')) ?: 1 }}
+            });
+        }
     })();
 </script>
 @endpush
