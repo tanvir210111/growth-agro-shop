@@ -13,6 +13,9 @@ const APP_STATE = {
   selectedOrders: new Set(),
   orders: [], // Clean initial state (Zero hardcoded mock orders). Populated dynamically from SQLite /api/orders
   customers: [], // Aggregated dynamically from real orders
+  liveLandingPages: [],
+  lpFilterStatus: 'all',
+  lpSearchQuery: '',
   creditsList: JSON.parse(localStorage.getItem('admin_credits')) || [],
   incomeList: JSON.parse(localStorage.getItem('admin_income')) || [],
   expenseList: JSON.parse(localStorage.getItem('admin_expense')) || [],
@@ -138,6 +141,8 @@ function initAuthCheck() {
       if (appSection) appSection.style.display = 'flex';
       updateSidebarUser(data.user);
       renderDashboardData();
+      renderLandingPagesList();
+      loadServerOrders();
     } else {
       throw new Error('Not authenticated');
     }
@@ -1603,8 +1608,8 @@ function renderLandingPagesTableRows() {
 
   let filtered = APP_STATE.liveLandingPages || [];
 
-  if (APP_STATE.lpFilterStatus !== 'all') {
-    filtered = filtered.filter(p => p.status === APP_STATE.lpFilterStatus);
+  if (APP_STATE.lpFilterStatus && APP_STATE.lpFilterStatus !== 'all') {
+    filtered = filtered.filter(p => (p.status || '').toLowerCase() === APP_STATE.lpFilterStatus.toLowerCase());
   }
 
   if (APP_STATE.lpSearchQuery && APP_STATE.lpSearchQuery.trim() !== '') {
@@ -1641,6 +1646,7 @@ function renderLandingPagesTableRows() {
     const statusLabel = page.status ? page.status.charAt(0).toUpperCase() + page.status.slice(1) : 'Draft';
     const isMaster = (page.slug === 'chicken-booster');
     const updatedDate = page.updated_at || page.created_at || '-';
+    const themeLabel = (page.theme === 'chicken-booster') ? 'Chicken Booster' : 'Universal Product';
 
     tr.innerHTML = `
       <td style="color:#64748B;font-size:12px;">${idx + 1}</td>
@@ -1657,7 +1663,7 @@ function renderLandingPagesTableRows() {
       </td>
       <td>
         <span style="background:#E2E8F0;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:#334155;">
-          ${isMaster ? 'Master Default' : 'Chicken Booster'}
+          ${themeLabel}
         </span>
       </td>
       <td>
@@ -1691,10 +1697,10 @@ function renderLandingPagesTableRows() {
 }
 
 window.filterLandingPagesByStatus = function(status) {
-  APP_STATE.lpFilterStatus = status;
+  APP_STATE.lpFilterStatus = (status || 'all').toLowerCase();
   ['All', 'Published', 'Draft', 'Unpublished'].forEach(s => {
     const btn = document.getElementById('lpFilter' + s);
-    if (btn) btn.classList.toggle('active', s.toLowerCase() === status);
+    if (btn) btn.classList.toggle('active', s.toLowerCase() === APP_STATE.lpFilterStatus);
   });
   renderLandingPagesTableRows();
 };
@@ -2917,23 +2923,29 @@ function renderLandingPagesHub() {
   if (!container) return;
   container.innerHTML = '';
 
-  const pages = APP_STATE.liveLandingPages.length ? APP_STATE.liveLandingPages : [
-    { id: 1, name: "Chicken Booster (চিকেন বুস্টার)", slug: "chicken-booster", status: "published", public_url: "/product/chicken-booster" }
-  ];
+  const pages = (APP_STATE.liveLandingPages && APP_STATE.liveLandingPages.length) ? APP_STATE.liveLandingPages : [];
+
+  if (pages.length === 0) {
+    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:#64748B;">No landing pages available.</div>`;
+    return;
+  }
 
   pages.forEach(lp => {
     const card = document.createElement('div');
     card.className = 'lp-card';
+    const isPublished = (lp.status === 'published');
+    const badgeLabel = (lp.theme === 'chicken-booster') ? 'Poultry & Agro' : 'Universal Product';
+
     card.innerHTML = `
       <div class="lp-card-header">
-        <span class="lp-badge">Poultry & Agro</span>
-        <span style="font-size:11px;color:${lp.status === 'published' ? '#10B981' : '#F59E0B'};font-weight:600;">● ${lp.status ? lp.status.toUpperCase() : 'ACTIVE'}</span>
+        <span class="lp-badge">${badgeLabel}</span>
+        <span style="font-size:11px;color:${isPublished ? '#10B981' : '#F59E0B'};font-weight:600;">● ${lp.status ? lp.status.toUpperCase() : 'DRAFT'}</span>
       </div>
       <div class="lp-card-body">
         <h4 style="font-size:13.5px;font-weight:700;margin-bottom:4px;">${lp.name}</h4>
         <p style="font-size:11.5px;color:#718096;margin-bottom:10px;">URL: <code>/product/${lp.slug}</code></p>
         <div class="lp-actions">
-          <button class="btn-lp-action primary" onclick="previewLandingPageById(${lp.id || 1}, '${lp.name}')">
+          <button class="btn-lp-action primary" onclick="previewLandingPageById(${lp.id}, '${lp.name.replace(/'/g, "\\'")}')">
             👁️ Live Preview
           </button>
           <a href="${lp.public_url || `/product/${lp.slug}`}" target="_blank" class="btn-lp-action" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">
