@@ -1556,8 +1556,13 @@
       });
     });
 
+    document.querySelectorAll('.btn-qty-plus, .btn-qty-minus').forEach(btn => {
+      btn.addEventListener('click', fireCheckoutStarted, { passive: true });
+    });
+
     optionCards.forEach(card => {
       card.addEventListener('click', function() {
+        fireCheckoutStarted();
         const key = this.getAttribute('data-variant');
         const currentQty = variantQuantities[key] || 0;
         variantQuantities[key] = currentQty > 0 ? 0 : 1;
@@ -1567,6 +1572,7 @@
 
     deliveryRadios.forEach(radio => {
       radio.addEventListener('change', function() {
+        fireCheckoutStarted();
         currentDeliveryZone = this.value;
         if (customerRiskData) {
           checkPhoneRisk();
@@ -1578,6 +1584,7 @@
 
     // Helper for interactive hero cards
     window.selectAndScroll = function(variantKey) {
+      fireCheckoutStarted();
       if (variantKey && CATALOG[variantKey]) {
         variantQuantities[variantKey] = Math.max(1, variantQuantities[variantKey] || 0);
       }
@@ -1589,21 +1596,54 @@
     // Tracking CTA Clicks
     document.querySelectorAll('.btn-red-cta, .btn-header-order').forEach(btn => {
       btn.addEventListener('click', function() {
+        fireCheckoutStarted();
         if (window.GrowthAgroTracking) {
           window.GrowthAgroTracking.trackCta('btn_landing_cta', LANDING_PAGE_SLUG);
         }
       });
     });
 
-    // Checkout Started Tracking
+    // Checkout Started Tracking (First-Party Analytics & Meta Pixel InitiateCheckout)
     let checkoutStartedFired = false;
     function fireCheckoutStarted() {
-      if (!checkoutStartedFired && window.GrowthAgroTracking) {
-        checkoutStartedFired = true;
+      if (checkoutStartedFired) return;
+      checkoutStartedFired = true;
+
+      // 1. First-Party Tracking
+      if (window.GrowthAgroTracking) {
         window.GrowthAgroTracking.track('checkout_started', {
           entity_type: 'landing_page',
           entity_id: LANDING_PAGE_SLUG,
           page_path: window.location.pathname
+        });
+      }
+
+      // 2. Meta Pixel: InitiateCheckout Event
+      if (typeof window.fbq === 'function') {
+        let subtotalVal = 0;
+        let totalItems = 0;
+        if (typeof variantQuantities === 'object') {
+          Object.keys(variantQuantities).forEach(k => {
+            const q = variantQuantities[k] || 0;
+            if (q > 0 && CATALOG[k]) {
+              subtotalVal += CATALOG[k].price * q;
+              totalItems += q;
+            }
+          });
+        }
+
+        const fallbackPrice = {{ (float)($firstPkgPrice ?? 0) }};
+        const orderValue = subtotalVal > 0 ? subtotalVal : fallbackPrice;
+
+        window.fbq('track', 'InitiateCheckout', {
+          content_ids: ['{{ addslashes($landingPage->product_id ?: $landingPage->slug) }}'],
+          content_name: '{{ addslashes($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name)) }}',
+          content_type: 'product',
+          @if(!empty($firstPkgPrice) && $firstPkgPrice > 0)
+          value: orderValue > 0 ? orderValue : fallbackPrice,
+          @endif
+          currency: 'BDT',
+          num_items: totalItems > 0 ? totalItems : 1
         });
       }
     }
@@ -1615,6 +1655,7 @@
     // Submit Order
     if (btnSubmit) {
       btnSubmit.addEventListener('click', async function() {
+        fireCheckoutStarted();
         const name = sanitize(nameInput ? nameInput.value : '');
         const addr = sanitize(addressInput ? addressInput.value : '');
         const phone = phoneInput ? phoneInput.value.trim().replace(/[^0-9]/g, '') : '';

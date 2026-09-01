@@ -180,4 +180,35 @@ class MetaPixelIntegrationTest extends TestCase
         // ViewContent should NOT fire on home
         $response->assertDontSee("ViewContent");
     }
+
+    public function test_main_ecommerce_checkout_page_fires_initiatecheckout()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/checkout');
+        $response->assertStatus(200);
+        $response->assertSee("fbq('track', 'PageView');", false);
+        $response->assertSee("fbq('track', 'InitiateCheckout', {", false);
+        $response->assertSee("currency: 'BDT'", false);
+    }
+
+    public function test_main_ecommerce_product_detail_page_has_initiatecheckout_hook()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/product/girls-red-butterfly-printed-t-shirt-floral-shorts-set');
+        $response->assertStatus(200);
+        $response->assertSee("triggerDetailInitiateCheckout()", false);
+        $response->assertSee("window.fbq('track', 'InitiateCheckout'", false);
+    }
+
+    public function test_landing_page_has_initiatecheckout_hook()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/product/chicken-booster');
+        $response->assertStatus(200);
+        $response->assertSee("fireCheckoutStarted()", false);
+        $response->assertSee("window.fbq('track', 'InitiateCheckout'", false);
+    }
 }

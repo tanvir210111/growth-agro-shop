@@ -157,6 +157,17 @@
             }
         });
     }
+
+    // Meta Pixel: InitiateCheckout Event
+    if (typeof window.fbq === 'function') {
+        window.fbq('track', 'InitiateCheckout', {
+            content_ids: @json(collect($cartSummary['items'] ?? [])->pluck('slug')->values()->toArray()),
+            content_type: 'product',
+            value: {{ (float)($subtotal ?? 0) }},
+            currency: 'BDT',
+            num_items: {{ (int)($cartSummary['item_count'] ?? count($cartSummary['items'] ?? [])) }}
+        });
+    }
 </script>
 @endpush
 @endsection

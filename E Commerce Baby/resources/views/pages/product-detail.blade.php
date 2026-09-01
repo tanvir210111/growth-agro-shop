@@ -160,6 +160,7 @@
     }
 
     function addDetailToBag(productId) {
+        triggerDetailInitiateCheckout();
         addToCart(productId, currentDetailSize, null, currentDetailQty);
     }
 
@@ -181,6 +182,30 @@
             value: {{ (float)$product["price"] }},
             currency: 'BDT'
         });
+    }
+
+    // Meta Pixel: InitiateCheckout Event (On Order Form Interaction / Add to Bag)
+    let detailCheckoutStarted = false;
+    function triggerDetailInitiateCheckout() {
+        if (detailCheckoutStarted) return;
+        detailCheckoutStarted = true;
+
+        if (typeof window.fbq === 'function') {
+            window.fbq('track', 'InitiateCheckout', {
+                content_ids: ['{{ $product["slug"] }}'],
+                content_name: '{{ addslashes($product["title"]) }}',
+                content_type: 'product',
+                value: {{ (float)$product["price"] }} * currentDetailQty,
+                currency: 'BDT',
+                num_items: currentDetailQty
+            });
+        }
+    }
+
+    const codForm = document.querySelector('.instant-cod-box form');
+    if (codForm) {
+        codForm.addEventListener('focusin', triggerDetailInitiateCheckout, { once: true, passive: true });
+        codForm.addEventListener('submit', triggerDetailInitiateCheckout);
     }
 </script>
 @endpush
