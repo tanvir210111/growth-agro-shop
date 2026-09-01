@@ -97,6 +97,56 @@ Route::patch('/api/orders/{order_number}/status', function (\Illuminate\Http\Req
     return response()->json(['success' => $updated > 0]);
 })->name('api.orders.updateStatus');
 
+// Forward Public Node Order & Courier API endpoints
+Route::post('/api/orders', function (\Illuminate\Http\Request $request) {
+    try {
+        $nodeHost = env('NODE_HOST', '127.0.0.1');
+        $nodePort = env('NODE_PORT', 3000);
+        $nodeUrl = "http://{$nodeHost}:{$nodePort}/api/orders";
+
+        $response = \Illuminate\Support\Facades\Http::timeout(10)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept'       => 'application/json',
+            ])
+            ->withBody($request->getContent(), 'application/json')
+            ->post($nodeUrl);
+
+        return response($response->body(), $response->status())
+            ->header('Content-Type', 'application/json');
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('[Laravel Proxy /api/orders Error] ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'error'   => 'Order processing service unavailable: ' . $e->getMessage()
+        ], 503);
+    }
+})->name('api.orders.post');
+
+Route::post('/api/checkout/courier-check', function (\Illuminate\Http\Request $request) {
+    try {
+        $nodeHost = env('NODE_HOST', '127.0.0.1');
+        $nodePort = env('NODE_PORT', 3000);
+        $nodeUrl = "http://{$nodeHost}:{$nodePort}/api/checkout/courier-check";
+
+        $response = \Illuminate\Support\Facades\Http::timeout(10)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept'       => 'application/json',
+            ])
+            ->withBody($request->getContent(), 'application/json')
+            ->post($nodeUrl);
+
+        return response($response->body(), $response->status())
+            ->header('Content-Type', 'application/json');
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'error'   => 'Courier check unavailable.'
+        ], 503);
+    }
+})->name('api.checkout.courier-check');
+
 // Central Landing Page Builder / CMS Endpoints
 use App\Http\Controllers\Api\AdminLandingPageController;
 
