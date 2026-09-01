@@ -104,13 +104,36 @@ Route::post('/api/orders', function (\Illuminate\Http\Request $request) {
         $nodePort = env('NODE_PORT', 3000);
         $nodeUrl = "http://{$nodeHost}:{$nodePort}/api/orders";
 
+        $payload = $request->all();
+        if (empty($payload)) {
+            $payload = json_decode($request->getContent(), true) ?: [];
+        }
+
+        // Attach authoritative landing page configuration directly from Laravel DB
+        $slug = $payload['slug'] ?? $payload['productId'] ?? $payload['product_id'] ?? $payload['landing_page'] ?? '';
+        if ($slug) {
+            $cleanSlug = trim(preg_replace('#^/(product|products)/#', '', trim($slug, '/')));
+            $lp = \App\Models\LandingPage::where('slug', $cleanSlug)->first();
+            if ($lp) {
+                $payload['landing_page_data'] = [
+                    'id'              => $lp->id,
+                    'name'            => $lp->name,
+                    'slug'            => $lp->slug,
+                    'status'          => $lp->status,
+                    'product_id'      => $lp->product_id,
+                    'product_name'    => $lp->product_name,
+                    'content'         => $lp->content,
+                    'delivery_config' => $lp->delivery_config,
+                ];
+            }
+        }
+
         $response = \Illuminate\Support\Facades\Http::timeout(10)
             ->withHeaders([
                 'Content-Type' => 'application/json',
                 'Accept'       => 'application/json',
             ])
-            ->withBody($request->getContent(), 'application/json')
-            ->post($nodeUrl);
+            ->post($nodeUrl, $payload);
 
         return response($response->body(), $response->status())
             ->header('Content-Type', 'application/json');

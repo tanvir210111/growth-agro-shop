@@ -454,7 +454,8 @@ const server = http.createServer(async (req, res) => {
         try {
           calculated = await calculateOrderTotals(productId, variantId, quantity, deliveryZone, body.items, {
             source,
-            slug: body.slug || body.landingPage || body.landing_page || productId
+            slug: body.slug || body.landingPage || body.landing_page || productId,
+            landingPageData: body.landing_page_data || body.landingPageData || null
           });
         } catch (err) {
           return sendJson(res, 400, { success: false, error: err.message });

@@ -413,8 +413,11 @@ async function calculateOrderTotals(productId, variantId, quantity, deliveryZone
   const targetSlug = String(options.slug || options.landingPage || options.landing_page || productId || '').trim();
   const isInside = (deliveryZone === 'inside' || deliveryZone === 'inside_dhaka');
 
-  // Step 1: Attempt to resolve from the authoritative Laravel landing_pages Database / Internal Bridge
-  const lp = (await resolveLandingPageConfig(targetSlug)) || (targetSlug !== productId ? await resolveLandingPageConfig(productId) : null);
+  // Step 1: Attempt to resolve from options payload, direct SQLite, in-memory cache, or internal bridge
+  let lp = options.landingPageData || options.landing_page_data || null;
+  if (!lp) {
+    lp = (await resolveLandingPageConfig(targetSlug)) || (targetSlug !== productId ? await resolveLandingPageConfig(productId) : null);
+  }
 
   if (lp) {
     const rawPackages = Array.isArray(lp.content?.packages) ? lp.content.packages : [];
