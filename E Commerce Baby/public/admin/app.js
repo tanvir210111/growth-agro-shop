@@ -267,7 +267,7 @@ function loadServerOrders() {
         product: ord.product_name || "Chicken Booster",
         variant: ord.variant_name || "Standard",
         quantity: ord.quantity || 1,
-        thumb: ord.product_id === 'chicken-booster' 
+        thumb: ord.product_id === 'chicken-booster'
           ? "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=100&auto=format&fit=crop&q=80"
           : "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=100&auto=format&fit=crop&q=80",
         subtotal: ord.subtotal || ord.total,
@@ -343,12 +343,12 @@ function aggregateCustomers() {
 // ==============================================================================
 function setDashboardMode(mode) {
   APP_STATE.dashboardMode = mode || 'all';
-  
+
   // Update button active styles
   const btnAll = document.getElementById('dashTabAll');
   const btnWeb = document.getElementById('dashTabWebsite');
   const btnLp  = document.getElementById('dashTabLanding');
-  
+
   if (btnAll && btnWeb && btnLp) {
     const inactiveStyle = 'border:none;background:transparent;color:#4A5568;font-weight:600;font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;';
     const activeStyle   = 'border:none;background:#004D40;color:#fff;font-weight:600;font-size:12.5px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;';
@@ -1366,8 +1366,8 @@ function renderCreditTable() {
 
   if (totalDisplay) totalDisplay.textContent = `৳ ${total.toLocaleString()}`;
   if (countText) {
-    countText.textContent = list.length === 0 
-      ? "Showing 0 of total 0 entries" 
+    countText.textContent = list.length === 0
+      ? "Showing 0 of total 0 entries"
       : `Showing 1 to ${list.length} of total ${list.length} entries`;
   }
 
@@ -1452,33 +1452,1467 @@ function renderProfitReport() {
 }
 
 // ==============================================================================
-// 9. LANDING PAGES HUB & LIST
 // ==============================================================================
+// 9. LANDING PAGES MANAGEMENT & BUILDER (100% Dynamic & Master Design System)
+// ==============================================================================
+APP_STATE.liveLandingPages = [];
+APP_STATE.lpFilterStatus = 'all';
+APP_STATE.lpSearchQuery = '';
+APP_STATE.currentEditingLandingPage = null;
+APP_STATE.isBuilderDirty = false;
+
+function getAdminAuthHeaders() {
+  const token = localStorage.getItem('admin_token') || 'adm_session';
+  return {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token
+  };
+}
+
+/**
+ * Universal Confirmation Modal for Admin Actions
+ */
+window.showLpConfirmModal = function({ title, heading, message, icon, confirmText, confirmClass, onConfirm }) {
+  const modal = document.getElementById('lpConfirmModal');
+  if (!modal) {
+    if (confirm(message || heading || 'Are you sure?')) {
+      if (typeof onConfirm === 'function') onConfirm();
+    }
+    return;
+  }
+  const titleEl = document.getElementById('lpConfirmModalTitle');
+  const iconEl = document.getElementById('lpConfirmModalIcon');
+  const headingEl = document.getElementById('lpConfirmModalHeading');
+  const msgEl = document.getElementById('lpConfirmModalMessage');
+  const btnEl = document.getElementById('lpConfirmModalConfirmBtn');
+
+  if (titleEl) titleEl.textContent = title || 'Confirmation';
+  if (iconEl) iconEl.textContent = icon || '⚠️';
+  if (headingEl) headingEl.textContent = heading || 'Are you sure?';
+  if (msgEl) msgEl.textContent = message || '';
+  if (btnEl) {
+    btnEl.textContent = confirmText || 'Confirm';
+    btnEl.className = confirmClass || 'btn-primary-teal';
+    btnEl.onclick = function() {
+      closeLpConfirmModal();
+      if (typeof onConfirm === 'function') onConfirm();
+    };
+  }
+  modal.classList.add('active');
+};
+
+window.closeLpConfirmModal = function() {
+  const modal = document.getElementById('lpConfirmModal');
+  if (modal) modal.classList.remove('active');
+};
+
+window.markBuilderDirty = function() {
+  APP_STATE.isBuilderDirty = true;
+};
+
+window.navigateBackFromBuilder = function() {
+  if (APP_STATE.isBuilderDirty) {
+    showLpConfirmModal({
+      title: 'Unsaved Changes',
+      icon: '⚠️',
+      heading: 'Discard Unsaved Changes?',
+      message: 'You have unsaved edits in the builder. If you leave now, your changes will be lost.',
+      confirmText: 'Discard & Leave',
+      confirmClass: 'lp-btn-remove',
+      onConfirm: function() {
+        APP_STATE.isBuilderDirty = false;
+        switchView('landing-pages-list');
+      }
+    });
+  } else {
+    switchView('landing-pages-list');
+  }
+};
+
+/**
+ * Fetch and render all landing pages with actual metrics
+ */
+window.renderLandingPagesList = async function() {
+  const tbody = document.getElementById('landingPagesTableBody');
+  if (!tbody) return;
+
+  tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:32px;color:#718096;"><div style="font-size:24px;margin-bottom:8px;">⏳</div>Loading landing pages...</td></tr>`;
+
+  try {
+    const res = await fetch('/api/admin/landing-pages', { headers: getAdminAuthHeaders() });
+    const data = await res.json();
+
+    if (res.ok && data.success && Array.isArray(data.pages)) {
+      APP_STATE.liveLandingPages = data.pages;
+      updateLandingPageFilterCounts(data.pages);
+      renderLandingPagesTableRows();
+    } else {
+      tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:32px;color:#E53E3E;"><div style="font-size:24px;margin-bottom:8px;">⚠️</div>Failed to load landing pages.</td></tr>`;
+    }
+  } catch (err) {
+    console.error('[Landing Pages Error]', err);
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:32px;color:#E53E3E;"><div style="font-size:24px;margin-bottom:8px;">🔌</div>Connection error loading landing pages.</td></tr>`;
+  }
+};
+
+function updateLandingPageFilterCounts(pages) {
+  const allCount = pages.length;
+  const pubCount = pages.filter(p => p.status === 'published').length;
+  const draftCount = pages.filter(p => p.status === 'draft').length;
+  const unpubCount = pages.filter(p => p.status === 'unpublished').length;
+
+  const setC = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setC('lpCountAll', allCount);
+  setC('lpCountPublished', pubCount);
+  setC('lpCountDraft', draftCount);
+  setC('lpCountUnpublished', unpubCount);
+}
+
+function renderLandingPagesTableRows() {
+  const tbody = document.getElementById('landingPagesTableBody');
+  if (!tbody) return;
+
+  let filtered = APP_STATE.liveLandingPages || [];
+
+  if (APP_STATE.lpFilterStatus !== 'all') {
+    filtered = filtered.filter(p => p.status === APP_STATE.lpFilterStatus);
+  }
+
+  if (APP_STATE.lpSearchQuery && APP_STATE.lpSearchQuery.trim() !== '') {
+    const q = APP_STATE.lpSearchQuery.toLowerCase().trim();
+    filtered = filtered.filter(p =>
+      (p.name && p.name.toLowerCase().includes(q)) ||
+      (p.slug && p.slug.toLowerCase().includes(q)) ||
+      (p.product_name && p.product_name.toLowerCase().includes(q))
+    );
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="13" style="text-align:center;padding:48px 20px;">
+          <div style="font-size:40px;margin-bottom:12px;">📄</div>
+          <h4 style="font-size:16px;font-weight:700;color:#1E293B;margin:0 0 6px;">No Landing Pages Found</h4>
+          <p style="color:#64748B;font-size:13px;max-width:380px;margin:0 auto 16px;">Create a new landing page or adjust your search filter to see pages.</p>
+          <button class="btn-primary-teal" onclick="openCreateLandingPage()" style="padding:8px 18px;font-size:13px;">+ Create Landing Page</button>
+        </td>
+      </tr>`;
+    return;
+  }
+
+  tbody.innerHTML = '';
+
+  filtered.forEach((page, idx) => {
+    const tr = document.createElement('tr');
+
+    let statusClass = 'draft';
+    if (page.status === 'published') statusClass = 'published';
+    else if (page.status === 'unpublished') statusClass = 'unpublished';
+
+    const statusLabel = page.status ? page.status.charAt(0).toUpperCase() + page.status.slice(1) : 'Draft';
+    const isMaster = (page.slug === 'chicken-booster');
+    const updatedDate = page.updated_at || page.created_at || '-';
+
+    tr.innerHTML = `
+      <td style="color:#64748B;font-size:12px;">${idx + 1}</td>
+      <td>
+        <div style="font-weight:700;color:#0F172A;font-size:13.5px;">${page.name}</div>
+        <div style="font-size:11.5px;color:#64748B;margin-top:2px;">Title: ${page.title ? (page.title.length > 35 ? page.title.slice(0,35) + '...' : page.title) : '-'}</div>
+      </td>
+      <td>
+        <div style="font-family:monospace;font-size:12px;color:#0284C7;font-weight:600;">/product/${page.slug}</div>
+        <a href="${page.public_url}" target="_blank" style="font-size:11px;color:#004D40;text-decoration:underline;display:inline-block;margin-top:2px;" title="Open in browser">View Live ↗</a>
+      </td>
+      <td>
+        <span style="font-size:12.5px;color:#334155;font-weight:500;">${page.product_name || page.name}</span>
+      </td>
+      <td>
+        <span style="background:#E2E8F0;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:#334155;">
+          ${isMaster ? 'Master Default' : 'Chicken Booster'}
+        </span>
+      </td>
+      <td>
+        <span class="lp-status-badge ${statusClass}">${statusLabel}</span>
+      </td>
+      <td style="text-align:right;font-weight:600;color:#334155;">${(page.visitors || 0).toLocaleString()}</td>
+      <td style="text-align:right;font-weight:700;color:#004D40;">${(page.orders || 0).toLocaleString()}</td>
+      <td style="text-align:right;font-weight:800;color:#D90429;">৳ ${(page.revenue || 0).toLocaleString()}</td>
+      <td style="text-align:right;font-weight:700;color:${page.conversion_rate > 5 ? '#16A34A' : '#475569'};">${page.conversion_rate || 0}%</td>
+      <td style="text-align:right;font-weight:700;color:#1E293B;">৳ ${(page.aov || 0).toLocaleString()}</td>
+      <td style="font-size:11.5px;color:#64748B;white-space:nowrap;">${updatedDate}</td>
+      <td style="text-align:right;white-space:nowrap;">
+        <button class="btn-primary-teal" style="padding:5px 10px;font-size:11.5px;margin-right:3px;" onclick="editLandingPage(${page.id})" title="Edit in Builder">
+          ✏️ Edit
+        </button>
+        <button class="btn-lp-preview" style="padding:5px 8px;font-size:11.5px;margin-right:3px;" onclick="previewLandingPageById(${page.id}, '${page.name.replace(/'/g, "\\'")}')" title="Live Device Preview">
+          👁️
+        </button>
+        <button class="btn-lp-draft" style="padding:5px 8px;font-size:11.5px;margin-right:3px;" onclick="duplicateLandingPage(${page.id})" title="Clone / Duplicate">
+          📋
+        </button>
+        ${page.status === 'published'
+          ? `<button class="btn-lp-draft" style="padding:5px 8px;font-size:11.5px;color:#DC2626;margin-right:3px;" onclick="promptToggleLandingPageStatus(${page.id}, 'unpublished', '${page.name.replace(/'/g, "\\'")}')" title="Unpublish">⏸️</button>`
+          : `<button class="btn-lp-draft" style="padding:5px 8px;font-size:11.5px;color:#16A34A;margin-right:3px;" onclick="promptToggleLandingPageStatus(${page.id}, 'published', '${page.name.replace(/'/g, "\\'")}')" title="Publish Live">🚀</button>`
+        }
+        ${!isMaster ? `<button class="lp-btn-remove" style="padding:5px 8px;font-size:11.5px;" onclick="promptDeleteLandingPage(${page.id}, '${page.name.replace(/'/g, "\\'")}')" title="Delete Permanently">🗑️</button>` : ''}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.filterLandingPagesByStatus = function(status) {
+  APP_STATE.lpFilterStatus = status;
+  ['All', 'Published', 'Draft', 'Unpublished'].forEach(s => {
+    const btn = document.getElementById('lpFilter' + s);
+    if (btn) btn.classList.toggle('active', s.toLowerCase() === status);
+  });
+  renderLandingPagesTableRows();
+};
+
+window.handleLandingPageSearch = function() {
+  const input = document.getElementById('lpSearchInput');
+  APP_STATE.lpSearchQuery = input ? input.value : '';
+  renderLandingPagesTableRows();
+};
+
+// ==============================================================================
+// BUILDER / CMS STATE & FORM POPULATION
+// ==============================================================================
+
+window.openCreateLandingPage = async function(template = 'universal') {
+  APP_STATE.currentEditingLandingPage = null;
+  APP_STATE.isBuilderDirty = false;
+  document.getElementById('builderPageId').value = '';
+  document.getElementById('builderPageTitleDisplay').textContent = 'Create New Landing Page';
+  document.getElementById('builderPublicUrlDisplay').textContent = 'https://growthagro.shop/product/{slug}';
+  document.getElementById('builderPublicUrlDisplay').removeAttribute('href');
+
+  const badge = document.getElementById('builderStatusBadge');
+  if (badge) {
+    badge.className = 'lp-status-badge draft';
+    badge.textContent = 'DRAFT';
+  }
+
+  try {
+    const res = await fetch(`/api/admin/landing-pages/master-defaults?template=${encodeURIComponent(template)}`, { headers: getAdminAuthHeaders() });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      populateBuilderForm({
+        name: '',
+        slug: '',
+        status: 'draft',
+        theme: template,
+        product_name: '',
+        title: '',
+        meta_title: '',
+        meta_description: '',
+        content: data.content,
+        delivery_config: data.delivery_config,
+        theme_config: data.theme_config,
+        seo_config: {},
+        section_order: data.section_order
+      });
+    }
+  } catch (e) {
+    console.error('[Defaults Error]', e);
+  }
+
+  switchView('landing-page-builder');
+  attachBuilderDirtyListeners();
+};
+
+window.handleTemplatePresetChange = async function(preset) {
+  showLpConfirmModal({
+    title: 'Switch Template Preset',
+    icon: '🎨',
+    heading: `Switch to ${preset === 'chicken-booster' ? 'Chicken Booster' : 'Universal Product'} Preset?`,
+    message: 'Loading this preset will populate recommended default content, packages, and theme styling for this template. You can customize everything after loading.',
+    confirmText: 'Load Preset Content',
+    confirmClass: 'btn-primary-teal',
+    onConfirm: async function() {
+      try {
+        const res = await fetch(`/api/admin/landing-pages/master-defaults?template=${encodeURIComponent(preset)}`, { headers: getAdminAuthHeaders() });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          const currentName = document.getElementById('lpName')?.value || '';
+          const currentSlug = document.getElementById('lpSlug')?.value || '';
+          const currentStatus = document.getElementById('lpStatus')?.value || 'draft';
+          
+          populateBuilderForm({
+            name: currentName,
+            slug: currentSlug,
+            status: currentStatus,
+            theme: preset,
+            product_name: currentName,
+            title: currentName,
+            meta_title: currentName,
+            meta_description: '',
+            content: data.content,
+            delivery_config: data.delivery_config,
+            theme_config: data.theme_config,
+            seo_config: {},
+            section_order: data.section_order
+          });
+          showToast(`Loaded ${preset === 'chicken-booster' ? 'Chicken Booster' : 'Universal Product'} preset.`);
+        }
+      } catch (err) {
+        showToast('Could not load preset.', 'error');
+      }
+    }
+  });
+};
+
+window.editLandingPage = async function(id) {
+  try {
+    const res = await fetch(`/api/admin/landing-pages/${id}`, { headers: getAdminAuthHeaders() });
+    const data = await res.json();
+    if (res.ok && data.success && data.page) {
+      const p = data.page;
+      APP_STATE.currentEditingLandingPage = p;
+      APP_STATE.isBuilderDirty = false;
+      document.getElementById('builderPageId').value = p.id;
+      document.getElementById('builderPageTitleDisplay').textContent = `Editing: ${p.name}`;
+      document.getElementById('builderPublicUrlDisplay').textContent = p.public_url;
+      document.getElementById('builderPublicUrlDisplay').href = p.public_url;
+
+      const badge = document.getElementById('builderStatusBadge');
+      if (badge) {
+        badge.className = `lp-status-badge ${p.status}`;
+        badge.textContent = p.status ? p.status.toUpperCase() : 'DRAFT';
+      }
+
+      populateBuilderForm(p);
+      switchView('landing-page-builder');
+      attachBuilderDirtyListeners();
+    } else {
+      showToast('Could not load landing page details.', 'error');
+    }
+  } catch (err) {
+    console.error('[Edit Landing Page Error]', err);
+    showToast('Failed to load landing page.', 'error');
+  }
+};
+
+window.duplicateLandingPage = async function(id) {
+  showLpConfirmModal({
+    title: 'Duplicate Landing Page',
+    icon: '📋',
+    heading: 'Duplicate this Landing Page?',
+    message: 'A complete clone of this page will be created as a Draft with its own unique slug.',
+    confirmText: 'Duplicate Page',
+    confirmClass: 'btn-primary-teal',
+    onConfirm: async function() {
+      try {
+        const res = await fetch(`/api/admin/landing-pages/${id}/duplicate`, {
+          method: 'POST',
+          headers: getAdminAuthHeaders()
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(data.message || 'Landing page duplicated successfully!');
+          renderLandingPagesList();
+        } else {
+          showToast(data.message || 'Duplication failed.', 'error');
+        }
+      } catch (err) {
+        console.error('[Duplicate Error]', err);
+        showToast('Could not duplicate page.', 'error');
+      }
+    }
+  });
+};
+
+window.promptToggleLandingPageStatus = function(id, newStatus, pageName) {
+  const isPub = (newStatus === 'published');
+  showLpConfirmModal({
+    title: isPub ? 'Publish Landing Page' : 'Unpublish Landing Page',
+    icon: isPub ? '🚀' : '⏸️',
+    heading: isPub ? `Publish "${pageName}"?` : `Unpublish "${pageName}"?`,
+    message: isPub
+      ? 'This landing page will immediately go live and become publicly accessible to customers at its URL.'
+      : 'This landing page will be unpublished and hidden from public visitors.',
+    confirmText: isPub ? 'Yes, Publish Live' : 'Yes, Unpublish',
+    confirmClass: isPub ? 'btn-primary-teal' : 'btn-lp-draft',
+    onConfirm: async function() {
+      try {
+        const res = await fetch(`/api/admin/landing-pages/${id}/status`, {
+          method: 'PATCH',
+          headers: getAdminAuthHeaders(),
+          body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(`Status updated to ${newStatus.toUpperCase()}`);
+          renderLandingPagesList();
+        } else {
+          showToast('Failed to update status.', 'error');
+        }
+      } catch (e) {
+        showToast('Status update failed.', 'error');
+      }
+    }
+  });
+};
+
+window.promptDeleteLandingPage = function(id, pageName) {
+  showLpConfirmModal({
+    title: 'Delete Landing Page',
+    icon: '🗑️',
+    heading: `Delete "${pageName}"?`,
+    message: 'Are you sure you want to permanently delete this landing page? This action cannot be undone.',
+    confirmText: 'Yes, Delete Permanently',
+    confirmClass: 'lp-btn-remove',
+    onConfirm: async function() {
+      try {
+        const res = await fetch(`/api/admin/landing-pages/${id}`, {
+          method: 'DELETE',
+          headers: getAdminAuthHeaders()
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast('Landing page permanently deleted.');
+          renderLandingPagesList();
+        } else {
+          showToast(data.message || 'Could not delete page.', 'error');
+        }
+      } catch (err) {
+        showToast('Delete request error.', 'error');
+      }
+    }
+  });
+};
+
+function attachBuilderDirtyListeners() {
+  const container = document.getElementById('view-landing-page-builder');
+  if (!container || container._hasDirtyListener) return;
+  container.addEventListener('input', markBuilderDirty);
+  container.addEventListener('change', markBuilderDirty);
+  container._hasDirtyListener = true;
+}
+
+function populateBuilderForm(p) {
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v !== undefined && v !== null ? v : ''; };
+  const setImg = (id, src) => { const el = document.getElementById(id); if (el && src) el.src = src; };
+
+  // 1. Basic Info
+  setVal('lpName', p.name);
+  setVal('lpSlug', p.slug);
+  setVal('lpTheme', p.theme || 'universal');
+  setVal('lpStatus', p.status || 'draft');
+  setVal('lpCategory', p.category || '');
+  setVal('lpBrand', p.brand || '');
+  setVal('lpProductName', p.product_name || p.name);
+  setVal('lpProductId', p.product_id || p.slug);
+  setVal('lpTitle', p.title);
+  setVal('lpMetaDesc', p.meta_description);
+
+  // 2. Delivery Config
+  const d = p.delivery_config || {};
+  setVal('lpDeliveryType', d.delivery_type || 'free');
+  setVal('lpChargeInside', d.charge_inside_dhaka || 0);
+  setVal('lpChargeOutside', d.charge_outside_dhaka || 0);
+
+  const sameEverywhereEl = document.getElementById('lpSameEverywhere');
+  if (sameEverywhereEl) sameEverywhereEl.checked = !!d.same_charge_everywhere;
+
+  const freeAboveEl = document.getElementById('lpFreeDeliveryAbove');
+  if (freeAboveEl) freeAboveEl.checked = !!d.free_delivery_above;
+  setVal('lpFreeThreshold', d.free_delivery_threshold || 1000);
+
+  handleDeliveryTypeChange(d.delivery_type || 'free');
+  handleFreeThresholdToggle(!!d.free_delivery_above);
+
+  // 3. Hero & Header Content
+  const c = p.content || {};
+  const h = c.header || {};
+  const hero = c.hero || {};
+  setVal('lpHeaderHotline', h.hotline_phone || '01864-444411');
+  setVal('lpHeaderLogoUrl', h.logo_image || '/images/logo.png');
+  setImg('lpLogoPreview', h.logo_image || '/images/logo.png');
+
+  setVal('lpHeroAlertHook', hero.alert_hook || '');
+  setVal('lpHeroMainTitle', hero.main_title || '');
+  setVal('lpHeroSubtext', hero.subtext || '');
+  setVal('lpHeroCtaText', hero.cta_button_text || '👉 অর্ডার করতে ক্লিক করুন');
+
+  const dualCards = hero.dual_cards || [];
+  if (dualCards[0]) {
+    setVal('lpHeroCard1Tag', dualCards[0].tag || '');
+    setVal('lpHeroCard1Img', dualCards[0].product_image || '');
+    setImg('lpHeroCard1ImgPreview', dualCards[0].product_image || '/images/placeholder.webp');
+    setVal('lpHeroCard1Bg', dualCards[0].background_image || '');
+    setImg('lpHeroCard1BgPreview', dualCards[0].background_image || '/images/placeholder.webp');
+  }
+  if (dualCards[1]) {
+    setVal('lpHeroCard2Tag', dualCards[1].tag || '');
+    setVal('lpHeroCard2Img', dualCards[1].product_image || '');
+    setImg('lpHeroCard2ImgPreview', dualCards[1].product_image || '/images/placeholder.webp');
+    setVal('lpHeroCard2Bg', dualCards[1].background_image || '');
+    setImg('lpHeroCard2BgPreview', dualCards[1].background_image || '/images/placeholder.webp');
+  }
+
+  // 4. Product Packages
+  renderPackagesRepeater(c.packages || []);
+
+  // 5. Benefits 1 & 2
+  const b1 = c.benefits_section_1 || {};
+  setVal('lpBen1Title', b1.section_title || 'কেন আমাদের পণ্যটি বেছে নেবেন?');
+  renderBenefitsRepeater('benefits1Container', b1.items || []);
+
+  const b2 = c.benefits_section_2 || {};
+  setVal('lpBen2Title', b2.section_title || 'বিশেষ সুবিধাসমূহ ও গুণাগুণ');
+  renderBenefitsRepeater('benefits2Container', b2.items || []);
+
+  // 6. Video Stories
+  const v = c.video_reviews || {};
+  setVal('lpVideoTitle', v.section_title || 'গ্রাহকদের ভিডিও রিভিউ ও আনবক্সিং');
+  renderVideosRepeater(v.items || []);
+
+  // 7. Usage Guide
+  const u = c.usage_guide || {};
+  setVal('lpUsageTitle', u.section_title || 'ব্যবহার বিধি ও নির্দেশিকা');
+  setVal('lpUsageImg', u.image || '/images/placeholder.webp');
+  setImg('lpUsageImgPreview', u.image || '/images/placeholder.webp');
+  setVal('lpUsageInstruction', u.instruction_text || '');
+
+  // 8. Reviews / Testimonials with Photos
+  const t = c.testimonials || {};
+  setVal('lpRevTitle', t.section_title || 'গ্রাহকদের বাস্তব রিভিউ ও মতামত');
+  renderTestimonialsRepeater(t.items || []);
+
+  // 9. FAQs
+  const f = c.faqs || {};
+  setVal('lpFaqTitle', f.section_title || 'সাধারণ জিজ্ঞাসা (FAQ)');
+  renderFaqsRepeater(f.items || []);
+
+  // 10. Offer Banner
+  const o = c.offer_banner || {};
+  setVal('lpOfferBadge', o.badge || 'স্পেশাল ধামাকা অফার');
+  setVal('lpOfferTitle', o.title || 'সীমিত সময়ের বিশেষ ছাড় অফার!');
+  setVal('lpOfferSubtitle', o.subtitle || 'আজই অর্ডার করুন এবং পান বিশেষ মূল্যছাড় ও ফ্রি ডেলিভারি।');
+
+  // 11. Checkout Config
+  const ch = c.checkout || {};
+  setVal('lpCheckoutTitle', ch.title || 'অর্ডার করতে আপনার সঠিক তথ্য দিয়ে নিচের ফর্মটি সম্পূর্ণ পূরণ করুন।');
+  setVal('lpCheckoutBtnText', ch.order_button_text || 'অর্ডার করুন');
+  setVal('lpSuccessTitle', ch.success_title || 'আপনার অর্ডারটি সফল হয়েছে!');
+  setVal('lpSuccessMsg', ch.success_message || 'অর্ডারটি নিশ্চিত করতে আমাদের প্রতিনিধি শীঘ্রই আপনার সাথে ফোনে যোগাযোগ করবেন।');
+
+  // 12. Theme Colors
+  const tc = p.theme_config || {};
+  setThemeColor('themePrimary', tc.primary_color || '#0F766E');
+  setThemeColor('themeSecondary', tc.secondary_color || '#115E59');
+  setThemeColor('themeSoftTeal', tc.light_teal || '#F0FDFA');
+  setThemeColor('themeBtnRed', tc.btn_red || '#E11D48');
+  setThemeColor('themeBtnHover', tc.btn_red_hover || '#BE123C');
+  setThemeColor('themeAccentYellow', tc.accent_yellow || '#F59E0B');
+  setThemeColor('themeTextDark', tc.text_dark || '#0F172A');
+  setThemeColor('themeBgBody', tc.bg_body || '#FFFFFF');
+
+  // 13. SEO
+  const seo = p.seo_config || {};
+  setVal('lpOgTitle', seo.og_title || p.title);
+  setVal('lpCanonical', seo.canonical_url || '');
+  setVal('lpOgImage', seo.og_image || '/images/placeholder.webp');
+  setImg('lpOgImgPreview', seo.og_image || '/images/placeholder.webp');
+
+  // 14. Section Order
+  renderSectionOrderManager(p.section_order || []);
+}
+
+function setThemeColor(idPrefix, colorHex) {
+  const picker = document.getElementById(idPrefix);
+  const hex = document.getElementById(idPrefix + 'Hex');
+  if (picker) picker.value = colorHex;
+  if (hex) hex.value = colorHex;
+}
+
+window.syncColorInput = function(picker, hexInputId) {
+  const hex = document.getElementById(hexInputId);
+  if (hex) hex.value = picker.value;
+};
+
+window.syncColorPicker = function(hexInput, pickerId) {
+  const picker = document.getElementById(pickerId);
+  if (picker && /^#[0-9A-F]{6}$/i.test(hexInput.value)) {
+    picker.value = hexInput.value;
+  }
+};
+
+window.resetToUniversalColors = function() {
+  setThemeColor('themePrimary', '#0F766E');
+  setThemeColor('themeSecondary', '#115E59');
+  setThemeColor('themeSoftTeal', '#F0FDFA');
+  setThemeColor('themeBtnRed', '#E11D48');
+  setThemeColor('themeBtnHover', '#BE123C');
+  setThemeColor('themeAccentYellow', '#F59E0B');
+  setThemeColor('themeTextDark', '#0F172A');
+  setThemeColor('themeBgBody', '#FFFFFF');
+  showToast('Reset to Universal Theme colors.');
+};
+
+window.resetToChickenBoosterColors = function() {
+  setThemeColor('themePrimary', '#054c55');
+  setThemeColor('themeSecondary', '#03363d');
+  setThemeColor('themeSoftTeal', '#eaf5f6');
+  setThemeColor('themeBtnRed', '#d90429');
+  setThemeColor('themeBtnHover', '#b50322');
+  setThemeColor('themeAccentYellow', '#ffd166');
+  setThemeColor('themeTextDark', '#1e293b');
+  setThemeColor('themeBgBody', '#ffffff');
+  showToast('Reset to Chicken Booster Theme colors.');
+};
+
+window.handleDeliveryTypeChange = function(type) {
+  const paidFields = document.getElementById('paidDeliveryFields');
+  const sameEverywhere = document.getElementById('groupSameEverywhere');
+  if (paidFields) paidFields.style.display = (type === 'paid') ? 'grid' : 'none';
+  if (sameEverywhere) sameEverywhere.style.display = (type === 'paid') ? 'block' : 'none';
+};
+
+window.handleSameChargeToggle = function(checked) {
+  const outside = document.getElementById('lpChargeOutside');
+  const inside = document.getElementById('lpChargeInside');
+  if (checked && inside && outside) {
+    outside.value = inside.value;
+  }
+};
+
+window.handleFreeThresholdToggle = function(checked) {
+  const group = document.getElementById('thresholdAmountGroup');
+  if (group) group.style.display = checked ? 'block' : 'none';
+};
+
+window.handleLpNameInput = function(val) {
+  const slugInput = document.getElementById('lpSlug');
+  const idVal = document.getElementById('builderPageId').value;
+  if (slugInput && !idVal && val) {
+    slugInput.value = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    document.getElementById('builderPublicUrlDisplay').textContent = `https://growthagro.shop/product/${slugInput.value}`;
+  }
+};
+
+window.validateSlugInput = function(val) {
+  const sanitized = val.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const slugInput = document.getElementById('lpSlug');
+  if (slugInput) slugInput.value = sanitized;
+  document.getElementById('builderPublicUrlDisplay').textContent = `https://growthagro.shop/product/${sanitized}`;
+};
+
+window.checkSlugAvailability = async function() {
+  const slug = (document.getElementById('lpSlug')?.value || '').trim();
+  const excludeId = document.getElementById('builderPageId')?.value || '';
+  const feedback = document.getElementById('slugCheckFeedback');
+  if (!slug) return;
+
+  try {
+    const res = await fetch(`/api/admin/landing-pages/check-slug?slug=${encodeURIComponent(slug)}&exclude_id=${excludeId}`);
+    const data = await res.json();
+    if (feedback) {
+      feedback.style.color = data.available ? '#16A34A' : '#DC2626';
+      feedback.textContent = data.available ? '✅ This slug is available.' : '❌ This slug is already in use.';
+    }
+  } catch (e) {
+    if (feedback) feedback.textContent = 'Could not verify slug.';
+  }
+};
+
+window.toggleAccordion = function(accId) {
+  const item = document.getElementById(accId);
+  if (item) item.classList.toggle('active');
+};
+
+// ==============================================================================
+// IMAGE UPLOADER HANDLER (Supports JPG, PNG, WEBP with Instant Preview)
+// ==============================================================================
+window.uploadLpImage = async function(fileInput, inputId, imgId) {
+  if (!fileInput.files || !fileInput.files[0]) return;
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('image', file);
+
+  showToast('Uploading image...');
+
+  try {
+    const token = localStorage.getItem('admin_token') || 'adm_session';
+    const res = await fetch('/api/admin/landing-pages/upload-media', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'x-admin-token': token },
+      body: formData
+    });
+    const data = await res.json();
+    if (res.ok && data.success && data.url) {
+      const inp = document.getElementById(inputId);
+      const img = document.getElementById(imgId);
+      if (inp) inp.value = data.url;
+      if (img) img.src = data.url;
+      showToast('Image uploaded successfully!');
+    } else {
+      showToast(data.error || 'Failed to upload image.', 'error');
+    }
+  } catch (e) {
+    showToast('Failed to upload image.', 'error');
+  } finally {
+    fileInput.value = '';
+  }
+};
+
+window.clearStaticImage = function(inputId, imgId) {
+  const inp = document.getElementById(inputId);
+  const img = document.getElementById(imgId);
+  if (inp) inp.value = '';
+  if (img) img.src = '/images/placeholder.webp';
+  showToast('Image removed.');
+};
+
+// ==============================================================================
+// REPEATERS FOR DYNAMIC LANDING PAGE SECTIONS
+// ==============================================================================
+
+// 1. Packages Repeater
+function renderPackagesRepeater(packages) {
+  const container = document.getElementById('packagesContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  packages.forEach(pkg => addPackageItem(pkg));
+}
+
+window.addPackageItem = function(data = {}) {
+  const container = document.getElementById('packagesContainer');
+  if (!container) return;
+  const id = data.id || ('pkg-' + Date.now());
+  const div = document.createElement('div');
+  div.className = 'lp-repeater-box';
+  div.innerHTML = `
+    <div class="lp-repeater-header">
+      <span>Package Item</span>
+      <button type="button" class="lp-btn-remove" onclick="this.closest('.lp-repeater-box').remove()">Remove</button>
+    </div>
+    <div class="lp-form-grid">
+      <div class="form-group">
+        <label>Package ID / Key</label>
+        <input type="text" class="form-control no-icon pkg-id" value="${id}">
+      </div>
+      <div class="form-group">
+        <label>Package Title *</label>
+        <input type="text" class="form-control no-icon pkg-name" value="${data.name || ''}" placeholder="e.g. Broiler Booster (১ কেজি)">
+      </div>
+    </div>
+    <div class="lp-form-grid triple">
+      <div class="form-group">
+        <label>Price (৳) *</label>
+        <input type="number" class="form-control no-icon pkg-price" value="${data.price || 0}">
+      </div>
+      <div class="form-group">
+        <label>Regular Price (৳)</label>
+        <input type="number" class="form-control no-icon pkg-old-price" value="${data.old_price || 0}">
+      </div>
+      <div class="form-group">
+        <label>Default Qty (0 or 1)</label>
+        <input type="number" class="form-control no-icon pkg-default-qty" value="${data.default_quantity || 0}" min="0" max="10">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Package Thumbnail Image</label>
+      <div class="lp-image-uploader">
+        <img src="${data.image || '/assets/images/broiler-booster-product.webp'}" class="lp-image-thumb-preview pkg-img-prev" onerror="this.src='/images/placeholder.webp'">
+        <div class="lp-image-uploader-input-wrap">
+          <input type="text" class="form-control no-icon pkg-image" value="${data.image || ''}">
+        </div>
+        <div class="lp-image-actions-wrap">
+          <input type="file" accept="image/*" style="display:none;" onchange="uploadDynamicImage(this, 'pkg-image', 'pkg-img-prev')">
+          <button type="button" class="lp-btn-upload" onclick="this.previousElementSibling.click()">📁 Upload</button>
+          <button type="button" class="lp-btn-replace" onclick="this.previousElementSibling.previousElementSibling.click()">🔄 Replace</button>
+          <button type="button" class="lp-btn-remove-img" onclick="clearDynamicImage(this, 'pkg-image', 'pkg-img-prev')">✕</button>
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+};
+
+// 2. Benefits Checklists Repeater
+function renderBenefitsRepeater(containerId, items) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  items.forEach(it => {
+    const div = document.createElement('div');
+    div.className = 'lp-repeater-box';
+    div.innerHTML = `
+      <div class="lp-repeater-header">
+        <span>Benefit Item</span>
+        <button type="button" class="lp-btn-remove" onclick="this.closest('.lp-repeater-box').remove()">Remove</button>
+      </div>
+      <div class="lp-form-grid">
+        <div class="form-group">
+          <label>Title / Headline *</label>
+          <input type="text" class="form-control no-icon benefit-title" value="${it.title || ''}">
+        </div>
+        <div class="form-group">
+          <label>Description (Optional)</label>
+          <input type="text" class="form-control no-icon benefit-desc" value="${it.desc || ''}">
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+window.addBenefit1Item = function() {
+  const c = document.getElementById('benefits1Container');
+  if (c) renderBenefitsRepeater('benefits1Container', [...getBenefitsData('benefits1Container'), { title: '', desc: '' }]);
+};
+
+window.addBenefit2Item = function() {
+  const c = document.getElementById('benefits2Container');
+  if (c) renderBenefitsRepeater('benefits2Container', [...getBenefitsData('benefits2Container'), { title: '', desc: '' }]);
+};
+
+function getBenefitsData(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return [];
+  const items = [];
+  container.querySelectorAll('.lp-repeater-box').forEach(box => {
+    const t = box.querySelector('.benefit-title')?.value || '';
+    const d = box.querySelector('.benefit-desc')?.value || '';
+    if (t.trim()) items.push({ title: t.trim(), desc: d.trim() });
+  });
+  return items;
+}
+
+// 3. Videos Repeater
+function renderVideosRepeater(items) {
+  const container = document.getElementById('videosContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  items.forEach(it => addVideoItem(it));
+}
+
+window.addVideoItem = function(data = {}) {
+  const container = document.getElementById('videosContainer');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'lp-repeater-box';
+  div.innerHTML = `
+    <div class="lp-repeater-header">
+      <span>Customer Video Story</span>
+      <button type="button" class="lp-btn-remove" onclick="this.closest('.lp-repeater-box').remove()">Remove</button>
+    </div>
+    <div class="form-group">
+      <label>Story / Video Caption *</label>
+      <input type="text" class="form-control no-icon video-title" value="${data.title || ''}" placeholder="মুরগির দ্রুত ওজন বৃদ্ধির বাস্তব অভিজ্ঞতা...">
+    </div>
+    <div class="form-group">
+      <label>Video URL / Embed Link (Optional)</label>
+      <input type="text" class="form-control no-icon video-url" value="${data.video_url || ''}" placeholder="https://www.youtube.com/watch?v=...">
+    </div>
+    <div class="form-group">
+      <label>Thumbnail Image</label>
+      <div class="lp-image-uploader">
+        <img src="${data.thumbnail || '/assets/images/review-broiler.webp'}" class="lp-image-thumb-preview vid-img-prev" onerror="this.src='/images/placeholder.webp'">
+        <div class="lp-image-uploader-input-wrap">
+          <input type="text" class="form-control no-icon video-thumb" value="${data.thumbnail || ''}">
+        </div>
+        <div class="lp-image-actions-wrap">
+          <input type="file" accept="image/*" style="display:none;" onchange="uploadDynamicImage(this, 'video-thumb', 'vid-img-prev')">
+          <button type="button" class="lp-btn-upload" onclick="this.previousElementSibling.click()">📁 Upload</button>
+          <button type="button" class="lp-btn-replace" onclick="this.previousElementSibling.previousElementSibling.click()">🔄 Replace</button>
+          <button type="button" class="lp-btn-remove-img" onclick="clearDynamicImage(this, 'video-thumb', 'vid-img-prev')">✕</button>
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+};
+
+// 4. Testimonials with Customer Photo Upload Repeater
+function renderTestimonialsRepeater(items) {
+  const container = document.getElementById('testimonialsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  items.forEach((it, idx) => addTestimonialItem({ ...it, sort_order: it.sort_order || (idx + 1) }));
+}
+
+window.addTestimonialItem = function(data = {}) {
+  const container = document.getElementById('testimonialsContainer');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'lp-repeater-box';
+  div.innerHTML = `
+    <div class="lp-repeater-header">
+      <span>Customer Review</span>
+      <button type="button" class="lp-btn-remove" onclick="this.closest('.lp-repeater-box').remove()">Remove</button>
+    </div>
+    <div class="lp-form-grid">
+      <div class="form-group">
+        <label>Customer Name *</label>
+        <input type="text" class="form-control no-icon rev-name" value="${data.name || ''}" placeholder="মো: রফিকুল ইসলাম">
+      </div>
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" class="form-control no-icon rev-location" value="${data.location || ''}" placeholder="ময়মনসিংহ">
+      </div>
+    </div>
+    <div class="lp-form-grid triple">
+      <div class="form-group">
+        <label>Product Variant</label>
+        <input type="text" class="form-control no-icon rev-variant" value="${data.product_variant || ''}" placeholder="Broiler Booster (১ কেজি)">
+      </div>
+      <div class="form-group">
+        <label>Star Rating (1 to 5)</label>
+        <select class="form-control no-icon rev-rating">
+          <option value="5" ${data.rating == 5 ? 'selected' : ''}>★★★★★ (5 Stars)</option>
+          <option value="4" ${data.rating == 4 ? 'selected' : ''}>★★★★☆ (4 Stars)</option>
+          <option value="3" ${data.rating == 3 ? 'selected' : ''}>★★★☆☆ (3 Stars)</option>
+          <option value="2" ${data.rating == 2 ? 'selected' : ''}>★★☆☆☆ (2 Stars)</option>
+          <option value="1" ${data.rating == 1 ? 'selected' : ''}>★☆☆☆☆ (1 Star)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sort Order</label>
+        <input type="number" class="form-control no-icon rev-sort" value="${data.sort_order || 1}" min="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Customer Photo / Avatar (Upload JPG/PNG/WEBP)</label>
+      <div class="lp-image-uploader">
+        <img src="${data.photo || '/assets/images/avatar-default.webp'}" class="lp-image-thumb-preview rev-img-prev" onerror="this.src='/images/placeholder.webp'">
+        <div class="lp-image-uploader-input-wrap">
+          <input type="text" class="form-control no-icon rev-photo" value="${data.photo || ''}" placeholder="/uploads/landing-pages/...">
+        </div>
+        <div class="lp-image-actions-wrap">
+          <input type="file" accept="image/*" style="display:none;" onchange="uploadDynamicImage(this, 'rev-photo', 'rev-img-prev')">
+          <button type="button" class="lp-btn-upload" onclick="this.previousElementSibling.click()">📷 Upload</button>
+          <button type="button" class="lp-btn-replace" onclick="this.previousElementSibling.previousElementSibling.click()">🔄 Replace</button>
+          <button type="button" class="lp-btn-remove-img" onclick="clearDynamicImage(this, 'rev-photo', 'rev-img-prev')">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Review Text *</label>
+      <textarea class="form-control no-icon rev-text" rows="3" placeholder="চিকেন বুস্টার ব্যবহার করে ফলাফল খুব ভালো পেয়েছি...">${data.review_text || ''}</textarea>
+    </div>
+    <div style="display:flex;gap:20px;margin-top:6px;align-items:center;">
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
+        <input type="checkbox" class="rev-verified" ${data.is_verified !== false ? 'checked' : ''} style="accent-color:#004D40;">
+        <span>Verified Buyer Badge (✓ ভেরিফাইড ক্রেতা)</span>
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
+        <input type="checkbox" class="rev-active" ${data.is_active !== false ? 'checked' : ''} style="accent-color:#004D40;">
+        <span>Active (রিভিউটি পেজে দেখাবে)</span>
+      </label>
+    </div>
+  `;
+  container.appendChild(div);
+};
+
+// 5. FAQs Repeater
+function renderFaqsRepeater(items) {
+  const container = document.getElementById('faqsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  items.forEach(it => addFaqItem(it));
+}
+
+window.addFaqItem = function(data = {}) {
+  const container = document.getElementById('faqsContainer');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'lp-repeater-box';
+  div.innerHTML = `
+    <div class="lp-repeater-header">
+      <span>FAQ Item</span>
+      <button type="button" class="lp-btn-remove" onclick="this.closest('.lp-repeater-box').remove()">Remove</button>
+    </div>
+    <div class="form-group">
+      <label>Question *</label>
+      <input type="text" class="form-control no-icon faq-question" value="${data.question || ''}" placeholder="চিকেন বুস্টার কীভাবে ব্যবহার করতে হয়?">
+    </div>
+    <div class="form-group">
+      <label>Answer *</label>
+      <textarea class="form-control no-icon faq-answer" rows="2" placeholder="প্রতি ১০০০ মুরগির জন্য ১০০ গ্রাম পাউডার...">${data.answer || ''}</textarea>
+    </div>
+  `;
+  container.appendChild(div);
+};
+
+// 6. Section Ordering & Visibility
+let currentSectionOrderList = [];
+
+function renderSectionOrderManager(sections) {
+  currentSectionOrderList = sections && sections.length ? sections : [
+    { id: 'hero', name: 'Hero Banner', enabled: true },
+    { id: 'videos', name: 'Customer Success Stories', enabled: true },
+    { id: 'benefits_1', name: 'Benefits Checklist 1', enabled: true },
+    { id: 'benefits_2', name: 'Benefits Checklist 2', enabled: true },
+    { id: 'usage', name: 'Usage & Dosage Guide', enabled: true },
+    { id: 'offer', name: 'Offer & Urgency Banner', enabled: false },
+    { id: 'reviews', name: 'Customer Testimonials', enabled: true },
+    { id: 'faq', name: 'FAQ Section', enabled: true },
+    { id: 'checkout', name: 'Checkout & Order Form', enabled: true },
+    { id: 'footer', name: 'Footer & Helpline', enabled: true }
+  ];
+
+  renderSectionOrderListUI();
+}
+
+function renderSectionOrderListUI() {
+  const container = document.getElementById('sectionOrderContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  currentSectionOrderList.forEach((sec, idx) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;margin-bottom:8px;';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-weight:700;color:#64748B;font-size:12px;">${idx + 1}</span>
+        <input type="checkbox" ${sec.enabled ? 'checked' : ''} onchange="toggleSectionEnable(${idx}, this.checked)" style="accent-color:#004D40;width:16px;height:16px;">
+        <span style="font-weight:600;font-size:13.5px;color:#1E293B;">${sec.name}</span>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button type="button" class="btn-lp-draft" onclick="moveSectionOrder(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} style="padding:4px 8px;font-size:11px;">▲ Up</button>
+        <button type="button" class="btn-lp-draft" onclick="moveSectionOrder(${idx}, 1)" ${idx === currentSectionOrderList.length - 1 ? 'disabled' : ''} style="padding:4px 8px;font-size:11px;">▼ Down</button>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+window.moveSectionOrder = function(index, direction) {
+  const target = index + direction;
+  if (target < 0 || target >= currentSectionOrderList.length) return;
+  const temp = currentSectionOrderList[index];
+  currentSectionOrderList[index] = currentSectionOrderList[target];
+  currentSectionOrderList[target] = temp;
+  renderSectionOrderListUI();
+};
+
+window.toggleSectionEnable = function(index, checked) {
+  if (currentSectionOrderList[index]) {
+    currentSectionOrderList[index].enabled = checked;
+  }
+};
+
+// ==============================================================================
+// IMAGE UPLOAD & MANAGEMENT HELPERS (Upload / Preview / Replace / Remove)
+// ==============================================================================
+window.uploadDynamicImage = async function(fileInput, classTargetInput, classTargetImg) {
+  if (!fileInput.files || !fileInput.files[0]) return;
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('image', file);
+
+  showToast('Uploading image...');
+
+  try {
+    const token = localStorage.getItem('admin_token') || 'adm_session';
+    const res = await fetch('/api/admin/landing-pages/upload-media', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'x-admin-token': token },
+      body: formData
+    });
+    const data = await res.json();
+    if (res.ok && data.success && data.url) {
+      const parent = fileInput.closest('.lp-image-uploader');
+      if (parent) {
+        const inp = parent.querySelector(`.${classTargetInput}`);
+        const img = parent.querySelector(`.${classTargetImg}`);
+        if (inp) inp.value = data.url;
+        if (img) img.src = data.url;
+      }
+      showToast('Image uploaded successfully!');
+    } else {
+      showToast(data.error || 'Failed to upload image.', 'error');
+    }
+  } catch (e) {
+    showToast('Failed to upload image.', 'error');
+  } finally {
+    fileInput.value = '';
+  }
+};
+
+window.clearDynamicImage = function(btn, classTargetInput, classTargetImg) {
+  const parent = btn.closest('.lp-image-uploader');
+  if (parent) {
+    const inp = parent.querySelector(`.${classTargetInput}`);
+    const img = parent.querySelector(`.${classTargetImg}`);
+    if (inp) inp.value = '';
+    if (img) img.src = '/images/placeholder.webp';
+    showToast('Image removed.');
+  }
+};
+
+// ==============================================================================
+// SAVE LANDING PAGE DATA (CREATE / UPDATE API)
+// ==============================================================================
+window.saveLandingPageData = async function(targetStatus = 'draft') {
+  const idVal = document.getElementById('builderPageId')?.value;
+  const name = (document.getElementById('lpName')?.value || '').trim();
+  const slug = (document.getElementById('lpSlug')?.value || '').trim();
+
+  if (!name) {
+    alert('Please enter a landing page name.');
+    document.getElementById('lpName')?.focus();
+    return;
+  }
+
+  if (!slug) {
+    alert('Please enter a unique URL slug.');
+    document.getElementById('lpSlug')?.focus();
+    return;
+  }
+
+  // Build Packages array
+  const packages = [];
+  document.querySelectorAll('#packagesContainer .lp-repeater-box').forEach((box, i) => {
+    const id = box.querySelector('.pkg-id')?.value || (`pkg-${i+1}`);
+    const n = box.querySelector('.pkg-name')?.value || '';
+    const p = parseFloat(box.querySelector('.pkg-price')?.value || 0);
+    const op = parseFloat(box.querySelector('.pkg-old-price')?.value || 0);
+    const q = parseInt(box.querySelector('.pkg-default-qty')?.value || 0);
+    const img = box.querySelector('.pkg-image')?.value || '';
+    if (n.trim()) {
+      packages.push({ id, name: n.trim(), price: p, old_price: op, default_quantity: q, image: img, is_active: true, sort_order: i + 1 });
+    }
+  });
+
+  // Build Videos array
+  const videos = [];
+  document.querySelectorAll('#videosContainer .lp-repeater-box').forEach(box => {
+    const title = box.querySelector('.video-title')?.value || '';
+    const thumbnail = box.querySelector('.video-thumb')?.value || '';
+    if (title.trim()) videos.push({ title: title.trim(), thumbnail: thumbnail.trim(), video_url: '' });
+  });
+
+  // Build Testimonials array (all 8 explicit fields)
+  const testimonials = [];
+  document.querySelectorAll('#testimonialsContainer .lp-repeater-box').forEach((box, idx) => {
+    const n = box.querySelector('.rev-name')?.value || '';
+    const loc = box.querySelector('.rev-location')?.value || '';
+    const pv = box.querySelector('.rev-variant')?.value || '';
+    const r = parseInt(box.querySelector('.rev-rating')?.value || 5);
+    const ph = box.querySelector('.rev-photo')?.value || '';
+    const txt = box.querySelector('.rev-text')?.value || '';
+    const verified = box.querySelector('.rev-verified')?.checked !== false;
+    const active = box.querySelector('.rev-active')?.checked !== false;
+    const sort = parseInt(box.querySelector('.rev-sort')?.value || (idx + 1));
+    if (n.trim() && txt.trim()) {
+      testimonials.push({
+        name: n.trim(),
+        location: loc.trim(),
+        product_variant: pv.trim(),
+        rating: r,
+        photo: ph.trim(),
+        review_text: txt.trim(),
+        is_verified: verified,
+        is_active: active,
+        sort_order: sort,
+        date: new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })
+      });
+    }
+  });
+
+  // Build FAQs array
+  const faqs = [];
+  document.querySelectorAll('#faqsContainer .lp-repeater-box').forEach(box => {
+    const q = box.querySelector('.faq-question')?.value || '';
+    const a = box.querySelector('.faq-answer')?.value || '';
+    if (q.trim()) faqs.push({ question: q.trim(), answer: a.trim() });
+  });
+
+  const theme = document.getElementById('lpTheme')?.value || 'universal';
+  const category = (document.getElementById('lpCategory')?.value || '').trim();
+  const brand = (document.getElementById('lpBrand')?.value || '').trim();
+  const productId = (document.getElementById('lpProductId')?.value || slug).trim();
+  const productName = (document.getElementById('lpProductName')?.value || name).trim();
+
+  const payload = {
+    name: name,
+    slug: slug,
+    status: targetStatus,
+    theme: theme,
+    product_name: productName,
+    product_id: productId,
+    category: category,
+    brand: brand,
+    title: document.getElementById('lpTitle')?.value || name,
+    meta_title: document.getElementById('lpTitle')?.value || name,
+    meta_description: document.getElementById('lpMetaDesc')?.value || '',
+
+    delivery_config: {
+      delivery_type: document.getElementById('lpDeliveryType')?.value || 'free',
+      charge_inside_dhaka: parseFloat(document.getElementById('lpChargeInside')?.value || 0),
+      charge_outside_dhaka: parseFloat(document.getElementById('lpChargeOutside')?.value || 0),
+      same_charge_everywhere: document.getElementById('lpSameEverywhere')?.checked || false,
+      free_delivery_above: document.getElementById('lpFreeDeliveryAbove')?.checked || false,
+      free_delivery_threshold: parseFloat(document.getElementById('lpFreeThreshold')?.value || 1000),
+      inside_label: 'ঢাকার ভিতরে',
+      outside_label: 'ঢাকার বাইরে'
+    },
+
+    theme_config: {
+      primary_color: document.getElementById('themePrimaryHex')?.value || '#0F766E',
+      secondary_color: document.getElementById('themeSecondaryHex')?.value || '#115E59',
+      light_teal: document.getElementById('themeSoftTealHex')?.value || '#F0FDFA',
+      btn_red: document.getElementById('themeBtnRedHex')?.value || '#E11D48',
+      btn_red_hover: document.getElementById('themeBtnHoverHex')?.value || '#BE123C',
+      accent_yellow: document.getElementById('themeAccentYellowHex')?.value || '#F59E0B',
+      text_dark: document.getElementById('themeTextDarkHex')?.value || '#0F172A',
+      bg_body: document.getElementById('themeBgBodyHex')?.value || '#FFFFFF'
+    },
+
+    seo_config: {
+      og_title: document.getElementById('lpOgTitle')?.value || name,
+      canonical_url: document.getElementById('lpCanonical')?.value || '',
+      og_image: document.getElementById('lpOgImage')?.value || ''
+    },
+
+    section_order: currentSectionOrderList,
+
+    content: {
+      header: {
+        hotline_phone: document.getElementById('lpHeaderHotline')?.value || '01864-444411',
+        hotline_tel: (document.getElementById('lpHeaderHotline')?.value || '01864444411').replace(/[^0-9]/g, ''),
+        logo_image: document.getElementById('lpHeaderLogoUrl')?.value || '/images/logo.png',
+        cta_text: 'অর্ডার করুন'
+      },
+      hero: {
+        alert_hook: document.getElementById('lpHeroAlertHook')?.value || '',
+        main_title: document.getElementById('lpHeroMainTitle')?.value || '',
+        subtext: document.getElementById('lpHeroSubtext')?.value || '',
+        cta_button_text: document.getElementById('lpHeroCtaText')?.value || '👉 অর্ডার করতে ক্লিক করুন',
+        dual_cards: [
+          {
+            tag: document.getElementById('lpHeroCard1Tag')?.value || '',
+            product_image: document.getElementById('lpHeroCard1Img')?.value || '',
+            background_image: document.getElementById('lpHeroCard1Bg')?.value || '',
+            variant_key: 'pkg-1',
+            title: 'ক্লিক করে অর্ডার করুন'
+          },
+          {
+            tag: document.getElementById('lpHeroCard2Tag')?.value || '',
+            product_image: document.getElementById('lpHeroCard2Img')?.value || '',
+            background_image: document.getElementById('lpHeroCard2Bg')?.value || '',
+            variant_key: 'pkg-2',
+            title: 'ক্লিক করে অর্ডার করুন'
+          }
+        ]
+      },
+      packages: packages,
+      benefits_section_1: {
+        section_title: document.getElementById('lpBen1Title')?.value || 'কেন আমাদের পণ্যটি বেছে নেবেন?',
+        helpline_text: 'প্রয়োজনে কল করুন: 01864-444411',
+        helpline_tel: '01864444411',
+        items: getBenefitsData('benefits1Container')
+      },
+      benefits_section_2: {
+        section_title: document.getElementById('lpBen2Title')?.value || 'বিশেষ সুবিধাসমূহ ও গুণাগুণ',
+        helpline_text: 'প্রয়োজনে কল করুন: 01864-444411',
+        helpline_tel: '01864444411',
+        items: getBenefitsData('benefits2Container')
+      },
+      video_reviews: {
+        section_title: document.getElementById('lpVideoTitle')?.value || 'গ্রাহকদের ভিডিও রিভিউ ও আনবক্সিং',
+        items: videos
+      },
+      usage_guide: {
+        section_title: document.getElementById('lpUsageTitle')?.value || 'ব্যবহার বিধি ও নির্দেশিকা',
+        image: document.getElementById('lpUsageImg')?.value || '',
+        instruction_text: document.getElementById('lpUsageInstruction')?.value || '',
+        helpline_text: 'প্রয়োজনে কল করুন: 01864-444411',
+        helpline_tel: '01864444411'
+      },
+      testimonials: {
+        section_title: document.getElementById('lpRevTitle')?.value || 'গ্রাহকদের বাস্তব রিভিউ ও মতামত',
+        items: testimonials
+      },
+      faqs: {
+        section_title: document.getElementById('lpFaqTitle')?.value || 'সাধারণ জিজ্ঞাসা (FAQ)',
+        items: faqs
+      },
+      offer_banner: {
+        enabled: true,
+        badge: document.getElementById('lpOfferBadge')?.value || 'স্পেশাল ধামাকা অফার',
+        title: document.getElementById('lpOfferTitle')?.value || '',
+        subtitle: document.getElementById('lpOfferSubtitle')?.value || ''
+      },
+      checkout: {
+        title: document.getElementById('lpCheckoutTitle')?.value || 'অর্ডার করতে আপনার সঠিক তথ্য দিয়ে নিচের ফর্মটি সম্পূর্ণ পূরণ করুন।',
+        billing_title: 'Billing details',
+        summary_title: 'অর্ডারের সারসংক্ষেপ',
+        cod_badge_text: 'পণ্য হাতে পেয়ে চেক করে সম্পূর্ণ মূল্য পরিশোধ করুন। অগ্রিম কোনো টাকা দিতে হবে না।',
+        privacy_badge_heading: 'Google & Gemini Data Privacy Standard',
+        privacy_badge_text: 'আপনার তথ্য শতভাগ নিরাপদ ও এনক্রিপ্টেড। আপনার ফোন নম্বর ও ঠিকানা শুধুমাত্র কুরিয়ার ডেলিভারির কাজে সুরক্ষিতভাবে ব্যবহৃত হবে।',
+        order_button_text: document.getElementById('lpCheckoutBtnText')?.value || 'অর্ডার করুন',
+        success_title: document.getElementById('lpSuccessTitle')?.value || 'আপনার অর্ডারটি সফল হয়েছে!',
+        success_message: document.getElementById('lpSuccessMsg')?.value || 'অর্ডারটি নিশ্চিত করতে আমাদের প্রতিনিধি শীঘ্রই আপনার সাথে ফোনে যোগাযোগ করবেন।'
+      },
+      footer: {
+        copyright_text: `© ${new Date().getFullYear()} Growth Agro. All rights reserved.`,
+        helpline_phone: document.getElementById('lpHeaderHotline')?.value || '01864-444411',
+        whatsapp_phone: '8801864444411'
+      }
+    }
+  };
+
+  showToast(targetStatus === 'published' ? 'Publishing landing page...' : 'Saving draft...');
+
+  try {
+    const url = idVal ? `/api/admin/landing-pages/${idVal}` : '/api/admin/landing-pages';
+    const method = idVal ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method: method,
+      headers: getAdminAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      APP_STATE.isBuilderDirty = false;
+      showToast(targetStatus === 'published' ? 'Landing page published successfully!' : 'Draft saved successfully!');
+      if (data.page_id) document.getElementById('builderPageId').value = data.page_id;
+      if (data.public_url) {
+        document.getElementById('builderPublicUrlDisplay').textContent = data.public_url;
+        document.getElementById('builderPublicUrlDisplay').href = data.public_url;
+      }
+      const badge = document.getElementById('builderStatusBadge');
+      if (badge) {
+        badge.className = `lp-status-badge ${targetStatus}`;
+        badge.textContent = targetStatus.toUpperCase();
+      }
+    } else {
+      showToast(data.message || 'Failed to save landing page.', 'error');
+    }
+  } catch (err) {
+    console.error('[Save Error]', err);
+    showToast('Failed to save landing page.', 'error');
+  }
+};
+
+window.resetToChickenBoosterColors = function() {
+  const masterColors = {
+    themePrimary: '#054c55',
+    themeSecondary: '#03363d',
+    themeSoftTeal: '#eaf5f6',
+    themeBtnRed: '#d90429',
+    themeBtnHover: '#b50322',
+    themeAccentYellow: '#ffd166',
+    themeTextDark: '#1e293b',
+    themeBgBody: '#ffffff'
+  };
+  Object.keys(masterColors).forEach(id => {
+    setThemeColor(id, masterColors[id]);
+  });
+  markBuilderDirty();
+  showToast('Reset colors to Master Chicken Booster palette!');
+};
+
+// ==============================================================================
+// MULTI-DEVICE LIVE PREVIEW MODAL
+// ==============================================================================
+window.openLivePreviewModal = function() {
+  const idVal = document.getElementById('builderPageId')?.value;
+  const slug = document.getElementById('lpSlug')?.value;
+  const modal = document.getElementById('lpPreviewModal');
+  const iframe = document.getElementById('lpPreviewIframe');
+  const title = document.getElementById('lpPreviewTitle');
+
+  if (modal && iframe) {
+    if (title) title.textContent = (document.getElementById('lpName')?.value || 'Landing Page') + ' — Live Device Preview';
+    const previewUrl = idVal ? `/admin/landing-pages/${idVal}/preview` : (slug ? `/product/${slug}?preview=true` : '/products/chicken-booster');
+    iframe.src = previewUrl;
+    modal.classList.add('active');
+    setPreviewDevice('desktop');
+  }
+};
+
+window.previewLandingPageById = function(id, name) {
+  const modal = document.getElementById('lpPreviewModal');
+  const iframe = document.getElementById('lpPreviewIframe');
+  const title = document.getElementById('lpPreviewTitle');
+
+  if (modal && iframe) {
+    if (title) title.textContent = (name || 'Landing Page') + ' — Live Device Preview';
+    iframe.src = `/admin/landing-pages/${id}/preview`;
+    modal.classList.add('active');
+    setPreviewDevice('desktop');
+  }
+};
+
+window.closeLivePreviewModal = function() {
+  const modal = document.getElementById('lpPreviewModal');
+  const iframe = document.getElementById('lpPreviewIframe');
+  if (modal) modal.classList.remove('active');
+  if (iframe) iframe.src = 'about:blank';
+};
+
+window.setPreviewDevice = function(device) {
+  const iframe = document.getElementById('lpPreviewIframe');
+  if (!iframe) return;
+
+  const buttons = document.querySelectorAll('#lpPreviewModal .modal-header button');
+  buttons.forEach(btn => {
+    if (btn.textContent.toLowerCase().includes(device)) {
+      btn.style.background = '#03363d';
+      btn.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
+    } else if (btn.classList.contains('btn-primary-teal')) {
+      btn.style.background = '#004D40';
+      btn.style.boxShadow = 'none';
+    }
+  });
+
+  if (device === 'mobile') {
+    iframe.style.width = '375px';
+    iframe.style.maxWidth = '375px';
+    iframe.style.boxShadow = '0 10px 30px rgba(0,0,0,0.18)';
+    iframe.style.borderRadius = '20px';
+  } else if (device === 'tablet') {
+    iframe.style.width = '768px';
+    iframe.style.maxWidth = '768px';
+    iframe.style.boxShadow = '0 10px 30px rgba(0,0,0,0.18)';
+    iframe.style.borderRadius = '14px';
+  } else {
+    iframe.style.width = '100%';
+    iframe.style.maxWidth = '100%';
+    iframe.style.boxShadow = 'none';
+    iframe.style.borderRadius = '0';
+  }
+};
+
 function renderLandingPagesHub() {
   const container = document.getElementById('landingPagesGrid');
   if (!container) return;
   container.innerHTML = '';
 
-  APP_STATE.landingPages.forEach(lp => {
+  const pages = APP_STATE.liveLandingPages.length ? APP_STATE.liveLandingPages : [
+    { id: 1, name: "Chicken Booster (চিকেন বুস্টার)", slug: "chicken-booster", status: "published", public_url: "/product/chicken-booster" }
+  ];
+
+  pages.forEach(lp => {
     const card = document.createElement('div');
     card.className = 'lp-card';
-    const publicLink = lp.publicUrl || `../extracted_html/${lp.file}`;
     card.innerHTML = `
       <div class="lp-card-header">
-        <span class="lp-badge">${lp.category}</span>
-        <span style="font-size:11px;color:#10B981;font-weight:600;">● Active</span>
+        <span class="lp-badge">Poultry & Agro</span>
+        <span style="font-size:11px;color:${lp.status === 'published' ? '#10B981' : '#F59E0B'};font-weight:600;">● ${lp.status ? lp.status.toUpperCase() : 'ACTIVE'}</span>
       </div>
       <div class="lp-card-body">
-        <h4 style="font-size:13.5px;font-weight:700;margin-bottom:4px;">${lp.title}</h4>
-        <p style="font-size:11.5px;color:#718096;margin-bottom:10px;">JSON: <code>${lp.jsonFile}</code></p>
+        <h4 style="font-size:13.5px;font-weight:700;margin-bottom:4px;">${lp.name}</h4>
+        <p style="font-size:11.5px;color:#718096;margin-bottom:10px;">URL: <code>/product/${lp.slug}</code></p>
         <div class="lp-actions">
-          <button class="btn-lp-action primary" onclick="previewLandingPage('${lp.file}', '${lp.title}', '${lp.publicUrl || ''}')">
+          <button class="btn-lp-action primary" onclick="previewLandingPageById(${lp.id || 1}, '${lp.name}')">
             👁️ Live Preview
           </button>
-          <a href="${publicLink}" target="_blank" class="btn-lp-action" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">
+          <a href="${lp.public_url || `/product/${lp.slug}`}" target="_blank" class="btn-lp-action" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">
             🌐 Open
           </a>
-          <button class="btn-lp-action" onclick="copyLandingPageCode('${lp.file}', '${lp.publicUrl || ''}')">
+          <button class="btn-lp-action" onclick="navigator.clipboard.writeText(window.location.origin + '/product/${lp.slug}'); showToast('URL Copied!')">
             📋 Copy Link
           </button>
         </div>
@@ -1488,61 +2922,6 @@ function renderLandingPagesHub() {
   });
 }
 
-function renderLandingPagesList() {
-  const tbody = document.getElementById('landingPagesTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  APP_STATE.landingPages.forEach((lp, idx) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${idx + 1}</td>
-      <td>${lp.category}</td>
-      <td><b>${lp.title}</b></td>
-      <td><span style="background:${lp.id === 'chicken-booster' ? '#0284C7' : '#22C55E'};color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;">${lp.id === 'chicken-booster' ? 'YES' : 'NO'}</span></td>
-      <td><span style="background:#22C55E;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;">Active</span></td>
-      <td style="text-align:right;">
-        <a href="${lp.publicUrl || `../extracted_html/${lp.file}`}" target="_blank" class="btn-primary-teal" style="padding:2px 6px;font-size:11px;text-decoration:none;display:inline-block;">Open</a>
-        <button class="action-btn-square-teal" style="width:22px;height:22px;" onclick="previewLandingPage('${lp.file}', '${lp.title}', '${lp.publicUrl || ''}')">👁️</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-window.previewLandingPage = function(filename, title, publicUrl) {
-  const modal = document.getElementById('lpPreviewModal');
-  const iframe = document.getElementById('lpPreviewIframe');
-  const modalTitle = document.getElementById('lpPreviewTitle');
-  if (modal && iframe) {
-    modalTitle.textContent = title;
-    iframe.src = publicUrl ? publicUrl : `../extracted_html/${filename}`;
-    modal.classList.add('active');
-  }
-};
-
-window.setPreviewDevice = function(mode) {
-  const iframe = document.getElementById('lpPreviewIframe');
-  if (!iframe) return;
-  if (mode === 'mobile') {
-    iframe.style.width = '375px';
-    iframe.style.margin = '0 auto';
-    iframe.style.display = 'block';
-  } else if (mode === 'tablet') {
-    iframe.style.width = '768px';
-    iframe.style.margin = '0 auto';
-    iframe.style.display = 'block';
-  } else {
-    iframe.style.width = '100%';
-    iframe.style.margin = '0';
-  }
-};
-
-window.copyLandingPageCode = function(filename, publicUrl) {
-  const fullUrl = window.location.origin + (publicUrl ? publicUrl : `/extracted_html/${filename}`);
-  navigator.clipboard.writeText(fullUrl);
-  showToast(`Landing page link copied: ${fullUrl}`);
-};
 
 // ==============================================================================
 // 10. ADMIN USERS MANAGEMENT
@@ -1574,6 +2953,25 @@ function renderAdminUsersTable() {
 // 11. VIEW SWITCHER & GLOBAL NAVIGATION
 // ==============================================================================
 window.switchView = function(viewName) {
+  if (APP_STATE.activeView === 'landing-page-builder' && viewName !== 'landing-page-builder' && APP_STATE.isBuilderDirty) {
+    showLpConfirmModal({
+      title: 'Unsaved Changes',
+      icon: '⚠️',
+      heading: 'Discard Unsaved Changes?',
+      message: 'You have unsaved edits in the builder. If you leave now, your changes will be lost.',
+      confirmText: 'Discard & Leave',
+      confirmClass: 'lp-btn-remove',
+      onConfirm: function() {
+        APP_STATE.isBuilderDirty = false;
+        doSwitchView(viewName);
+      }
+    });
+    return;
+  }
+  doSwitchView(viewName);
+};
+
+function doSwitchView(viewName) {
   APP_STATE.activeView = viewName;
   document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -1602,7 +3000,7 @@ window.switchView = function(viewName) {
   if (viewName === 'landing-pages-list') renderLandingPagesList();
   if (viewName === 'profit-report') renderProfitReport();
   if (viewName === 'cities') renderCitiesTable();
-};
+}
 
 // Bangladesh Cities
 const BD_CITIES = [
@@ -1842,7 +3240,7 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
               Courier Breakdown
             </div>
             <div style="padding:12px;font-size:12.5px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              ${(d.courier_breakdown && d.courier_breakdown.length > 0) ? 
+              ${(d.courier_breakdown && d.courier_breakdown.length > 0) ?
                 d.courier_breakdown.map(c => {
                   let statusText = typeof c.status === 'object' && c.status !== null
                     ? `${c.status.success_parcel || c.status.delivered || 0}/${c.status.total_parcel || c.status.total || 0} (${c.status.success_ratio || 0}%)`

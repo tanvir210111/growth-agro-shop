@@ -51,6 +51,8 @@ let laravelProcess = null;
 
 function isStorefrontRoute(pathname) {
   if (pathname === '/' || pathname === '') return true;
+  // Allow landing page preview route through to Laravel
+  if (pathname.startsWith('/admin/landing-pages/')) return true;
   // Exclude Landing Pages, Admin, APIs, and Node assets
   if (pathname.startsWith('/products/')) return false;
   if (pathname.startsWith('/admin')) return false;
@@ -71,7 +73,8 @@ function isStorefrontRoute(pathname) {
     '/policy',
     '/css/',
     '/images/',
-    '/js/'
+    '/js/',
+    '/uploads/'
   ];
   return storePrefixes.some(p => pathname === p || pathname.startsWith(p));
 }

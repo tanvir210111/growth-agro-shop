@@ -97,6 +97,30 @@ Route::patch('/api/orders/{order_number}/status', function (\Illuminate\Http\Req
     return response()->json(['success' => $updated > 0]);
 })->name('api.orders.updateStatus');
 
+// Central Landing Page Builder / CMS Endpoints
+use App\Http\Controllers\Api\AdminLandingPageController;
+
+Route::get('/api/admin/landing-pages/master-defaults', [AdminLandingPageController::class, 'defaults'])->name('api.admin.landing-pages.defaults');
+Route::get('/api/admin/landing-pages/check-slug', [AdminLandingPageController::class, 'checkSlug'])->name('api.admin.landing-pages.check-slug');
+Route::post('/api/admin/landing-pages/upload-media', [AdminLandingPageController::class, 'uploadMedia'])->name('api.admin.landing-pages.upload-media');
+Route::get('/api/admin/landing-pages', [AdminLandingPageController::class, 'index'])->name('api.admin.landing-pages.index');
+Route::post('/api/admin/landing-pages', [AdminLandingPageController::class, 'store'])->name('api.admin.landing-pages.store');
+Route::get('/api/admin/landing-pages/{id}', [AdminLandingPageController::class, 'show'])->name('api.admin.landing-pages.show');
+Route::match(['put', 'patch', 'post'], '/api/admin/landing-pages/{id}', [AdminLandingPageController::class, 'update'])->name('api.admin.landing-pages.update');
+Route::post('/api/admin/landing-pages/{id}/duplicate', [AdminLandingPageController::class, 'duplicate'])->name('api.admin.landing-pages.duplicate');
+Route::patch('/api/admin/landing-pages/{id}/status', [AdminLandingPageController::class, 'setStatus'])->name('api.admin.landing-pages.status');
+Route::delete('/api/admin/landing-pages/{id}', [AdminLandingPageController::class, 'destroy'])->name('api.admin.landing-pages.destroy');
+
+// Admin Preview Route
+Route::get('/admin/landing-pages/{id}/preview', function ($id, \Illuminate\Http\Request $request) {
+    $landingPage = \App\Models\LandingPage::findOrFail($id);
+    $content = $landingPage->content ?: \App\Models\LandingPage::getDefaultMasterContent();
+    $deliveryConfig = $landingPage->delivery_config ?: \App\Models\LandingPage::getDefaultDeliveryConfig();
+    $themeConfig = $landingPage->theme_config ?: \App\Models\LandingPage::getDefaultThemeConfig();
+    $sectionOrder = $landingPage->section_order ?: \App\Models\LandingPage::getDefaultSectionOrder();
+    return view('pages.landing-page', compact('landingPage', 'content', 'deliveryConfig', 'themeConfig', 'sectionOrder'));
+})->name('admin.landing-pages.preview');
+
 // Internal Node.js to Laravel Landing Order Sync Bridge
 use App\Http\Controllers\Api\InternalSyncController;
 Route::post('/api/internal/sync-landing-order', [InternalSyncController::class, 'syncLandingOrder'])->name('api.internal.sync-landing-order');

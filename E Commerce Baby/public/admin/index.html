@@ -74,7 +74,7 @@
       </div>
 
       <ul class="sidebar-nav">
-        
+
         <!-- 1. Dashboard -->
         <li class="nav-item">
           <a class="nav-link active" id="nav-dashboard" onclick="switchView('dashboard')">
@@ -251,8 +251,9 @@
           </a>
           <div class="submenu-tree">
             <ul class="tree-list">
+              <li class="tree-item"><a class="tree-link" id="subnav-landing-pages-list" onclick="switchView('landing-pages-list')">All Landing Pages</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-create-landing-page" onclick="openCreateLandingPage()">+ Create New Page</a></li>
               <li class="tree-item"><a class="tree-link" id="subnav-landingpages" onclick="switchView('landingpages')">Landing Page Hub</a></li>
-              <li class="tree-item"><a class="tree-link" id="subnav-landing-pages-list" onclick="switchView('landing-pages-list')">Pages List</a></li>
             </ul>
           </div>
         </li>
@@ -262,7 +263,7 @@
 
     <!-- MAIN WRAPPER -->
     <div class="main-wrapper">
-      
+
       <!-- TOP NAVBAR -->
       <header class="top-navbar">
         <div class="navbar-left">
@@ -1303,7 +1304,7 @@
         <div id="view-header-setting" class="view-panel" style="display:none;">
           <div class="white-box-card">
             <h2 class="centered-card-title">Header Information</h2>
-            
+
             <form onsubmit="event.preventDefault(); showToast('হেডার তথ্য সফলভাবে আপডেট হয়েছে!');">
               <div class="form-horizontal-row">
                 <label class="form-horizontal-label">Logo(160 x 60)</label>
@@ -1350,9 +1351,9 @@
             <h2 class="centered-card-title">Set Theme Color</h2>
 
             <form onsubmit="event.preventDefault(); showToast('থিম কালার সফলভাবে পরিবর্তন হয়েছে!');" style="max-width:650px;margin:0 auto;">
-              
+
               <div style="border:1px dashed #CBD5E0;padding:24px;border-radius:6px;margin-bottom:20px;">
-                
+
                 <div class="theme-color-row">
                   <span style="font-weight:600;color:#4A5568;">Primary Color</span>
                   <div class="color-preview-box" style="background:#C5A059;"></div>
@@ -1440,7 +1441,7 @@
             <h2 class="centered-card-title">Courier API Setup</h2>
 
             <form onsubmit="event.preventDefault(); showToast('কুরিয়ার এপিআই সফলভাবে সংরক্ষিত হয়েছে!');">
-              
+
               <!-- 1. PATHAO -->
               <div class="courier-section-card">
                 <h3 class="courier-brand-title">PATHAO</h3>
@@ -1965,7 +1966,7 @@
           </div>
         </div>
 
-        
+
         <!-- VIEW: SUB CITY (Exact Match) -->
         <div id="view-sub-city" class="view-panel" style="display:none;">
           <div class="white-box-card">
@@ -2486,7 +2487,7 @@
           </div>
         </div>
 
-        
+
         <!-- VIEW: ADMIN MANAGE (Exact Match: babyfashionbd.com/admin/listAdmin) -->
         <div id="view-manage-admin" class="view-panel" style="display:none;">
           <div style="margin-bottom:16px;">
@@ -2623,32 +2624,715 @@
         </div>
 
 
-        <!-- VIEW: LANDING PAGES TABLE (Exact Match: babyfashionbd.com/admin/landing/page-list) -->
+        <!-- VIEW: LANDING PAGES TABLE -->
         <div id="view-landing-pages-list" class="view-panel" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <button class="btn-primary-teal" onclick="showToast('Create new landing page modal')">
-              + Add Page
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h2 style="font-size:18px;font-weight:700;color:#1A202C;margin-bottom:4px;">🚀 Landing Pages Management</h2>
+              <p style="font-size:13px;color:#718096;margin:0;">Create, edit, duplicate, and analyze high-converting landing pages.</p>
+            </div>
+            <button class="btn-primary-teal" onclick="openCreateLandingPage()" style="padding:9px 18px;font-size:13.5px;font-weight:700;box-shadow:0 4px 12px rgba(0,77,64,0.25);">
+              + Create Landing Page
             </button>
           </div>
 
-          <div class="white-box-card">
-            <h2 class="centered-card-title">Pages</h2>
+          <!-- Filter & Search Toolbar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:10px 16px;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn-status-filter active" id="lpFilterAll" onclick="filterLandingPagesByStatus('all')">All (<span id="lpCountAll">0</span>)</button>
+              <button class="btn-status-filter" id="lpFilterPublished" onclick="filterLandingPagesByStatus('published')">Published (<span id="lpCountPublished">0</span>)</button>
+              <button class="btn-status-filter" id="lpFilterDraft" onclick="filterLandingPagesByStatus('draft')">Draft (<span id="lpCountDraft">0</span>)</button>
+              <button class="btn-status-filter" id="lpFilterUnpublished" onclick="filterLandingPagesByStatus('unpublished')">Unpublished (<span id="lpCountUnpublished">0</span>)</button>
+            </div>
+            <input type="text" id="lpSearchInput" placeholder="Search pages by name or slug..." class="form-control" style="width:260px;height:36px;font-size:13px;" oninput="handleLandingPageSearch()">
+          </div>
 
+          <div class="white-box-card">
             <div class="orders-table-container">
               <table class="orders-table">
                 <thead>
                   <tr style="background:#F8FAFC;">
-                    <th style="width:40px;">#</th>
-                    <th>Category</th>
-                    <th>Title</th>
-                    <th>Authoritative</th>
+                    <th style="width:36px;">#</th>
+                    <th>Landing Page</th>
+                    <th>Slug & Live URL</th>
+                    <th>Product</th>
+                    <th>Theme</th>
                     <th>Status</th>
-                    <th style="text-align:right;">Action</th>
+                    <th style="text-align:right;">Visitors</th>
+                    <th style="text-align:right;">Orders</th>
+                    <th style="text-align:right;">Revenue</th>
+                    <th style="text-align:right;">CVR</th>
+                    <th style="text-align:right;">AOV</th>
+                    <th>Updated</th>
+                    <th style="text-align:right;min-width:180px;">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="landingPagesTableBody"></tbody>
+                <tbody id="landingPagesTableBody">
+                  <tr><td colspan="13" style="text-align:center;padding:28px;color:#718096;">Loading landing pages...</td></tr>
+                </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <!-- VIEW: LANDING PAGE BUILDER / CMS -->
+        <div id="view-landing-page-builder" class="view-panel" style="display:none;">
+
+          <!-- Sticky Top Action Bar -->
+          <div class="lp-builder-header">
+            <div class="lp-builder-title-group">
+              <button class="btn-lp-draft" onclick="navigateBackFromBuilder()" style="padding:6px 12px;font-size:12.5px;">
+                ← Back to List
+              </button>
+              <div>
+                <h2 id="builderPageTitleDisplay">Create Landing Page</h2>
+                <div style="font-size:12px;color:#64748B;margin-top:2px;">
+                  URL: <a id="builderPublicUrlDisplay" href="#" target="_blank" style="color:#0284C7;text-decoration:underline;">https://growthagro.shop/product/---</a>
+                </div>
+              </div>
+              <span class="lp-status-badge draft" id="builderStatusBadge">Draft</span>
+            </div>
+
+            <div class="lp-builder-actions">
+              <button type="button" class="btn-lp-preview" onclick="openLivePreviewModal()">
+                👁️ Live Preview
+              </button>
+              <button type="button" class="btn-lp-draft" onclick="saveLandingPageData('draft')">
+                💾 Save Draft
+              </button>
+              <button type="button" class="btn-lp-publish" onclick="saveLandingPageData('published')">
+                🚀 Publish Page
+              </button>
+            </div>
+          </div>
+
+          <input type="hidden" id="builderPageId" value="">
+
+          <!-- Form Accordions -->
+          <div class="lp-accordion-container">
+
+            <!-- 1. BASIC INFORMATION -->
+            <div class="lp-accordion-item active" id="acc-basic">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-basic')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">⚙️</span>
+                  <span>1. Basic Information</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="lp-form-grid">
+                  <div class="form-group">
+                    <label>Landing Page Name *</label>
+                    <input type="text" id="lpName" class="form-control no-icon" placeholder="e.g. Premium Baby Feeding Bottle" oninput="handleLpNameInput(this.value)">
+                  </div>
+                  <div class="form-group">
+                    <label>URL Slug (growthagro.shop/product/<b>{slug}</b>) *</label>
+                    <div style="display:flex;gap:8px;">
+                      <input type="text" id="lpSlug" class="form-control no-icon" placeholder="e.g. baby-feeding-bottle" oninput="validateSlugInput(this.value)">
+                      <button type="button" class="btn-lp-draft" onclick="checkSlugAvailability()" style="padding:6px 12px;font-size:12px;white-space:nowrap;">Check</button>
+                    </div>
+                    <span id="slugCheckFeedback" style="font-size:11.5px;color:#64748B;margin-top:4px;display:block;"></span>
+                  </div>
+                </div>
+
+                <div class="lp-form-grid">
+                  <div class="form-group">
+                    <label>Master Template / Theme Preset</label>
+                    <select id="lpTheme" class="form-control no-icon" onchange="handleTemplatePresetChange(this.value)">
+                      <option value="universal">Universal Product Template (Default)</option>
+                      <option value="chicken-booster">Chicken Booster Preset (Poultry / Agro Theme)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Publish Status</label>
+                    <select id="lpStatus" class="form-control no-icon">
+                      <option value="draft">Draft (Private, not visible to public)</option>
+                      <option value="published">Published (Live at /product/{slug})</option>
+                      <option value="unpublished">Unpublished (Archived)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="lp-form-grid">
+                  <div class="form-group">
+                    <label>Product Category (Optional)</label>
+                    <input type="text" id="lpCategory" class="form-control no-icon" placeholder="e.g. Baby Care, Skincare, Health, Electronics">
+                  </div>
+                  <div class="form-group">
+                    <label>Brand Name (Optional)</label>
+                    <input type="text" id="lpBrand" class="form-control no-icon" placeholder="e.g. Growth Agro, TinyTrendy, Velour">
+                  </div>
+                </div>
+
+                <div class="lp-form-grid single">
+                  <div class="form-group">
+                    <label>Browser Page Title (&lt;title&gt;)</label>
+                    <input type="text" id="lpTitle" class="form-control no-icon" placeholder="e.g. Ultra Soft Baby Feeding Bottle — 100% BPA Free | Growth Agro">
+                  </div>
+                  <div class="form-group">
+                    <label>SEO Meta Description</label>
+                    <textarea id="lpMetaDesc" class="form-control no-icon" rows="2" placeholder="আপনার পছন্দের প্রিমিয়াম কোয়ালিটি পণ্য — সেরা অফারে আজই অর্ডার করুন..."></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. PRODUCT DETAILS -->
+            <div class="lp-accordion-item" id="acc-product">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-product')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">📦</span>
+                  <span>2. Product Details</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="lp-form-grid">
+                  <div class="form-group">
+                    <label>Product Display Name *</label>
+                    <input type="text" id="lpProductName" class="form-control no-icon" placeholder="e.g. Ultra Soft Baby Feeding Bottle">
+                  </div>
+                  <div class="form-group">
+                    <label>Product SKU / ID</label>
+                    <input type="text" id="lpProductId" class="form-control no-icon" placeholder="e.g. BBY-BOTTLE-01">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. DELIVERY CHARGE CONFIGURATION -->
+            <div class="lp-accordion-item" id="acc-delivery">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-delivery')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">🚚</span>
+                  <span>3. Delivery Charge Configuration</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="lp-form-grid">
+                  <div class="form-group">
+                    <label>Delivery Pricing Type</label>
+                    <select id="lpDeliveryType" class="form-control no-icon" onchange="handleDeliveryTypeChange(this.value)">
+                      <option value="free">Free Delivery (100% বিনামূল্যে ডেলিভারি)</option>
+                      <option value="paid">Paid Delivery (নির্ধারিত ডেলিভারি চার্জ)</option>
+                    </select>
+                  </div>
+                  <div class="form-group" id="groupSameEverywhere">
+                    <label>Charge Uniformity</label>
+                    <div style="display:flex;align-items:center;height:40px;gap:8px;">
+                      <input type="checkbox" id="lpSameEverywhere" style="width:18px;height:18px;accent-color:#004D40;" onchange="handleSameChargeToggle(this.checked)">
+                      <span style="font-size:13px;color:#334155;">সব জায়গায় একই ডেলিভারি চার্জ</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="lp-form-grid" id="paidDeliveryFields" style="display:none;">
+                  <div class="form-group">
+                    <label>Inside Dhaka Delivery Charge (৳)</label>
+                    <input type="number" id="lpChargeInside" class="form-control no-icon" value="0" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Outside Dhaka Delivery Charge (৳)</label>
+                    <input type="number" id="lpChargeOutside" class="form-control no-icon" value="0" min="0">
+                  </div>
+                </div>
+
+                <div class="lp-form-grid">
+                  <div class="form-group">
+                    <label>Free Delivery Threshold Above Order Amount</label>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <input type="checkbox" id="lpFreeDeliveryAbove" style="width:18px;height:18px;accent-color:#004D40;" onchange="handleFreeThresholdToggle(this.checked)">
+                      <span style="font-size:13px;color:#334155;">নির্দিষ্ট টাকার বেশি অর্ডারে ফ্রি ডেলিভারি</span>
+                    </div>
+                  </div>
+                  <div class="form-group" id="thresholdAmountGroup" style="display:none;">
+                    <label>Free Delivery Minimum Amount (৳)</label>
+                    <input type="number" id="lpFreeThreshold" class="form-control no-icon" value="1000" min="100">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. HERO SECTION -->
+            <div class="lp-accordion-item" id="acc-hero">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-hero')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">🌟</span>
+                  <span>4. Hero Section Configuration</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="lp-form-grid single">
+                  <div class="form-group">
+                    <label>Hero Alert Hook Text (Badge headline)</label>
+                    <input type="text" id="lpHeroAlertHook" class="form-control no-icon" placeholder='e.g. "১০০% প্রিমিয়াম ও অরিজিনাল কোয়ালিটি নিশ্চিত"'>
+                  </div>
+                  <div class="form-group">
+                    <label>Main Headline *</label>
+                    <input type="text" id="lpHeroMainTitle" class="form-control no-icon" placeholder='e.g. "আপনার পছন্দের প্রিমিয়াম পণ্য — সীমিত সময়ের বিশেষ ছাড়ে আজই অর্ডার করুন"'>
+                  </div>
+                  <div class="form-group">
+                    <label>Hero Subtext / Trust Bar</label>
+                    <input type="text" id="lpHeroSubtext" class="form-control no-icon" placeholder="e.g. হাজারো সন্তুষ্ট গ্রাহকের নির্ভরযোগ্য পছন্দ। দ্রুত ডেলিভারি ও শতভাগ ক্যাশ অন ডেলিভারি সুবিধা।">
+                  </div>
+                  <div class="form-group">
+                    <label>CTA Button Text</label>
+                    <input type="text" id="lpHeroCtaText" class="form-control no-icon" value="👉 অর্ডার করতে ক্লিক করুন">
+                  </div>
+                </div>
+
+                <div class="lp-form-grid">
+                  <div class="form-group">
+                    <label>Header Hotline Phone</label>
+                    <input type="text" id="lpHeaderHotline" class="form-control no-icon" value="01864-444411">
+                  </div>
+                  <div class="form-group">
+                    <label>Header Brand Logo</label>
+                    <div class="lp-image-uploader">
+                      <img id="lpLogoPreview" src="/images/logo.png" class="lp-image-thumb-preview" onerror="this.src='/images/placeholder.webp'">
+                      <div class="lp-image-uploader-input-wrap">
+                        <input type="text" id="lpHeaderLogoUrl" class="form-control no-icon" value="/images/logo.png" placeholder="/images/logo.png">
+                      </div>
+                      <div class="lp-image-actions-wrap">
+                        <input type="file" id="fileUploadLogo" accept="image/*" style="display:none;" onchange="uploadLpImage(this, 'lpHeaderLogoUrl', 'lpLogoPreview')">
+                        <button type="button" class="lp-btn-upload" onclick="document.getElementById('fileUploadLogo').click()">📁 Upload</button>
+                        <button type="button" class="lp-btn-replace" onclick="document.getElementById('fileUploadLogo').click()">🔄 Replace</button>
+                        <button type="button" class="lp-btn-remove-img" onclick="clearStaticImage('lpHeaderLogoUrl', 'lpLogoPreview')">✕</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <h4 style="font-size:14px;font-weight:700;margin:18px 0 10px;color:#1E293B;">Hero Feature / Product Cards</h4>
+                <div class="lp-form-grid">
+                  <!-- Left Card -->
+                  <div class="lp-repeater-box">
+                    <div class="lp-repeater-header">Feature Card 1 (Left / Primary)</div>
+                    <div class="form-group">
+                      <label>Tag / Badge</label>
+                      <input type="text" id="lpHeroCard1Tag" class="form-control no-icon" value="১ পিস / ১ প্যাক (স্ট্যান্ডার্ড)">
+                    </div>
+                    <div class="form-group">
+                      <label>Product Image</label>
+                      <div class="lp-image-uploader">
+                        <img id="lpHeroCard1ImgPreview" src="/images/placeholder.webp" class="lp-image-thumb-preview" onerror="this.src='/images/placeholder.webp'">
+                        <div class="lp-image-uploader-input-wrap">
+                          <input type="text" id="lpHeroCard1Img" class="form-control no-icon" value="/images/placeholder.webp">
+                        </div>
+                        <div class="lp-image-actions-wrap">
+                          <input type="file" id="fileCard1Img" accept="image/*" style="display:none;" onchange="uploadLpImage(this, 'lpHeroCard1Img', 'lpHeroCard1ImgPreview')">
+                          <button type="button" class="lp-btn-upload" onclick="document.getElementById('fileCard1Img').click()">📁 Upload</button>
+                          <button type="button" class="lp-btn-replace" onclick="document.getElementById('fileCard1Img').click()">🔄 Replace</button>
+                          <button type="button" class="lp-btn-remove-img" onclick="clearStaticImage('lpHeroCard1Img', 'lpHeroCard1ImgPreview')">✕</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Background Image (Optional)</label>
+                      <div class="lp-image-uploader">
+                        <img id="lpHeroCard1BgPreview" src="/images/placeholder.webp" class="lp-image-thumb-preview" onerror="this.src='/images/placeholder.webp'">
+                        <div class="lp-image-uploader-input-wrap">
+                          <input type="text" id="lpHeroCard1Bg" class="form-control no-icon" value="">
+                        </div>
+                        <div class="lp-image-actions-wrap">
+                          <input type="file" id="fileCard1Bg" accept="image/*" style="display:none;" onchange="uploadLpImage(this, 'lpHeroCard1Bg', 'lpHeroCard1BgPreview')">
+                          <button type="button" class="lp-btn-upload" onclick="document.getElementById('fileCard1Bg').click()">📁 Upload</button>
+                          <button type="button" class="lp-btn-replace" onclick="document.getElementById('fileCard1Bg').click()">🔄 Replace</button>
+                          <button type="button" class="lp-btn-remove-img" onclick="clearStaticImage('lpHeroCard1Bg', 'lpHeroCard1BgPreview')">✕</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right Card -->
+                  <div class="lp-repeater-box">
+                    <div class="lp-repeater-header">Feature Card 2 (Right / Secondary)</div>
+                    <div class="form-group">
+                      <label>Tag / Badge</label>
+                      <input type="text" id="lpHeroCard2Tag" class="form-control no-icon" value="২ পিস / ২ প্যাক (স্পেশাল কম্বো)">
+                    </div>
+                    <div class="form-group">
+                      <label>Product Image</label>
+                      <div class="lp-image-uploader">
+                        <img id="lpHeroCard2ImgPreview" src="/images/placeholder.webp" class="lp-image-thumb-preview" onerror="this.src='/images/placeholder.webp'">
+                        <div class="lp-image-uploader-input-wrap">
+                          <input type="text" id="lpHeroCard2Img" class="form-control no-icon" value="/images/placeholder.webp">
+                        </div>
+                        <div class="lp-image-actions-wrap">
+                          <input type="file" id="fileCard2Img" accept="image/*" style="display:none;" onchange="uploadLpImage(this, 'lpHeroCard2Img', 'lpHeroCard2ImgPreview')">
+                          <button type="button" class="lp-btn-upload" onclick="document.getElementById('fileCard2Img').click()">📁 Upload</button>
+                          <button type="button" class="lp-btn-replace" onclick="document.getElementById('fileCard2Img').click()">🔄 Replace</button>
+                          <button type="button" class="lp-btn-remove-img" onclick="clearStaticImage('lpHeroCard2Img', 'lpHeroCard2ImgPreview')">✕</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Background Image (Optional)</label>
+                      <div class="lp-image-uploader">
+                        <img id="lpHeroCard2BgPreview" src="/images/placeholder.webp" class="lp-image-thumb-preview" onerror="this.src='/images/placeholder.webp'">
+                        <div class="lp-image-uploader-input-wrap">
+                          <input type="text" id="lpHeroCard2Bg" class="form-control no-icon" value="">
+                        </div>
+                        <div class="lp-image-actions-wrap">
+                          <input type="file" id="fileCard2Bg" accept="image/*" style="display:none;" onchange="uploadLpImage(this, 'lpHeroCard2Bg', 'lpHeroCard2BgPreview')">
+                          <button type="button" class="lp-btn-upload" onclick="document.getElementById('fileCard2Bg').click()">📁 Upload</button>
+                          <button type="button" class="lp-btn-replace" onclick="document.getElementById('fileCard2Bg').click()">🔄 Replace</button>
+                          <button type="button" class="lp-btn-remove-img" onclick="clearStaticImage('lpHeroCard2Bg', 'lpHeroCard2BgPreview')">✕</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. PRODUCT PACKAGES & PRICING -->
+            <div class="lp-accordion-item" id="acc-packages">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-packages')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">📦</span>
+                  <span>5. Product Packages & Pricing</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <p style="font-size:13px;color:#64748B;margin-bottom:14px;">Add package / variant options available for customer selection in the checkout form.</p>
+                <div id="packagesContainer"></div>
+                <button type="button" class="lp-btn-add" onclick="addPackageItem()">+ Add Package Option</button>
+              </div>
+            </div>
+
+            <!-- 6. BENEFITS CHECKLIST 1 -->
+            <div class="lp-accordion-item" id="acc-benefits-1">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-benefits-1')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">📝</span>
+                  <span>6. Product Benefits Checklist (Why Choose Us)</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="form-group">
+                  <label>Section Pill Title</label>
+                  <input type="text" id="lpBen1Title" class="form-control no-icon" value="কেন আমাদের পণ্যটি বেছে নেবেন?">
+                </div>
+                <div id="benefits1Container"></div>
+                <button type="button" class="lp-btn-add" onclick="addBenefit1Item()">+ Add Benefit Item</button>
+              </div>
+            </div>
+
+            <!-- 7. BENEFITS CHECKLIST 2 -->
+            <div class="lp-accordion-item" id="acc-benefits-2">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-benefits-2')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">📝</span>
+                  <span>7. Key Features & Quality Specifications</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="form-group">
+                  <label>Section Pill Title</label>
+                  <input type="text" id="lpBen2Title" class="form-control no-icon" value="বিশেষ সুবিধাসমূহ ও গুণাগুণ">
+                </div>
+                <div id="benefits2Container"></div>
+                <button type="button" class="lp-btn-add" onclick="addBenefit2Item()">+ Add Benefit Item</button>
+              </div>
+            </div>
+
+            <!-- 8. CUSTOMER SUCCESS STORIES / VIDEOS -->
+            <div class="lp-accordion-item" id="acc-videos">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-videos')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">🎬</span>
+                  <span>8. Customer Video Stories / Product Demos</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="form-group">
+                  <label>Section Pill Title</label>
+                  <input type="text" id="lpVideoTitle" class="form-control no-icon" value="গ্রাহকদের ভিডিও রিভিউ ও আনবক্সিং">
+                </div>
+                <div id="videosContainer"></div>
+                <button type="button" class="lp-btn-add" onclick="addVideoItem()">+ Add Story / Video Card</button>
+              </div>
+            </div>
+
+            <!-- 9. HOW TO USE / USAGE GUIDE -->
+            <div class="lp-accordion-item" id="acc-usage">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-usage')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">💡</span>
+                  <span>9. How To Use / Usage Guide</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="form-group">
+                  <label>Section Title</label>
+                  <input type="text" id="lpUsageTitle" class="form-control no-icon" value="ব্যবহার বিধি ও নির্দেশিকা">
+                </div>
+                <div class="form-group">
+                  <label>Guide Image</label>
+                  <div class="lp-image-uploader">
+                    <img id="lpUsageImgPreview" src="/images/placeholder.webp" class="lp-image-thumb-preview" onerror="this.src='/images/placeholder.webp'">
+                    <div class="lp-image-uploader-input-wrap">
+                      <input type="text" id="lpUsageImg" class="form-control no-icon" value="/images/placeholder.webp">
+                    </div>
+                    <div class="lp-image-actions-wrap">
+                      <input type="file" id="fileUsageImg" accept="image/*" style="display:none;" onchange="uploadLpImage(this, 'lpUsageImg', 'lpUsageImgPreview')">
+                      <button type="button" class="lp-btn-upload" onclick="document.getElementById('fileUsageImg').click()">📁 Upload</button>
+                      <button type="button" class="lp-btn-replace" onclick="document.getElementById('fileUsageImg').click()">🔄 Replace</button>
+                      <button type="button" class="lp-btn-remove-img" onclick="clearStaticImage('lpUsageImg', 'lpUsageImgPreview')">✕</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Instructions / Step-by-step Text</label>
+                  <textarea id="lpUsageInstruction" class="form-control no-icon" rows="3" placeholder="প্যাকেটের নির্দেশিকা অনুযায়ী সঠিক নিয়মে ব্যবহার করুন..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- 10. CUSTOMER REVIEWS & TESTIMONIALS -->
+            <div class="lp-accordion-item" id="acc-testimonials">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-testimonials')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">⭐</span>
+                  <span>10. Customer Reviews & Testimonials</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="form-group">
+                  <label>Section Title</label>
+                  <input type="text" id="lpRevTitle" class="form-control no-icon" value="গ্রাহকদের বাস্তব রিভিউ ও মতামত">
+                </div>
+                <div id="testimonialsContainer"></div>
+                <button type="button" class="lp-btn-add" onclick="addTestimonialItem()">+ Add Customer Review</button>
+              </div>
+            </div>
+
+            <!-- 11. FAQ SECTION -->
+            <div class="lp-accordion-item" id="acc-faq">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-faq')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">❓</span>
+                  <span>11. FAQ Section</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="form-group">
+                  <label>Section Title</label>
+                  <input type="text" id="lpFaqTitle" class="form-control no-icon" value="সাধারণ জিজ্ঞাসা (FAQ)">
+                </div>
+                <div id="faqsContainer"></div>
+                <button type="button" class="lp-btn-add" onclick="addFaqItem()">+ Add FAQ Item</button>
+              </div>
+            </div>
+
+            <!-- 12. OFFER & URGENCY BANNER -->
+            <div class="lp-accordion-item" id="acc-offer">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-offer')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">🏷️</span>
+                  <span>12. Offer & Urgency Banner</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="form-group">
+                  <label>Offer Badge Text</label>
+                  <input type="text" id="lpOfferBadge" class="form-control no-icon" value="স্পেশাল ধামাকা অফার">
+                </div>
+                <div class="form-group">
+                  <label>Offer Main Title</label>
+                  <input type="text" id="lpOfferTitle" class="form-control no-icon" value="সীমিত সময়ের বিশেষ ছাড় অফার!">
+                </div>
+                <div class="form-group">
+                  <label>Offer Subtitle</label>
+                  <input type="text" id="lpOfferSubtitle" class="form-control no-icon" value="আজই অর্ডার করুন এবং পান বিশেষ মূল্যছাড় ও ফ্রি ডেলিভারি।">
+                </div>
+              </div>
+            </div>
+
+            <!-- 13. CHECKOUT & ORDER CONFIG -->
+            <div class="lp-accordion-item" id="acc-checkout">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-checkout')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">🛒</span>
+                  <span>13. Checkout & Order Configuration</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="form-group">
+                  <label>Checkout Heading</label>
+                  <input type="text" id="lpCheckoutTitle" class="form-control no-icon" value="অর্ডার করতে আপনার সঠিক তথ্য দিয়ে নিচের ফর্মটি সম্পূর্ণ পূরণ করুন।">
+                </div>
+                <div class="form-group">
+                  <label>Order Button Text</label>
+                  <input type="text" id="lpCheckoutBtnText" class="form-control no-icon" value="অর্ডার করুন">
+                </div>
+                <div class="form-group">
+                  <label>Success Modal Title</label>
+                  <input type="text" id="lpSuccessTitle" class="form-control no-icon" value="আপনার অর্ডারটি সফল হয়েছে!">
+                </div>
+                <div class="form-group">
+                  <label>Success Modal Message</label>
+                  <textarea id="lpSuccessMsg" class="form-control no-icon" rows="2">অর্ডারটি নিশ্চিত করতে আমাদের প্রতিনিধি শীঘ্রই আপনার সাথে ফোনে যোগাযোগ করবেন।</textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- 14. THEME & COLORS -->
+            <div class="lp-accordion-item" id="acc-theme">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-theme')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">🎨</span>
+                  <span>14. Theme & Colors</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+                  <span style="font-size:13px;color:#64748B;">Customize the palette for this landing page or restore default presets.</span>
+                  <div style="display:flex;gap:8px;">
+                    <button type="button" class="btn-lp-draft" onclick="resetToUniversalColors()" style="color:#0F766E;font-weight:700;border-color:#0F766E;">
+                      🔄 Reset to Universal Theme
+                    </button>
+                    <button type="button" class="btn-lp-draft" onclick="resetToChickenBoosterColors()" style="color:#054c55;font-weight:700;border-color:#054c55;">
+                      🐔 Load Chicken Booster Preset
+                    </button>
+                  </div>
+                </div>
+
+                <div class="lp-color-grid">
+                  <div class="lp-color-card">
+                    <label>Primary Brand Color</label>
+                    <div class="lp-color-input-wrap">
+                      <input type="color" id="themePrimary" value="#0F766E" class="lp-color-picker" onchange="syncColorInput(this, 'themePrimaryHex')">
+                      <input type="text" id="themePrimaryHex" value="#0F766E" class="lp-color-hex" oninput="syncColorPicker(this, 'themePrimary')">
+                    </div>
+                  </div>
+
+                  <div class="lp-color-card">
+                    <label>Secondary Dark Color</label>
+                    <div class="lp-color-input-wrap">
+                      <input type="color" id="themeSecondary" value="#115E59" class="lp-color-picker" onchange="syncColorInput(this, 'themeSecondaryHex')">
+                      <input type="text" id="themeSecondaryHex" value="#115E59" class="lp-color-hex" oninput="syncColorPicker(this, 'themeSecondary')">
+                    </div>
+                  </div>
+
+                  <div class="lp-color-card">
+                    <label>Soft Light Background</label>
+                    <div class="lp-color-input-wrap">
+                      <input type="color" id="themeSoftTeal" value="#F0FDFA" class="lp-color-picker" onchange="syncColorInput(this, 'themeSoftTealHex')">
+                      <input type="text" id="themeSoftTealHex" value="#F0FDFA" class="lp-color-hex" oninput="syncColorPicker(this, 'themeSoftTeal')">
+                    </div>
+                  </div>
+
+                  <div class="lp-color-card">
+                    <label>Action Button Red / CTA</label>
+                    <div class="lp-color-input-wrap">
+                      <input type="color" id="themeBtnRed" value="#E11D48" class="lp-color-picker" onchange="syncColorInput(this, 'themeBtnRedHex')">
+                      <input type="text" id="themeBtnRedHex" value="#E11D48" class="lp-color-hex" oninput="syncColorPicker(this, 'themeBtnRed')">
+                    </div>
+                  </div>
+
+                  <div class="lp-color-card">
+                    <label>Action CTA Hover</label>
+                    <div class="lp-color-input-wrap">
+                      <input type="color" id="themeBtnHover" value="#BE123C" class="lp-color-picker" onchange="syncColorInput(this, 'themeBtnHoverHex')">
+                      <input type="text" id="themeBtnHoverHex" value="#BE123C" class="lp-color-hex" oninput="syncColorPicker(this, 'themeBtnHover')">
+                    </div>
+                  </div>
+
+                  <div class="lp-color-card">
+                    <label>Accent Gold / Headline</label>
+                    <div class="lp-color-input-wrap">
+                      <input type="color" id="themeAccentYellow" value="#F59E0B" class="lp-color-picker" onchange="syncColorInput(this, 'themeAccentYellowHex')">
+                      <input type="text" id="themeAccentYellowHex" value="#F59E0B" class="lp-color-hex" oninput="syncColorPicker(this, 'themeAccentYellow')">
+                    </div>
+                  </div>
+
+                  <div class="lp-color-card">
+                    <label>Dark Text Color</label>
+                    <div class="lp-color-input-wrap">
+                      <input type="color" id="themeTextDark" value="#0F172A" class="lp-color-picker" onchange="syncColorInput(this, 'themeTextDarkHex')">
+                      <input type="text" id="themeTextDarkHex" value="#0F172A" class="lp-color-hex" oninput="syncColorPicker(this, 'themeTextDark')">
+                    </div>
+                  </div>
+
+                  <div class="lp-color-card">
+                    <label>Body Background Color</label>
+                    <div class="lp-color-input-wrap">
+                      <input type="color" id="themeBgBody" value="#FFFFFF" class="lp-color-picker" onchange="syncColorInput(this, 'themeBgBodyHex')">
+                      <input type="text" id="themeBgBodyHex" value="#FFFFFF" class="lp-color-hex" oninput="syncColorPicker(this, 'themeBgBody')">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 15. SEO & SOCIAL META -->
+            <div class="lp-accordion-item" id="acc-seo">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-seo')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">🔍</span>
+                  <span>15. SEO & Social Media Meta</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <div class="lp-form-grid">
+                  <div class="form-group">
+                    <label>OG Social Title</label>
+                    <input type="text" id="lpOgTitle" class="form-control no-icon" placeholder="OpenGraph Title for Facebook/WhatsApp sharing">
+                  </div>
+                  <div class="form-group">
+                    <label>Canonical URL</label>
+                    <input type="text" id="lpCanonical" class="form-control no-icon" placeholder="https://growthagro.shop/product/...">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>OG Social Image</label>
+                  <div class="lp-image-uploader">
+                    <img id="lpOgImgPreview" src="/images/placeholder.webp" class="lp-image-thumb-preview" onerror="this.src='/images/placeholder.webp'">
+                    <div class="lp-image-uploader-input-wrap">
+                      <input type="text" id="lpOgImage" class="form-control no-icon" value="/images/placeholder.webp">
+                    </div>
+                    <div class="lp-image-actions-wrap">
+                      <input type="file" id="fileOgImg" accept="image/*" style="display:none;" onchange="uploadLpImage(this, 'lpOgImage', 'lpOgImgPreview')">
+                      <button type="button" class="lp-btn-upload" onclick="document.getElementById('fileOgImg').click()">📁 Upload</button>
+                      <button type="button" class="lp-btn-replace" onclick="document.getElementById('fileOgImg').click()">🔄 Replace</button>
+                      <button type="button" class="lp-btn-remove-img" onclick="clearStaticImage('lpOgImage', 'lpOgImgPreview')">✕</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 16. SECTION ORDER & VISIBILITY -->
+            <div class="lp-accordion-item" id="acc-sections">
+              <div class="lp-accordion-header" onclick="toggleAccordion('acc-sections')">
+                <div class="lp-accordion-header-left">
+                  <span class="lp-accordion-icon">🗂️</span>
+                  <span>16. Section Ordering & Visibility</span>
+                </div>
+                <span class="lp-accordion-arrow">▼</span>
+              </div>
+              <div class="lp-accordion-body">
+                <p style="font-size:13px;color:#64748B;margin-bottom:12px;">Toggle sections ON/OFF and reorder how they appear on the public landing page.</p>
+                <div id="sectionOrderContainer" style="display:flex;flex-direction:column;gap:8px;"></div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -2656,12 +3340,48 @@
         <div id="view-landingpages" class="view-panel" style="display:none;">
           <div class="panel-box" style="margin-bottom:20px;">
             <div class="panel-header">
-              <span class="panel-title">Landing Page Hub (১১টি সক্রিয় ল্যান্ডিং পেজ)</span>
+              <span class="panel-title">Landing Page Hub</span>
             </div>
-            <p style="color:#718096;font-size:14px;">আপনার সবগুলো ল্যান্ডিং পেজ সরাসরি প্রিভিউ ও এলিমেন্টর রেডি কোড কপি করুন।</p>
+            <p style="color:#718096;font-size:14px;">আপনার সবগুলো ল্যান্ডিং পেজ সরাসরি প্রিভিউ ও ম্যানেজ করুন।</p>
           </div>
           <div class="lp-grid" id="landingPagesGrid"></div>
         </div>
+
+        <!-- MULTI-DEVICE LIVE PREVIEW MODAL -->
+        <div class="lp-preview-modal-overlay" id="lpLivePreviewModal">
+          <div class="lp-preview-topbar">
+            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;">
+              <span>👁️ Live Preview:</span>
+              <span id="lpPreviewModalTitle" style="color:var(--accent-yellow);">Chicken Booster</span>
+            </div>
+
+            <!-- Device Switcher -->
+            <div class="lp-device-switcher">
+              <button type="button" class="lp-device-btn active" id="btnDeviceDesktop" onclick="setPreviewDevice('desktop')">
+                🖥️ Desktop (100%)
+              </button>
+              <button type="button" class="lp-device-btn" id="btnDeviceTablet" onclick="setPreviewDevice('tablet')">
+                📱 Tablet (768px)
+              </button>
+              <button type="button" class="lp-device-btn" id="btnDeviceMobile" onclick="setPreviewDevice('mobile')">
+                📱 Mobile (375px)
+              </button>
+            </div>
+
+            <div>
+              <button type="button" class="btn-lp-draft" onclick="closeLivePreviewModal()" style="padding:6px 14px;font-size:13px;">
+                ✕ Close Preview
+              </button>
+            </div>
+          </div>
+
+          <div class="lp-preview-body">
+            <div class="lp-preview-frame-container" id="lpPreviewContainer" style="width:100%;max-width:1200px;">
+              <iframe id="lpPreviewIframe" class="lp-preview-frame" src="about:blank"></iframe>
+            </div>
+          </div>
+        </div>
+
 
       </main>
     </div>
@@ -2790,6 +3510,25 @@
       </div>
       <div class="modal-body" id="orderJourneyModalBody" style="overflow-y:auto; max-height:75vh; padding:20px;">
         <div style="text-align:center; padding:30px; color:#A0AEC0;">Loading journey timeline...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMATION DIALOG -->
+  <div class="modal-overlay" id="lpConfirmModal">
+    <div class="modal-content" style="max-width:460px;border-radius:12px;">
+      <div class="modal-header">
+        <h3 id="lpConfirmModalTitle" style="font-size:16px;font-weight:700;margin:0;">Confirmation</h3>
+        <button class="btn-close-modal" onclick="closeLpConfirmModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:22px 20px;text-align:center;">
+        <div id="lpConfirmModalIcon" style="font-size:38px;margin-bottom:12px;">⚠️</div>
+        <h4 id="lpConfirmModalHeading" style="font-size:16px;font-weight:700;color:#0F172A;margin:0 0 8px;">Are you sure?</h4>
+        <p id="lpConfirmModalMessage" style="font-size:13.5px;color:#475569;line-height:1.5;margin:0 0 22px;"></p>
+        <div style="display:flex;justify-content:center;gap:12px;">
+          <button type="button" class="btn-lp-draft" onclick="closeLpConfirmModal()" style="padding:8px 20px;font-size:13px;font-weight:600;">Cancel</button>
+          <button type="button" class="btn-primary-teal" id="lpConfirmModalConfirmBtn" style="padding:8px 22px;font-size:13px;font-weight:700;">Confirm</button>
+        </div>
       </div>
     </div>
   </div>

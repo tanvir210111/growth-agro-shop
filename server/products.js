@@ -217,10 +217,16 @@ function calculateOrderTotals(productId, variantId, quantity, deliveryZone, item
     for (const it of items) {
       const itQty = parseInt(it.quantity || 0, 10);
       if (itQty > 0) {
-        const itVariant = (product.variants && product.variants[it.variantId]) || { price: 2300, name: it.variantId, freeDelivery: true };
-        subtotal += itVariant.price * itQty;
+        const itPrice = parseFloat(it.price) || 0;
+        const itVariant = (product.variants && product.variants[it.variantId]) || {
+          price: itPrice > 0 ? itPrice : 2300,
+          name: it.name || it.variantId,
+          freeDelivery: itPrice > 0 ? false : true
+        };
+        const unitP = itVariant.price || itPrice;
+        subtotal += unitP * itQty;
         totalQty += itQty;
-        summaries.push(`${itVariant.name} × ${itQty}`);
+        summaries.push(`${itVariant.name || it.name || it.variantId} × ${itQty}`);
         if (!itVariant.freeDelivery) isFreeDelivery = false;
       }
     }
@@ -228,7 +234,7 @@ function calculateOrderTotals(productId, variantId, quantity, deliveryZone, item
     if (totalQty > 0) {
       const deliveryOption = (product.deliveryZones && product.deliveryZones[deliveryZone]) 
         ? product.deliveryZones[deliveryZone] 
-        : { id: "outside", label: "ঢাকার বাইরে", charge: 0 };
+        : { id: deliveryZone || "inside", label: deliveryZone === 'outside' ? "ঢাকার বাইরে" : "ঢাকার ভিতরে", charge: deliveryZone === 'outside' ? 120 : 80 };
       const deliveryCharge = isFreeDelivery ? 0 : deliveryOption.charge;
       const total = subtotal + deliveryCharge;
 
@@ -237,13 +243,13 @@ function calculateOrderTotals(productId, variantId, quantity, deliveryZone, item
         variant: {
           id: items.map(i => i.variantId).join('+'),
           name: summaries.join(' + '),
-          price: 2300,
+          price: totalQty > 0 ? Math.round(subtotal / totalQty) : 0,
           freeDelivery: isFreeDelivery
         },
         quantity: totalQty,
         deliveryZone: deliveryOption.id,
         deliveryZoneLabel: deliveryOption.label,
-        unitPrice: 2300,
+        unitPrice: totalQty > 0 ? Math.round(subtotal / totalQty) : 0,
         subtotal,
         deliveryCharge,
         total,

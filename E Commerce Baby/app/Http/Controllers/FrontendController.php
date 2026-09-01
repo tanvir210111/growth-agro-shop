@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LandingPage;
 use App\Services\CartService;
 use App\Services\CheckoutService;
 use App\Services\ProductService;
@@ -98,8 +99,28 @@ class FrontendController extends Controller
         ));
     }
 
-    public function product(string $slug): View
+    public function product(string $slug, Request $request): View
     {
+        // 1. Check if a Landing Page exists with this slug
+        $landingPage = LandingPage::where('slug', $slug)->first();
+
+        if ($landingPage) {
+            // Allow if published or in preview mode
+            $isPreview = $request->has('preview') || $request->query('preview') === 'true';
+            if ($landingPage->status === 'published' || $isPreview) {
+                $content = $landingPage->content ?: LandingPage::getDefaultMasterContent();
+                $deliveryConfig = $landingPage->delivery_config ?: LandingPage::getDefaultDeliveryConfig();
+                $themeConfig = $landingPage->theme_config ?: LandingPage::getDefaultThemeConfig();
+                $sectionOrder = $landingPage->section_order ?: LandingPage::getDefaultSectionOrder();
+
+                return view('pages.landing-page', compact('landingPage', 'content', 'deliveryConfig', 'themeConfig', 'sectionOrder'));
+            }
+
+            // Draft or Unpublished without preview
+            abort(404, 'Landing page is currently not published.');
+        }
+
+        // 2. Standard Storefront Product Fallback
         $product = $this->productService->findBySlug($slug);
         if (!$product) {
             abort(404, 'Product not found');
