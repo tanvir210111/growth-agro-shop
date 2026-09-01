@@ -1104,7 +1104,16 @@ class AdminAnalyticsController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
         }
 
-        $phone = trim((string)($request->input('phone') ?: $request->query('phone', '')));
+        $phone = trim((string)($request->input('phone') ?: $request->query('phone', '') ?: $request->input('customer_phone', '')));
+        $invoice = trim((string)($request->input('invoice') ?: $request->input('order_number', '') ?: $request->query('invoice', '')));
+
+        if (empty($phone) && !empty($invoice)) {
+            $order = Order::where('invoice_no', $invoice)->first();
+            if ($order && !empty($order->customer_phone)) {
+                $phone = trim($order->customer_phone);
+            }
+        }
+
         if (empty($phone)) {
             return response()->json(['success' => false, 'message' => 'Phone number is required.'], 400);
         }

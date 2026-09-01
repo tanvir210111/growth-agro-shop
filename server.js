@@ -539,23 +539,23 @@ const server = http.createServer(async (req, res) => {
 
           const syncPayload = JSON.stringify({
             order_number: newOrder.order_number,
-            customer_name: newOrder.customer_name,
-            customer_phone: newOrder.phone,
-            customer_address: newOrder.address,
-            delivery_zone: newOrder.delivery_zone,
-            delivery_charge: newOrder.delivery_charge,
-            subtotal: newOrder.subtotal,
-            total: newOrder.total,
-            payment_method: newOrder.payment_method,
-            product_name: newOrder.product_name,
-            variant_name: newOrder.variant_name,
-            quantity: newOrder.quantity,
-            unit_price: newOrder.unit_price,
-            landing_page: newOrder.landing_page,
+            customer_name: newOrder.customer_name || customerName || 'Customer',
+            customer_phone: newOrder.phone || phone || '',
+            customer_address: newOrder.address || address || '-',
+            delivery_zone: newOrder.delivery_zone || deliveryZone || 'inside',
+            delivery_charge: newOrder.delivery_charge ?? calculated.deliveryCharge ?? 0,
+            subtotal: newOrder.subtotal ?? calculated.subtotal ?? 0,
+            total: newOrder.total ?? calculated.total ?? 0,
+            payment_method: newOrder.payment_method || 'Cash on Delivery',
+            product_name: newOrder.product_name || calculated.product.shortName || calculated.product.name || 'Product',
+            variant_name: newOrder.variant_name || calculated.variant.name || 'Standard',
+            quantity: newOrder.quantity || calculated.quantity || 1,
+            unit_price: newOrder.unit_price || calculated.unitPrice || (calculated.quantity ? calculated.subtotal / calculated.quantity : 0),
+            landing_page: newOrder.landing_page || calculated.product.landingPage || (source === 'LANDING_PAGE' ? `/product/${calculated.product.id}` : '/products/chicken-booster/'),
             items: calculated.items || [],
             visitor_uuid: visitorUuid,
             session_uuid: sessionUuid,
-            idempotency_key: newOrder.idempotency_key
+            idempotency_key: newOrder.idempotency_key || idempotencyKey
           });
 
           const syncReq = http.request({

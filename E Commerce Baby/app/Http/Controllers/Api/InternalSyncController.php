@@ -42,6 +42,24 @@ class InternalSyncController extends Controller
         // 2. Idempotency Check: Do not duplicate if order already synced
         $existingOrder = Order::where('invoice_no', $orderNumber)->first();
         if ($existingOrder) {
+            $incomingPhone = trim((string)($request->input('customer_phone') ?: $request->input('phone') ?: ''));
+            $incomingName = trim((string)($request->input('customer_name') ?: $request->input('name') ?: ''));
+            $incomingAddr = trim((string)($request->input('customer_address') ?: $request->input('address') ?: $request->input('shipping_address') ?: ''));
+
+            $updates = [];
+            if (!empty($incomingPhone) && (empty($existingOrder->customer_phone) || $existingOrder->customer_phone === '-')) {
+                $updates['customer_phone'] = $incomingPhone;
+            }
+            if (!empty($incomingName) && ($existingOrder->customer_name === 'Landing Customer' || empty($existingOrder->customer_name))) {
+                $updates['customer_name'] = $incomingName;
+            }
+            if (!empty($incomingAddr) && (empty($existingOrder->customer_address) || $existingOrder->customer_address === '-')) {
+                $updates['customer_address'] = $incomingAddr;
+            }
+            if (!empty($updates)) {
+                $existingOrder->update($updates);
+            }
+
             return response()->json([
                 'success' => true,
                 'is_duplicate' => true,
@@ -52,9 +70,9 @@ class InternalSyncController extends Controller
 
         DB::beginTransaction();
         try {
-            $customerName = trim($request->input('customer_name', 'Landing Customer'));
-            $phone = trim($request->input('customer_phone', ''));
-            $address = trim($request->input('customer_address', ''));
+            $customerName = trim((string)($request->input('customer_name') ?: $request->input('name') ?: 'Customer'));
+            $phone = trim((string)($request->input('customer_phone') ?: $request->input('phone') ?: ''));
+            $address = trim((string)($request->input('customer_address') ?: $request->input('address') ?: $request->input('shipping_address') ?: '-'));
             $deliveryZone = $request->input('delivery_zone', 'inside');
             $cityType = ($deliveryZone === 'inside' || $deliveryZone === 'inside_dhaka') ? 'inside_dhaka' : 'outside_dhaka';
             $shipping = (float) $request->input('delivery_charge', 0);

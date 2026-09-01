@@ -3172,17 +3172,29 @@ window.showToast = function(msg) {
 // 13. BD COURIER FRAUD & DELIVERY RATIO INTEGRATION (Hardened)
 // ==============================================================================
 window.checkCourierRatio = function(phone, customerName, invoice) {
+  let targetPhone = phone ? String(phone).trim() : '';
+  if ((!targetPhone || targetPhone === 'undefined' || targetPhone === 'null') && invoice) {
+    const found = APP_STATE.orders.find(o => o.invoice === invoice);
+    if (found && found.phone && found.phone !== 'undefined' && found.phone !== 'null') {
+      targetPhone = String(found.phone).trim();
+    }
+    if (found && found.customer) {
+      customerName = customerName || found.customer;
+    }
+  }
+
   const modal = document.getElementById('genericModal');
   const modalTitle = document.getElementById('genericModalTitle');
   const modalBody = document.getElementById('genericModalBody');
   if (!modal || !modalBody) return;
 
-  modalTitle.textContent = `🛡️ BD Courier Verification: ${customerName} (${phone})`;
+  const displayTitle = customerName && customerName !== 'undefined' ? customerName : 'Customer';
+  modalTitle.textContent = `🛡️ BD Courier Verification: ${displayTitle} ${targetPhone ? '(' + targetPhone + ')' : ''}`;
   modalBody.innerHTML = `
     <div style="padding:24px;text-align:center;">
       <div style="font-size:28px;margin-bottom:10px;animation:spin 1s infinite linear;">⏳</div>
       <h3 style="font-size:15px;color:#1A202C;margin:0 0 6px 0;">BD Courier API থেকে তথ্য যাচাই করা হচ্ছে...</h3>
-      <p style="font-size:12px;color:#718096;">ফোন নম্বর: <b>${phone}</b> (Steadfast, Pathao, RedX, Paperfly ডেটাবেজ চেক হচ্ছে)</p>
+      <p style="font-size:12px;color:#718096;">ফোন নম্বর: <b>${targetPhone || (invoice ? 'Order #' + invoice : 'N/A')}</b> (Steadfast, Pathao, RedX, Paperfly ডেটাবেজ চেক হচ্ছে)</p>
     </div>
   `;
   modal.classList.add('active');
@@ -3201,7 +3213,7 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
     method: 'POST',
     credentials: 'same-origin',
     headers: headers,
-    body: JSON.stringify({ phone: phone })
+    body: JSON.stringify({ phone: targetPhone, invoice: invoice })
   })
   .then(r => r.json())
   .then(res => {
@@ -3309,8 +3321,8 @@ window.checkCourierRatio = function(phone, customerName, invoice) {
           </div>
 
           <div style="background:#F8FAFC;border:1px solid #E2E8F0;padding:14px;border-radius:6px;font-size:13px;margin-bottom:16px;">
-            <div style="font-weight:700;margin-bottom:6px;">চেক করা নম্বর: <code>${phone}</code></div>
-            <div>গ্রাহকের নাম: <b>${customerName}</b> | অর্ডার: <b>#${invoice || 'N/A'}</b></div>
+            <div style="font-weight:700;margin-bottom:6px;">চেক করা নম্বর: <code>${targetPhone || phone || 'N/A'}</code></div>
+            <div>গ্রাহকের নাম: <b>${displayTitle}</b> | অর্ডার: <b>#${invoice || 'N/A'}</b></div>
           </div>
 
           <div style="display:flex;justify-content:space-between;align-items:center;">

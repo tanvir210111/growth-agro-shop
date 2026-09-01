@@ -305,17 +305,28 @@ function createOrder(orderInput = {}) {
     return {
       order_number: orderNumber,
       status: 'pending',
+      customer_name: cName,
+      phone: cPhone,
+      address: cAddress,
+      delivery_zone: dZone,
       product: pName,
+      product_name: pName,
       variant: vName,
+      variant_name: vName,
       quantity: qty,
+      unit_price: uPrice,
       subtotal: sTotal,
       delivery_charge: dCharge,
       total: gTotal,
       currency: curr,
       payment_method: payMethod,
       source: src,
+      landing_page: lp,
+      idempotency_key: idempKey,
       fraud_level: fLevel,
+      fraud_score: fScore,
       advance_amount: advAmount,
+      advance_paid: advPaid,
       created_at: now
     };
   } catch (err) {
