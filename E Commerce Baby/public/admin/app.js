@@ -2850,14 +2850,41 @@ window.resetToChickenBoosterColors = function() {
 // ==============================================================================
 window.openLivePreviewModal = function() {
   const idVal = document.getElementById('builderPageId')?.value;
-  const slug = document.getElementById('lpSlug')?.value;
+  const slugInput = document.getElementById('lpSlug')?.value?.trim();
   const modal = document.getElementById('lpPreviewModal');
   const iframe = document.getElementById('lpPreviewIframe');
   const title = document.getElementById('lpPreviewTitle');
+  const loader = document.getElementById('lpPreviewLoading');
 
   if (modal && iframe) {
-    if (title) title.textContent = (document.getElementById('lpName')?.value || 'Landing Page') + ' — Live Device Preview';
-    const previewUrl = idVal ? `/admin/landing-pages/${idVal}/preview` : (slug ? `/product/${slug}?preview=true` : '/products/chicken-booster');
+    let slug = slugInput;
+    if (!slug && idVal) {
+      const page = (APP_STATE.liveLandingPages || []).find(p => String(p.id) === String(idVal));
+      if (page && page.slug) slug = page.slug;
+    }
+    if (!slug) slug = 'chicken-booster';
+
+    const pageName = document.getElementById('lpName')?.value?.trim() || (slug === 'chicken-booster' ? 'Chicken Booster' : 'Landing Page');
+    if (title) title.textContent = `${pageName} — Live Device Preview`;
+
+    const previewUrl = `/product/${encodeURIComponent(slug)}?preview=true`;
+
+    if (loader) {
+      loader.innerHTML = '<span>⏳ Loading live preview...</span>';
+      loader.style.display = 'flex';
+    }
+    iframe.style.opacity = '0';
+
+    iframe.onload = () => {
+      if (loader) loader.style.display = 'none';
+      iframe.style.opacity = '1';
+    };
+    iframe.onerror = () => {
+      if (loader) {
+        loader.innerHTML = `<div style="color:#DC2626;text-align:center;">⚠️ Failed to load preview for <code>${slug}</code>.</div>`;
+      }
+    };
+
     iframe.src = previewUrl;
     modal.classList.add('active');
     setPreviewDevice('desktop');
@@ -2868,10 +2895,34 @@ window.previewLandingPageById = function(id, name) {
   const modal = document.getElementById('lpPreviewModal');
   const iframe = document.getElementById('lpPreviewIframe');
   const title = document.getElementById('lpPreviewTitle');
+  const loader = document.getElementById('lpPreviewLoading');
 
   if (modal && iframe) {
-    if (title) title.textContent = (name || 'Landing Page') + ' — Live Device Preview';
-    iframe.src = `/admin/landing-pages/${id}/preview`;
+    const page = (APP_STATE.liveLandingPages || []).find(p => String(p.id) === String(id));
+    const slug = page ? page.slug : (id === 1 ? 'chicken-booster' : (typeof name === 'string' && name ? name : 'chicken-booster'));
+    const pageName = name || (page ? page.name : 'Landing Page');
+
+    if (title) title.textContent = `${pageName} — Live Device Preview`;
+
+    const previewUrl = `/product/${encodeURIComponent(slug)}?preview=true`;
+
+    if (loader) {
+      loader.innerHTML = '<span>⏳ Loading live preview...</span>';
+      loader.style.display = 'flex';
+    }
+    iframe.style.opacity = '0';
+
+    iframe.onload = () => {
+      if (loader) loader.style.display = 'none';
+      iframe.style.opacity = '1';
+    };
+    iframe.onerror = () => {
+      if (loader) {
+        loader.innerHTML = `<div style="color:#DC2626;text-align:center;">⚠️ Failed to load preview for <code>${slug}</code>.</div>`;
+      }
+    };
+
+    iframe.src = previewUrl;
     modal.classList.add('active');
     setPreviewDevice('desktop');
   }
@@ -2880,8 +2931,17 @@ window.previewLandingPageById = function(id, name) {
 window.closeLivePreviewModal = function() {
   const modal = document.getElementById('lpPreviewModal');
   const iframe = document.getElementById('lpPreviewIframe');
+  const loader = document.getElementById('lpPreviewLoading');
   if (modal) modal.classList.remove('active');
-  if (iframe) iframe.src = 'about:blank';
+  if (iframe) {
+    iframe.onload = null;
+    iframe.onerror = null;
+    iframe.src = 'about:blank';
+  }
+  if (loader) {
+    loader.style.display = 'none';
+    loader.innerHTML = '<span>⏳ Loading live preview...</span>';
+  }
 };
 
 window.setPreviewDevice = function(device) {
