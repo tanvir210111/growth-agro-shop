@@ -1726,8 +1726,8 @@
             const order = data.order || {};
             const orderNo = order.order_number || data.order_number || ('CB-' + Date.now().toString().slice(-6));
 
-            // Redirect immediately to dedicated order success page
-            window.location.href = '/order/success/' + encodeURIComponent(orderNo);
+            // Redirect immediately to source-matched dedicated order success page
+            window.location.href = '/product/' + encodeURIComponent(LANDING_PAGE_SLUG) + '/success/' + encodeURIComponent(orderNo);
             return;
           } else {
             const serverMsg = (data && (data.error || data.message || (Array.isArray(data.errors) && data.errors[0])))

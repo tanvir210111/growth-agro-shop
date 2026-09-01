@@ -252,13 +252,13 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertSee("meta_tracked_purchase_", false);
     }
 
-    public function test_landing_page_redirects_to_order_success_page_on_success()
+    public function test_landing_page_redirects_to_source_matched_success_url_on_success()
     {
         Setting::set('facebook_pixel', '1793041018387711');
 
         $response = $this->get('/product/chicken-booster');
         $response->assertStatus(200);
-        $response->assertSee("window.location.href = '/order/success/' + encodeURIComponent(orderNo);", false);
+        $response->assertSee("window.location.href = '/product/' + encodeURIComponent(LANDING_PAGE_SLUG) + '/success/' + encodeURIComponent(orderNo);", false);
     }
 
     public function test_invalid_order_number_returns_404_on_success_page()
@@ -268,9 +268,21 @@ class MetaPixelIntegrationTest extends TestCase
         $response = $this->get('/order/success/NON-EXISTENT-ORDER-999');
         $response->assertStatus(404);
         $response->assertDontSee("window.fbq('track', 'Purchase'");
+
+        $response2 = $this->get('/product/chicken-booster/success/NON-EXISTENT-ORDER-999');
+        $response2->assertStatus(404);
+        $response2->assertDontSee("window.fbq('track', 'Purchase'");
     }
 
-    public function test_landing_page_order_renders_on_dedicated_success_page_with_purchase_event()
+    public function test_invalid_slug_returns_404_on_success_page()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $response = $this->get('/product/non-existent-slug-xyz/success/CB-20260901-TEST');
+        $response->assertStatus(404);
+    }
+
+    public function test_landing_page_order_renders_on_source_matched_success_url_with_purchase_event()
     {
         Setting::set('facebook_pixel', '1793041018387711');
 
@@ -286,7 +298,8 @@ class MetaPixelIntegrationTest extends TestCase
             'total_amount'     => 2300,
             'status'           => 'pending',
             'payment_method'   => 'COD',
-            'source_type'      => 'landing_page'
+            'source_type'      => 'landing_page',
+            'landing_page'     => '/product/chicken-booster'
         ]);
 
         \App\Models\OrderItem::create([
@@ -299,7 +312,8 @@ class MetaPixelIntegrationTest extends TestCase
             'total'         => 2300,
         ]);
 
-        $response = $this->get('/order/success/CB-20260901-TEST');
+        // Direct source-matched success URL
+        $response = $this->get('/product/chicken-booster/success/CB-20260901-TEST');
         $response->assertStatus(200);
         $response->assertSee("fbq('track', 'PageView');", false);
         $response->assertSee("window.fbq('track', 'Purchase', {", false);
@@ -309,9 +323,90 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertSee("num_items: 1", false);
         $response->assertSee("meta_tracked_purchase_", false);
         $response->assertSee("Broiler Booster (১ কেজি)", false);
-        // Landing page success must NOT contain Baby Fashion navigation/header/footer elements
         $response->assertDontSee("site-header", false);
         $response->assertDontSee("cart-drawer", false);
-        $response->assertSee("পণ্য পেজে ফিরে যান", false);
+        $response->assertSee('href="/product/chicken-booster"', false);
+    }
+
+    public function test_old_landing_success_url_redirects_to_source_matched_url()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $order = \App\Models\Order::create([
+            'invoice_no'       => 'CB-20260901-CANONICAL',
+            'customer_name'    => 'Farmer Rahim',
+            'customer_phone'   => '01811000000',
+            'customer_address' => 'Gazipur Farm',
+            'city_type'        => 'outside_dhaka',
+            'delivery_charge'  => 0,
+            'subtotal'         => 2300,
+            'discount'         => 0,
+            'total_amount'     => 2300,
+            'status'           => 'pending',
+            'payment_method'   => 'COD',
+            'source_type'      => 'landing_page',
+            'landing_page'     => '/product/chicken-booster'
+        ]);
+
+        \App\Models\OrderItem::create([
+            'order_id'      => $order->id,
+            'product_name'  => 'Broiler Booster (১ কেজি)',
+            'product_image' => '',
+            'size'          => '1 KG',
+            'price'         => 2300,
+            'quantity'      => 1,
+            'total'         => 2300,
+        ]);
+
+        $response = $this->get('/order/success/CB-20260901-CANONICAL');
+        $response->assertStatus(302);
+        $response->assertRedirect('/product/chicken-booster/success/CB-20260901-CANONICAL');
+    }
+
+    public function test_slug_mismatch_redirects_to_canonical_source_matched_url()
+    {
+        Setting::set('facebook_pixel', '1793041018387711');
+
+        $order = \App\Models\Order::create([
+            'invoice_no'       => 'CB-20260901-MISMATCH',
+            'customer_name'    => 'Farmer Rahim',
+            'customer_phone'   => '01811000000',
+            'customer_address' => 'Gazipur Farm',
+            'city_type'        => 'outside_dhaka',
+            'delivery_charge'  => 0,
+            'subtotal'         => 2300,
+            'discount'         => 0,
+            'total_amount'     => 2300,
+            'status'           => 'pending',
+            'payment_method'   => 'COD',
+            'source_type'      => 'landing_page',
+            'landing_page'     => '/product/chicken-booster'
+        ]);
+
+        \App\Models\OrderItem::create([
+            'order_id'      => $order->id,
+            'product_name'  => 'Broiler Booster (১ কেজি)',
+            'product_image' => '',
+            'size'          => '1 KG',
+            'price'         => 2300,
+            'quantity'      => 1,
+            'total'         => 2300,
+        ]);
+
+        \App\Models\LandingPage::firstOrCreate(
+            ['slug' => 'mediascope-it'],
+            [
+                'name'         => 'MediaScope IT Smart Device',
+                'theme'        => 'universal',
+                'status'       => 'published',
+                'product_id'   => 'mediascope-it',
+                'product_name' => 'MediaScope IT Smart Device'
+            ]
+        );
+
+        // Access Chicken Booster order via mediascope-it URL
+        $response = $this->get('/product/mediascope-it/success/CB-20260901-MISMATCH');
+        $response->assertStatus(302);
+        $response->assertRedirect('/product/chicken-booster/success/CB-20260901-MISMATCH');
     }
 }

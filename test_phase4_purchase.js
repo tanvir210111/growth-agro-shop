@@ -101,12 +101,12 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   console.log('\n--- Test 4: Landing Page Source Code Inspection for Redirect ---');
   const cbLandingRes = await sendReq(8000, '/product/chicken-booster');
   assert.strictEqual(cbLandingRes.status, 200);
-  assert.ok(cbLandingRes.body.includes("window.location.href = '/order/success/' + encodeURIComponent(orderNo);"), 'Landing page must redirect to dedicated /order/success page');
+  assert.ok(cbLandingRes.body.includes("window.location.href = '/product/' + encodeURIComponent(LANDING_PAGE_SLUG) + '/success/' + encodeURIComponent(orderNo);"), 'Landing page must redirect to source-matched /product/{slug}/success/{orderNumber}');
   assert.ok(!cbLandingRes.body.includes("successModal.classList.add('active')"), 'Modal must no longer be used');
-  console.log('✅ Landing page correctly configured to redirect to /order/success/{orderNumber} instead of showing modal.');
+  console.log('✅ Landing page correctly configured to redirect to source-matched URL: /product/{slug}/success/{orderNumber}.');
 
-  // Test 5: Chicken Booster Landing Page Order & Dedicated Success Page Resolution
-  console.log('\n--- Test 5: Chicken Booster Order Placement & Dedicated Success Page ---');
+  // Test 5: Chicken Booster Landing Page Order & Dedicated Source-Matched Success Page
+  console.log('\n--- Test 5: Chicken Booster Order Placement & Source-Matched Success Page ---');
   const cbOrderRes = await sendReq(8000, '/api/orders', 'POST', {
     slug: 'chicken-booster',
     landing_page_slug: 'chicken-booster',
@@ -135,9 +135,9 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   assert.ok(cbOrder && cbOrder.total > 0, 'Server must return calculated order total');
   console.log(`✅ Chicken Booster order confirmed by server (Order #${cbOrder.order_number}, Total: ৳${cbOrder.total}).`);
 
-  // Fetch dedicated success page for Chicken Booster order
-  const cbSuccessRes = await sendReq(8000, `/order/success/${cbOrder.order_number}`);
-  assert.strictEqual(cbSuccessRes.status, 200, 'Success page must load order from database');
+  // Fetch dedicated source-matched success page for Chicken Booster order
+  const cbSuccessRes = await sendReq(8000, `/product/chicken-booster/success/${cbOrder.order_number}`);
+  assert.strictEqual(cbSuccessRes.status, 200, 'Source-matched success page must load cleanly');
   assert.ok(cbSuccessRes.body.includes(cbOrder.order_number), 'Success page must contain the exact order number');
   assert.ok(cbSuccessRes.body.includes("window.fbq('track', 'Purchase', {"), 'Purchase event must fire on dedicated success page');
   assert.ok(cbSuccessRes.body.includes("currency: 'BDT'"), 'Currency must be BDT');
@@ -145,10 +145,17 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   assert.ok(cbSuccessRes.body.includes('href="/product/chicken-booster"'), 'Must have dynamic return CTA link to /product/chicken-booster');
   assert.ok(!cbSuccessRes.body.includes('site-header'), 'Must NOT have main website Baby Fashion header');
   assert.ok(!cbSuccessRes.body.includes('cart-drawer'), 'Must NOT have main website cart drawer');
-  console.log('✅ Chicken Booster dedicated success page renders standalone without main website header/navigation and with dynamic return link to /product/chicken-booster.');
+  console.log('✅ Chicken Booster source-matched success page (/product/chicken-booster/success/CB-XXXX) verified.');
 
-  // Test 6: MediaScope IT Landing Page Order & Dedicated Success Page
-  console.log('\n--- Test 6: MediaScope IT Order Placement & Dedicated Success Page ---');
+  // Test 5B: Backward Compatibility - Old /order/success URL redirects to source-matched URL
+  console.log('\n--- Test 5B: Backward Compatibility (/order/success/CB-XXXX -> /product/chicken-booster/success/CB-XXXX) ---');
+  const oldUrlRes = await sendReq(8000, `/order/success/${cbOrder.order_number}`);
+  assert.strictEqual(oldUrlRes.status, 302, 'Old URL must return 302 redirect');
+  assert.ok(oldUrlRes.headers['location'] && oldUrlRes.headers['location'].includes(`/product/chicken-booster/success/${cbOrder.order_number}`), 'Redirect must target canonical source-matched URL');
+  console.log('✅ Backward compatibility verified: Old /order/success URL safely 302 redirects to canonical source-matched URL.');
+
+  // Test 6: MediaScope IT Landing Page Order & Source-Matched Success Page
+  console.log('\n--- Test 6: MediaScope IT Order Placement & Source-Matched Success Page ---');
   const msOrderRes = await sendReq(8000, '/api/orders', 'POST', {
     slug: 'mediascope-it',
     landing_page_slug: 'mediascope-it',
@@ -176,16 +183,23 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   const msOrder = msOrderRes.json.order;
   console.log(`✅ MediaScope IT order confirmed by server (Order #${msOrder.order_number}).`);
 
-  const msSuccessRes = await sendReq(8000, `/order/success/${msOrder.order_number}`);
+  const msSuccessRes = await sendReq(8000, `/product/mediascope-it/success/${msOrder.order_number}`);
   assert.strictEqual(msSuccessRes.status, 200);
   assert.ok(msSuccessRes.body.includes(msOrder.order_number));
   assert.ok(msSuccessRes.body.includes("window.fbq('track', 'Purchase', {"));
   assert.ok(msSuccessRes.body.includes('href="/product/mediascope-it"'), 'Must have dynamic return CTA link to /product/mediascope-it');
   assert.ok(!msSuccessRes.body.includes('site-header'), 'Must NOT have main website header');
-  console.log('✅ MediaScope IT dedicated success page renders cleanly with dynamic return link to /product/mediascope-it.');
+  console.log('✅ MediaScope IT source-matched success page (/product/mediascope-it/success/CB-XXXX) verified.');
 
-  // Test 7: Future Dynamic Landing Page Order & Dedicated Success Page
-  console.log('\n--- Test 7: Dynamic Future Landing Page Order & Dedicated Success Page ---');
+  // Test 6B: Slug Mismatch Protection
+  console.log('\n--- Test 6B: Slug Mismatch Protection (/product/mediascope-it/success/CB-CHICKEN-ORDER) ---');
+  const mismatchRes = await sendReq(8000, `/product/mediascope-it/success/${cbOrder.order_number}`);
+  assert.strictEqual(mismatchRes.status, 302, 'Mismatch must return 302 redirect to canonical URL');
+  assert.ok(mismatchRes.headers['location'] && mismatchRes.headers['location'].includes(`/product/chicken-booster/success/${cbOrder.order_number}`), 'Must redirect to chicken-booster canonical URL');
+  console.log('✅ Slug mismatch protection verified: Visiting under wrong slug safely redirects to originating landing page success URL.');
+
+  // Test 7: Future Dynamic Landing Page Order & Source-Matched Success Page
+  console.log('\n--- Test 7: Dynamic Future Landing Page Order & Source-Matched Success Page ---');
   const futureSlug = 'dynamic-purchase-test-' + Date.now();
   const createRes = await sendReq(8000, '/api/admin/landing-pages', 'POST', {
     name: 'Future Dynamic Purchase Page',
@@ -231,24 +245,27 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   const dynamicOrder = dynamicOrderRes.json.order;
   assert.strictEqual(dynamicOrder.subtotal, 1850);
 
-  const dynamicSuccessRes = await sendReq(8000, `/order/success/${dynamicOrder.order_number}`);
+  const dynamicSuccessRes = await sendReq(8000, `/product/${futureSlug}/success/${dynamicOrder.order_number}`);
   assert.strictEqual(dynamicSuccessRes.status, 200);
   assert.ok(dynamicSuccessRes.body.includes(dynamicOrder.order_number));
   assert.ok(dynamicSuccessRes.body.includes("window.fbq('track', 'Purchase', {"));
   assert.ok(dynamicSuccessRes.body.includes(`href="/product/${futureSlug}"`), `Must have dynamic return CTA link to /product/${futureSlug}`);
   assert.ok(!dynamicSuccessRes.body.includes('site-header'));
-  console.log('✅ Dynamic future landing page dedicated success page verified with dynamic return link without hardcoded slugs.');
+  console.log(`✅ Dynamic future landing page source-matched success page (/product/${futureSlug}/success/...) verified.`);
 
   // Clean up dynamic page
   await sendReq(8000, `/api/admin/landing-pages/${tempPageId}`, 'DELETE', null, authHeaders);
   console.log('✅ Cleaned up dynamic test page');
 
-  // Test 8: Invalid Order Number (Security & 404 Check)
-  console.log('\n--- Test 8: Invalid Order Number 404 Check ---');
-  const invalidOrderRes = await sendReq(8000, '/order/success/NON-EXISTENT-ORDER-999999');
+  // Test 8: Invalid Order Number & Invalid Slug (Security & 404 Check)
+  console.log('\n--- Test 8: Invalid Order Number & Invalid Slug 404 Checks ---');
+  const invalidOrderRes = await sendReq(8000, '/product/chicken-booster/success/NON-EXISTENT-ORDER-999999');
   assert.strictEqual(invalidOrderRes.status, 404, 'Invalid order number must return 404');
   assert.ok(!invalidOrderRes.body.includes("window.fbq('track', 'Purchase'"), 'Invalid order must not fire Purchase');
-  console.log('✅ Invalid order number returns 404 and does NOT fire Purchase.');
+
+  const invalidSlugRes = await sendReq(8000, `/product/invalid-fake-slug-xyz/success/${cbOrder.order_number}`);
+  assert.strictEqual(invalidSlugRes.status, 404, 'Invalid slug must return 404');
+  console.log('✅ Invalid order number and invalid slug properly return 404 without firing Purchase.');
 
   // Test 9: Deduplication Verification
   console.log('\n--- Test 9: Deduplication Protection Verification ---');

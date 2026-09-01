@@ -323,28 +323,108 @@ class FrontendController extends Controller
             abort(404, 'Order not found.');
         }
 
-        // Check if this order originated from a Landing Page
+        // Backward compatibility: If a Landing Page order is accessed via /order/success/{orderNumber},
+        // redirect to its canonical source-matched URL: /product/{slug}/success/{orderNumber}
         $isLandingPage = ($dbOrder && $dbOrder->source_type === 'landing_page')
-            || !empty($order['landing_page'])
-            || ($order['source_type'] ?? '') === 'landing_page';
+            || (($order['source_type'] ?? '') === 'landing_page');
 
         if ($isLandingPage) {
             $rawLanding = $dbOrder->landing_page ?? ($order['landing_page'] ?? '');
             $parsedPath = parse_url($rawLanding, PHP_URL_PATH) ?: $rawLanding;
             $slug = trim(preg_replace('#^/?(product|products)/#', '', trim($parsedPath, '/')));
-            $landingPage = null;
+
             if ($slug) {
-                $landingPage = \App\Models\LandingPage::where('slug', $slug)->first();
+                return redirect()->route('landing.order.success', [
+                    'slug' => $slug,
+                    'orderNumber' => $order['order_number']
+                ]);
             }
-            $landingPageUrl = $slug ? ('/product/' . $slug) : '/';
-            $landingPageTitle = $landingPage
-                ? ($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name))
-                : ($order['items'][0]['title'] ?? 'Chicken Booster');
+
+            $landingPage = null;
+            $landingPageUrl = '/';
+            $landingPageTitle = $order['items'][0]['title'] ?? 'Chicken Booster';
 
             return view('pages.landing-success', compact('order', 'landingPage', 'landingPageUrl', 'landingPageTitle'));
         }
 
+        // Main website order: render pages.order-success (extends layouts.app)
         return view('pages.order-success', compact('order'));
+    }
+
+    public function landingOrderSuccess(string $slug, string $orderNumber)
+    {
+        $cleanSlug = trim($slug);
+        $landingPage = \App\Models\LandingPage::where('slug', $cleanSlug)->first();
+        if (!$landingPage && $cleanSlug === 'chicken-booster') {
+            $landingPage = \App\Models\LandingPage::firstOrCreate(
+                ['slug' => 'chicken-booster'],
+                [
+                    'name'            => 'Chicken Booster (চিকেন বুস্টার)',
+                    'theme'           => 'chicken-booster',
+                    'status'          => 'published',
+                    'product_id'      => 'chicken-booster',
+                    'product_name'    => 'Chicken Booster (চিকেন বুস্টার)',
+                    'content'         => \App\Models\LandingPage::getDefaultMasterContent(),
+                    'delivery_config' => \App\Models\LandingPage::getDefaultDeliveryConfig(),
+                    'theme_config'    => \App\Models\LandingPage::getDefaultThemeConfig(),
+                    'section_order'   => \App\Models\LandingPage::getDefaultSectionOrder(),
+                    'published_at'    => \Carbon\Carbon::now(),
+                ]
+            );
+        }
+
+        if (!$landingPage) {
+            abort(404, 'Landing page not found.');
+        }
+
+        $dbOrder = \App\Models\Order::where('invoice_no', $orderNumber)->orWhere('id', $orderNumber)->with('items')->first();
+        if (!$dbOrder) {
+            abort(404, 'Order not found.');
+        }
+
+        // Verify this order belongs to a landing page
+        $isLandingPageOrder = ($dbOrder->source_type === 'landing_page');
+        if (!$isLandingPageOrder) {
+            // If main website order is mistakenly opened here, redirect to canonical main success page
+            return redirect()->route('order.success', ['orderNumber' => $dbOrder->invoice_no ?: $dbOrder->id]);
+        }
+
+        // Slug mismatch protection: verify originating landing page slug matches the requested slug
+        $rawOriginLanding = $dbOrder->landing_page ?? '';
+        $parsedOriginPath = parse_url($rawOriginLanding, PHP_URL_PATH) ?: $rawOriginLanding;
+        $originatingSlug = trim(preg_replace('#^/?(product|products)/#', '', trim($parsedOriginPath, '/')));
+
+        if ($originatingSlug && $originatingSlug !== $cleanSlug) {
+            // Redirect to the canonical source-matched URL for the originating landing page
+            return redirect()->route('landing.order.success', [
+                'slug' => $originatingSlug,
+                'orderNumber' => $dbOrder->invoice_no ?: $dbOrder->id
+            ]);
+        }
+
+        $order = [
+            'order_number'        => $dbOrder->invoice_no ?: ('ORD-' . $dbOrder->id),
+            'customer_name'       => $dbOrder->customer_name,
+            'customer_phone'      => $dbOrder->customer_phone,
+            'customer_address'    => $dbOrder->customer_address,
+            'delivery_area_label' => ($dbOrder->city_type === 'inside_dhaka' || $dbOrder->city_type === 'inside') ? 'ঢাকার ভিতরে (Inside Dhaka)' : 'ঢাকার বাইরে (Outside Dhaka)',
+            'items'               => $dbOrder->items->map(fn($it) => [
+                'title'    => $it->product_name,
+                'price'    => (float)$it->price,
+                'quantity' => (int)$it->quantity,
+                'size'     => $it->size ?: 'Standard'
+            ])->toArray(),
+            'subtotal'            => (float)$dbOrder->subtotal,
+            'shipping'            => (float)$dbOrder->delivery_charge,
+            'total'               => (float)$dbOrder->total_amount,
+            'source_type'         => $dbOrder->source_type,
+            'landing_page'        => $dbOrder->landing_page,
+        ];
+
+        $landingPageUrl = '/product/' . $cleanSlug;
+        $landingPageTitle = $landingPage->product_name ?: ($landingPage->title ?: $landingPage->name);
+
+        return view('pages.landing-success', compact('order', 'landingPage', 'landingPageUrl', 'landingPageTitle'));
     }
 
     public function about(): View

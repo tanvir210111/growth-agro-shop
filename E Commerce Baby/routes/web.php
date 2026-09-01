@@ -32,6 +32,7 @@ Route::get('/cart/json', [FrontendController::class, 'cartJson'])->name('cart.js
 Route::get('/checkout', [FrontendController::class, 'checkout'])->name('checkout.index');
 Route::post('/checkout', [FrontendController::class, 'processCheckout'])->name('checkout.process');
 Route::get('/order/success/{orderNumber}', [FrontendController::class, 'orderSuccess'])->name('order.success');
+Route::get('/product/{slug}/success/{orderNumber}', [FrontendController::class, 'landingOrderSuccess'])->name('landing.order.success');
 
 // Informational Pages
 Route::get('/about-us', [FrontendController::class, 'about'])->name('about');
