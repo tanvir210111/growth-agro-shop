@@ -240,6 +240,26 @@
       transform: translateY(-1px);
     }
 
+    .btn-receipt {
+      background: #1e293b;
+      color: #ffffff;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: background 0.2s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-receipt:hover {
+      background: #0f172a;
+      transform: translateY(-1px);
+    }
+
     .footer-note {
       text-align: center;
       font-size: 0.85rem;
@@ -248,6 +268,68 @@
       border-top: 1px solid #e2e8f0;
       background: #ffffff;
       margin-top: auto;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 12pt;
+      }
+      .success-header, .actions-wrap, .footer-note, .btn-return, .btn-whatsapp, .btn-receipt {
+        display: none !important;
+      }
+      .success-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+      .success-card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        text-align: left !important;
+      }
+      .checkmark-wrap {
+        display: none !important;
+      }
+      .heading-title {
+        font-size: 1.4rem !important;
+        margin-bottom: 0.25rem !important;
+      }
+      .subtext {
+        font-size: 0.9rem !important;
+        margin-bottom: 1.25rem !important;
+        max-width: 100% !important;
+      }
+      .invoice-card {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 1.25rem !important;
+        border-radius: 8px !important;
+      }
+      .order-number-badge {
+        border: 1px solid #0f766e !important;
+        background: #f0fdfa !important;
+      }
+      .print-receipt-header {
+        display: block !important;
+        text-align: center;
+        border-bottom: 2px solid #0f766e;
+        padding-bottom: 0.75rem;
+        margin-bottom: 1.25rem;
+      }
+      .print-receipt-header h2 {
+        font-size: 1.5rem;
+        color: #0f766e;
+        margin: 0;
+      }
+      .print-receipt-header p {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0;
+      }
     }
   </style>
 </head>
@@ -264,6 +346,12 @@
   <main class="success-container">
     <div class="success-card">
       
+      <!-- Print Only Header -->
+      <div class="print-receipt-header" style="display:none;">
+        <h2>{{ $landingPageTitle }}</h2>
+        <p>অফিশিয়াল ক্যাশ অন ডেলিভারি অর্ডার রসিদ (Official Purchase Receipt)</p>
+      </div>
+
       <!-- Checkmark -->
       <div class="checkmark-wrap">✓</div>
 
@@ -289,6 +377,14 @@
         </div>
 
         <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">পণ্য / ল্যান্ডিং পেজ:</span>
+            <strong class="info-val" style="color: #0f766e;">{{ $landingPageTitle }}</strong>
+          </div>
+          <div class="info-row">
+            <span class="info-label">অর্ডারের তারিখ:</span>
+            <span class="info-val">{{ $order['created_at'] ?? date('d M, Y h:i A') }}</span>
+          </div>
           <div class="info-row">
             <span class="info-label">গ্রাহকের নাম:</span>
             <strong class="info-val">{{ $order['customer_name'] }}</strong>
@@ -353,6 +449,9 @@
 
       <!-- Action Buttons -->
       <div class="actions-wrap">
+        <button type="button" class="btn-receipt" onclick="window.print()" id="btnDownloadReceipt">
+          📄 রসিদ ডাউনলোড / প্রিন্ট করুন
+        </button>
         <a href="{{ $landingPageUrl }}" class="btn-return">
           পণ্য পেজে ফিরে যান &rarr;
         </a>

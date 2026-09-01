@@ -34,7 +34,7 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   console.log('================================================================\n');
 
   // Step 1: Admin Authentication & Pixel Verification
-  console.log('--- Requirement 1 & 2: Landing Page Load (PageView & ViewContent) ---');
+  console.log('--- Requirement 1 & 2: Landing Page Load (PageView ONLY, No ViewContent) ---');
   const loginRes = await sendReq(8000, '/api/admin/login', 'POST', {
     email: 'admin@gmail.com',
     password: 'admin123'
@@ -48,11 +48,9 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   assert.strictEqual(cbPageRes.status, 200);
   // PageView verification
   assert.ok(cbPageRes.body.includes("fbq('track', 'PageView');"), 'PageView must exist in header script');
-  // ViewContent verification
-  assert.ok(cbPageRes.body.includes("window.fbq('track', 'ViewContent', {"), 'ViewContent must fire on landing page load');
-  assert.ok(cbPageRes.body.includes("content_ids: ['chicken-booster']"), 'ViewContent must have dynamic product id');
-  assert.ok(cbPageRes.body.includes("currency: 'BDT'"), 'ViewContent currency must be BDT');
-  console.log('✅ Requirement 1 & 2 PASSED: Landing page load contains PageView and ViewContent with dynamic parameters.');
+  // ViewContent MUST NOT be present
+  assert.ok(!cbPageRes.body.includes("ViewContent"), 'ViewContent must NOT exist on landing page');
+  console.log('✅ Requirement 1 & 2 PASSED: Landing page load contains PageView ONLY; ViewContent is completely removed.');
 
   // Step 2: CTA Path (AddToCart + InitiateCheckout)
   console.log('\n--- Requirement 3 & 4: CTA Click Path (AddToCart & InitiateCheckout) ---');
@@ -76,7 +74,8 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   console.log('\n--- Requirement 7: Multiple Dynamic Landing Pages ---');
   const msPageRes = await sendReq(8000, '/product/mediascope-it');
   assert.strictEqual(msPageRes.status, 200);
-  assert.ok(msPageRes.body.includes("content_ids: ['mediascope-it']"), 'MediaScope IT must use mediascope-it slug');
+  assert.ok(msPageRes.body.includes("fbq('track', 'PageView')"), 'MediaScope IT must have PageView');
+  assert.ok(!msPageRes.body.includes("ViewContent"), 'MediaScope IT must NOT have ViewContent');
   assert.ok(msPageRes.body.includes("window.fbq('track', 'AddToCart', {"), 'MediaScope IT must have AddToCart');
   assert.ok(msPageRes.body.includes("window.fbq('track', 'InitiateCheckout', {"), 'MediaScope IT must have InitiateCheckout');
 
@@ -100,14 +99,14 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
 
   const dynPageRes = await sendReq(8000, `/product/${dynamicSlug}`);
   assert.strictEqual(dynPageRes.status, 200);
-  assert.ok(dynPageRes.body.includes("content_ids: ['agro-prot-88']"), 'Dynamic page must use custom product_id');
-  assert.ok(dynPageRes.body.includes("content_name: 'Super Agro Protein'"), 'Dynamic page must use custom product_name');
+  assert.ok(dynPageRes.body.includes("fbq('track', 'PageView')"), 'Dynamic page must have PageView');
+  assert.ok(!dynPageRes.body.includes("ViewContent"), 'Dynamic page must NOT have ViewContent');
   assert.ok(dynPageRes.body.includes("window.fbq('track', 'AddToCart', {"), 'Dynamic page must have AddToCart');
   assert.ok(dynPageRes.body.includes("window.fbq('track', 'InitiateCheckout', {"), 'Dynamic page must have InitiateCheckout');
-  console.log('✅ Requirement 7 PASSED: Multiple landing pages dynamically populate tracking parameters without hardcoding.');
+  console.log('✅ Requirement 7 PASSED: Multiple landing pages dynamically populate tracking parameters without hardcoding and without ViewContent.');
 
-  // Step 5: Successful Order Placement & Dedicated Source-Matched Success Page
-  console.log('\n--- Requirement 8, 9 & 10: Successful Order & Dedicated Success Page (PageView + Purchase + Deduplication) ---');
+  // Step 5: Successful Order Placement & Dedicated Source-Matched Success Page with Receipt
+  console.log('\n--- Requirement 8, 9 & 10: Successful Order & Dedicated Success Page (PageView + Purchase + Receipt) ---');
   const orderRes = await sendReq(8000, '/api/orders', 'POST', {
     slug: dynamicSlug,
     landing_page_slug: dynamicSlug,
@@ -139,12 +138,18 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   const successRes = await sendReq(8000, `/product/${dynamicSlug}/success/${order.order_number}`);
   assert.strictEqual(successRes.status, 200, 'Dedicated source-matched success page must load with 200');
   assert.ok(successRes.body.includes("fbq('track', 'PageView');"), 'Success page load must fire PageView');
+  assert.ok(!successRes.body.includes("ViewContent"), 'Success page must NOT fire ViewContent');
   assert.ok(successRes.body.includes("window.fbq('track', 'Purchase', {"), 'Purchase event must fire on confirmed order');
   assert.ok(successRes.body.includes("currency: 'BDT'"), 'Currency must be BDT');
   assert.ok(successRes.body.includes("const metaDedupeKey = 'meta_tracked_purchase_' + orderNo;"), 'Must have canonical deduplication key');
   assert.ok(successRes.body.includes("sessionStorage.setItem(metaDedupeKey, '1');"), 'Must mark order as tracked in sessionStorage');
   assert.ok(successRes.body.includes(`href="/product/${dynamicSlug}"`), 'Must have dynamic return link to originating landing page');
-  console.log(`✅ Requirement 8, 9 & 10 PASSED: Source-matched success page /product/${dynamicSlug}/success/${order.order_number} fires PageView and Purchase with sessionStorage deduplication.`);
+  // Receipt button and structure assertions
+  assert.ok(successRes.body.includes('id="btnDownloadReceipt"'), 'Must have download receipt button');
+  assert.ok(successRes.body.includes('রসিদ ডাউনলোড / প্রিন্ট করুন'), 'Must contain receipt button text');
+  assert.ok(successRes.body.includes('অফিশিয়াল ক্যাশ অন ডেলিভারি অর্ডার রসিদ'), 'Must have official receipt print header');
+  assert.ok(successRes.body.includes('অর্ডারের তারিখ:'), 'Must show order date');
+  console.log(`✅ Requirement 8, 9 & 10 PASSED: Source-matched success page /product/${dynamicSlug}/success/${order.order_number} fires PageView and Purchase (No ViewContent) with receipt button and print styling.`);
 
   // Cleanup dynamic page
   await sendReq(8000, `/api/admin/landing-pages/${tempPageId}`, 'DELETE', null, authHeaders);

@@ -314,6 +314,7 @@ class FrontendController extends Controller
                 'total'               => (float)$dbOrder->total_amount,
                 'source_type'         => $dbOrder->source_type,
                 'landing_page'        => $dbOrder->landing_page,
+                'created_at'          => $dbOrder->created_at ? $dbOrder->created_at->format('d M, Y h:i A') : date('d M, Y h:i A'),
             ];
         } else {
             $order = $this->checkoutService->getOrder($orderNumber);
@@ -419,6 +420,7 @@ class FrontendController extends Controller
             'total'               => (float)$dbOrder->total_amount,
             'source_type'         => $dbOrder->source_type,
             'landing_page'        => $dbOrder->landing_page,
+            'created_at'          => $dbOrder->created_at ? $dbOrder->created_at->format('d M, Y h:i A') : date('d M, Y h:i A'),
         ];
 
         $landingPageUrl = '/product/' . $cleanSlug;

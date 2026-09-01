@@ -71,7 +71,7 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   const cbRes = await sendReq(8000, '/product/chicken-booster');
   assert.strictEqual(cbRes.status, 200);
   assert.ok(cbRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire');
-  assert.ok(cbRes.body.includes("fbq('track', 'ViewContent'"), 'ViewContent must fire on load');
+  assert.ok(!cbRes.body.includes("ViewContent"), 'ViewContent must NOT fire on landing page');
   assert.ok(cbRes.body.includes("function fireAddToCart()"), 'fireAddToCart function must exist');
   assert.ok(cbRes.body.includes("window.fbq('track', 'AddToCart', {"), 'AddToCart call must be in fireAddToCart');
   assert.ok(cbRes.body.includes("let addToCartFired = false;"), 'Must have AddToCart deduplication guard');
@@ -88,7 +88,7 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   const msRes = await sendReq(8000, '/product/mediascope-it');
   assert.strictEqual(msRes.status, 200);
   assert.ok(msRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire');
-  assert.ok(msRes.body.includes("fbq('track', 'ViewContent'"), 'ViewContent must fire on load');
+  assert.ok(!msRes.body.includes("ViewContent"), 'ViewContent must NOT fire on landing page');
   assert.ok(msRes.body.includes("window.fbq('track', 'AddToCart', {"), 'AddToCart must be present');
   assert.ok(msRes.body.includes("window.fbq('track', 'InitiateCheckout', {"), 'InitiateCheckout must be present');
   console.log('✅ MediaScope IT landing page has AddToCart and InitiateCheckout properly wired.');

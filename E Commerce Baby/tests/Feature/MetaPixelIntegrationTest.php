@@ -154,7 +154,7 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertSee("currency: 'BDT'", false);
     }
 
-    public function test_landing_page_fires_viewcontent()
+    public function test_landing_page_fires_pageview_only_without_viewcontent_on_load()
     {
         Setting::set('facebook_pixel', '1793041018387711');
 
@@ -162,11 +162,8 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertStatus(200);
         // PageView in head
         $response->assertSee("fbq('track', 'PageView');", false);
-        // ViewContent in body script
-        $response->assertSee("fbq('track', 'ViewContent', {", false);
-        $response->assertSee("content_ids: ['chicken-booster']", false);
-        $response->assertSee("content_type: 'product'", false);
-        $response->assertSee("currency: 'BDT'", false);
+        // ViewContent must NOT be present on landing page
+        $response->assertDontSee("ViewContent");
     }
 
     public function test_viewcontent_is_not_fired_on_homepage()
@@ -319,6 +316,8 @@ class MetaPixelIntegrationTest extends TestCase
         $response = $this->get('/product/chicken-booster/success/CB-20260901-TEST');
         $response->assertStatus(200);
         $response->assertSee("fbq('track', 'PageView');", false);
+        // ViewContent must NOT be present on success page
+        $response->assertDontSee("ViewContent");
         $response->assertSee("window.fbq('track', 'Purchase', {", false);
         $response->assertSee("const totalVal = 2300;", false);
         $response->assertSee("value: totalVal,", false);
@@ -329,6 +328,9 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertDontSee("site-header", false);
         $response->assertDontSee("cart-drawer", false);
         $response->assertSee('href="/product/chicken-booster"', false);
+        // Receipt button and print structure
+        $response->assertSee("btnDownloadReceipt", false);
+        $response->assertSee("রসিদ ডাউনলোড / প্রিন্ট করুন", false);
     }
 
     public function test_old_landing_success_url_redirects_to_source_matched_url()

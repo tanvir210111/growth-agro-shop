@@ -61,45 +61,35 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   assert.strictEqual(mainViewContentCount, 1, 'ViewContent must fire exactly once on main product page');
   console.log('✅ Main website product page fires ViewContent with exact dynamic parameters (exactly once).');
 
-  // Test 3: Chicken Booster Landing Page ViewContent
-  console.log('\n--- Test 3: Chicken Booster Landing Page ViewContent ---');
+  // Test 3: Chicken Booster Landing Page (PageView only, No ViewContent)
+  console.log('\n--- Test 3: Chicken Booster Landing Page (PageView only, No ViewContent) ---');
   const cbRes = await sendReq(8000, '/product/chicken-booster');
   assert.strictEqual(cbRes.status, 200);
   assert.ok(cbRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire');
-  assert.ok(cbRes.body.includes("fbq('track', 'ViewContent'"), 'ViewContent must fire');
-  assert.ok(cbRes.body.includes("content_ids: ['chicken-booster']"), 'content_ids must match chicken-booster');
-  assert.ok(cbRes.body.includes("content_type: 'product'"), 'content_type must be product');
-  assert.ok(cbRes.body.includes("currency: 'BDT'"), 'currency must be BDT');
+  assert.ok(!cbRes.body.includes("ViewContent"), 'ViewContent must NOT fire on landing page');
+  console.log('✅ Chicken Booster landing page fires PageView only, ViewContent is correctly absent.');
 
-  const cbViewContentCount = (cbRes.body.match(/fbq\('track',\s*'ViewContent'/g) || []).length;
-  assert.strictEqual(cbViewContentCount, 1, 'ViewContent must fire exactly once on Chicken Booster');
-  console.log('✅ Chicken Booster landing page fires ViewContent with dynamic parameters (exactly once).');
-
-  // Test 4: MediaScope IT Landing Page ViewContent
-  console.log('\n--- Test 4: MediaScope IT Landing Page ViewContent ---');
+  // Test 4: MediaScope IT Landing Page (ViewContent Removed)
+  console.log('\n--- Test 4: MediaScope IT Landing Page (PageView only, No ViewContent) ---');
   const msRes = await sendReq(8000, '/product/mediascope-it');
   assert.strictEqual(msRes.status, 200);
   assert.ok(msRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire');
-  assert.ok(msRes.body.includes("fbq('track', 'ViewContent'"), 'ViewContent must fire');
-  assert.ok(msRes.body.includes("content_ids: ['mediascope-it']"), 'content_ids must match mediascope-it');
+  assert.ok(!msRes.body.includes("ViewContent"), 'ViewContent must NOT fire on landing page');
+  console.log('✅ MediaScope IT landing page fires PageView only, ViewContent is correctly absent.');
 
-  const msViewContentCount = (msRes.body.match(/fbq\('track',\s*'ViewContent'/g) || []).length;
-  assert.strictEqual(msViewContentCount, 1, 'ViewContent must fire exactly once on MediaScope IT');
-  console.log('✅ MediaScope IT landing page fires ViewContent with dynamic parameters (exactly once).');
-
-  // Test 5: Dynamic Future Landing Page ViewContent
-  console.log('\n--- Test 5: Dynamic Future Landing Page ViewContent ---');
+  // Test 5: Dynamic Future Landing Page (ViewContent Removed)
+  console.log('\n--- Test 5: Dynamic Future Landing Page (PageView only, No ViewContent) ---');
   const testSlug = 'dynamic-vc-test-' + Date.now();
   const createRes = await sendReq(8000, '/api/admin/landing-pages', 'POST', {
-    name: 'Dynamic ViewContent Product',
+    name: 'Dynamic Test Serum Product',
     slug: testSlug,
     status: 'published',
     theme: 'universal',
-    product_name: 'Dynamic ViewContent Serum',
+    product_name: 'Dynamic Agro Serum',
     product_id: 'serum-001',
     content: {
       packages: [
-        { id: 'pkg-1', name: '1 Bottle', price: 1250, weight: '50ml' }
+        { id: 'pkg-1', name: 'Serum 50ml', price: 1250, weight: '50ml' }
       ]
     }
   }, authHeaders);
@@ -108,30 +98,23 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
 
   const dynamicPageRes = await sendReq(8000, `/product/${testSlug}`);
   assert.strictEqual(dynamicPageRes.status, 200);
-  assert.ok(dynamicPageRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire on dynamic page');
-  assert.ok(dynamicPageRes.body.includes("fbq('track', 'ViewContent'"), 'ViewContent must fire on dynamic page');
-  assert.ok(dynamicPageRes.body.includes("content_ids: ['serum-001']"), 'content_ids must match dynamic product_id');
-  assert.ok(dynamicPageRes.body.includes("content_name: 'Dynamic ViewContent Serum'"), 'content_name must match dynamic product_name');
-  assert.ok(dynamicPageRes.body.includes("value: 1250"), 'value must match first package price 1250');
-  assert.ok(dynamicPageRes.body.includes("currency: 'BDT'"), 'currency must be BDT');
+  assert.ok(dynamicPageRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire');
+  assert.ok(!dynamicPageRes.body.includes("ViewContent"), 'ViewContent must NOT fire on dynamic landing page');
+  console.log('✅ Dynamic future landing page fires PageView only, ViewContent is correctly absent.');
 
-  const dynamicViewContentCount = (dynamicPageRes.body.match(/fbq\('track',\s*'ViewContent'/g) || []).length;
-  assert.strictEqual(dynamicViewContentCount, 1, 'ViewContent must fire exactly once on dynamic page');
-  console.log('✅ Dynamic future landing page automatically fires ViewContent with custom package price and product info.');
-
-  // Clean up dynamic test page
+  // Cleanup dynamic test page
   await sendReq(8000, `/api/admin/landing-pages/${tempPageId}`, 'DELETE', null, authHeaders);
   console.log('✅ Cleaned up dynamic test page');
 
-  // Test 6: Homepage Verification (PageView fires, ViewContent DOES NOT fire)
+  // Test 6: Homepage Verification
   console.log('\n--- Test 6: Homepage Verification ---');
   const homeRes = await sendReq(8000, '/');
   assert.strictEqual(homeRes.status, 200);
-  assert.ok(homeRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire on home');
-  assert.strictEqual(homeRes.body.includes("ViewContent"), false, 'ViewContent must NOT fire on home');
+  assert.ok(homeRes.body.includes("fbq('track', 'PageView')"), 'Homepage must fire PageView');
+  assert.ok(!homeRes.body.includes("ViewContent"), 'Homepage must NOT fire ViewContent');
   console.log('✅ Homepage correctly fires PageView only, without ViewContent.');
 
   console.log('\n================================================================');
-  console.log('🎉 ALL PHASE 2 VIEWCONTENT INTEGRATION TESTS PASSED SUCCESSFULLY!');
+  console.log('🎉 ALL PHASE 2 VIEWCONTENT VERIFICATION TESTS PASSED SUCCESSFULLY!');
   console.log('================================================================\n');
 })();
