@@ -110,12 +110,17 @@ function initAuthCheck() {
     updateSidebarUser(APP_STATE.currentUser);
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6000);
+
   // Verify server-side session with backend API
   fetch('/api/admin/me', {
+    signal: controller.signal,
     credentials: 'same-origin',
     headers: { 'Accept': 'application/json' }
   })
   .then(res => {
+    clearTimeout(timer);
     if (!res.ok) throw new Error('Not authenticated');
     return res.json();
   })
@@ -138,6 +143,7 @@ function initAuthCheck() {
     }
   })
   .catch(() => {
+    clearTimeout(timer);
     APP_STATE.currentUser = null;
     localStorage.removeItem('admin_user');
     localStorage.removeItem('admin_token');
@@ -145,7 +151,7 @@ function initAuthCheck() {
     if (loginSection) loginSection.style.display = 'flex';
     if (appSection) appSection.style.display = 'none';
 
-    if (!isLoginPage && window.location.pathname === '/admin') {
+    if (!isLoginPage && (window.location.pathname === '/admin' || window.location.pathname === '/admin/')) {
       window.history.replaceState(null, '', '/admin/login');
     }
   });
@@ -159,30 +165,26 @@ window.handleLogin = function(email, pass) {
 
   const errorAlert = document.getElementById('loginErrorAlert');
   const submitBtn = document.getElementById('loginSubmitBtn');
-  const loginSection = document.getElementById('loginSection');
-  const appSection = document.getElementById('appSection');
-
-  if (errorAlert) {
-    errorAlert.style.display = 'none';
-    errorAlert.textContent = '';
-  }
 
   if (!loginEmail || !loginPass) {
-    const msg = 'ইমেইল এবং পাসওয়ার্ড উভয়ই আবশ্যক।';
     if (errorAlert) {
-      errorAlert.textContent = msg;
+      errorAlert.textContent = 'Please enter both email and password.';
       errorAlert.style.display = 'block';
     }
-    showToast(msg, 'error');
     return;
   }
 
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.textContent = 'যাচাই করা হচ্ছে...';
+    submitBtn.innerHTML = 'Authenticating... ⏳';
   }
+  if (errorAlert) errorAlert.style.display = 'none';
 
-  // Real Database Authentication API call to Laravel backend
+  const loginPayload = {
+    email: loginEmail,
+    password: loginPass
+  };
+
   fetch('/api/admin/login', {
     method: 'POST',
     credentials: 'same-origin',
@@ -190,47 +192,38 @@ window.handleLogin = function(email, pass) {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     },
-    body: JSON.stringify({ email: loginEmail, password: loginPass })
+    body: JSON.stringify(loginPayload)
   })
-  .then(async (response) => {
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || 'ভুল ইমেইল বা পাসওয়ার্ড।');
+  .then(res => {
+    if (!res.ok) {
+      return res.json().then(d => { throw new Error(d.error || d.message || 'Login failed'); });
     }
+    return res.json();
+  })
+  .then(data => {
+    if (data && data.success && data.user) {
+      APP_STATE.currentUser = data.user;
+      localStorage.setItem('admin_user', JSON.stringify(data.user));
+      if (data.token) {
+        localStorage.setItem('admin_token', data.token);
+      }
 
-    // Authenticated successfully against database
-    APP_STATE.currentUser = data.user;
-    localStorage.setItem('admin_user', JSON.stringify(data.user));
-
-    if (errorAlert) errorAlert.style.display = 'none';
-    showToast('লগইন সফল হয়েছে! স্বাগতম ' + (data.user.name || 'Admin'));
-
-    if (window.location.pathname.includes('/login')) {
       window.location.href = '/admin';
-      return;
+    } else {
+      throw new Error(data.error || data.message || 'Invalid credentials');
     }
-
-    if (loginSection) loginSection.style.display = 'none';
-    if (appSection) appSection.style.display = 'flex';
-    updateSidebarUser(data.user);
-    renderDashboardData();
-    loadServerOrders();
   })
-  .catch((err) => {
-    // Crucial: Reject invalid credentials and NEVER open dashboard
-    APP_STATE.currentUser = null;
-    localStorage.removeItem('admin_user');
-    const errMsg = err.message || 'ভুল ইমেইল বা পাসওয়ার্ড।';
+  .catch(err => {
+    console.error('[Admin Login Error]', err.message);
     if (errorAlert) {
-      errorAlert.textContent = errMsg;
+      errorAlert.textContent = err.message || 'Invalid email or password.';
       errorAlert.style.display = 'block';
     }
-    showToast(errMsg, 'error');
   })
   .finally(() => {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Login ➔';
+      submitBtn.innerHTML = 'Login ➔';
     }
   });
 };
@@ -240,11 +233,11 @@ window.handleLogout = function() {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Accept': 'application/json' }
-  }).finally(() => {
+  })
+  .finally(() => {
+    APP_STATE.currentUser = null;
     localStorage.removeItem('admin_user');
     localStorage.removeItem('admin_token');
-    APP_STATE.currentUser = null;
-    showToast('লগআউট করা হয়েছে।');
     window.location.href = '/admin/login';
   });
 };
@@ -254,29 +247,22 @@ window.handleLogout = function() {
 // ==============================================================================
 function loadServerOrders() {
   const token = localStorage.getItem('admin_token') || '';
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
   fetch('/api/orders', {
+    signal: controller.signal,
+    credentials: 'same-origin',
     headers: {
+      'Accept': 'application/json',
       'Authorization': `Bearer ${token}`,
       'x-admin-token': token
     }
   })
   .then(r => {
+    clearTimeout(timer);
     if (r.status === 401) {
-      return fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'admin@gmail.com', password: 'admin123' })
-      })
-      .then(res => res.json())
-      .then(authData => {
-        if (authData && authData.token) {
-          localStorage.setItem('admin_token', authData.token);
-          return fetch('/api/orders', {
-            headers: { 'Authorization': `Bearer ${authData.token}` }
-          }).then(res2 => res2.json());
-        }
-        return { success: false, orders: [] };
-      });
+      return { success: false, orders: [] };
     }
     return r.json();
   })
@@ -1566,8 +1552,22 @@ window.renderLandingPagesList = async function() {
 
   tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:32px;color:#718096;"><div style="font-size:24px;margin-bottom:8px;">⏳</div>Loading landing pages...</td></tr>`;
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
   try {
-    const res = await fetch('/api/admin/landing-pages', { headers: getAdminAuthHeaders() });
+    const res = await fetch('/api/admin/landing-pages', {
+      signal: controller.signal,
+      credentials: 'same-origin',
+      headers: getAdminAuthHeaders()
+    });
+    clearTimeout(timer);
+
+    if (res.status === 401) {
+      tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:32px;color:#718096;">Please login to view landing pages.</td></tr>`;
+      return;
+    }
+
     const data = await res.json();
 
     if (res.ok && data.success && Array.isArray(data.pages)) {
@@ -1578,6 +1578,7 @@ window.renderLandingPagesList = async function() {
       tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:32px;color:#E53E3E;"><div style="font-size:24px;margin-bottom:8px;">⚠️</div>Failed to load landing pages.</td></tr>`;
     }
   } catch (err) {
+    clearTimeout(timer);
     console.error('[Landing Pages Error]', err);
     tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:32px;color:#E53E3E;"><div style="font-size:24px;margin-bottom:8px;">🔌</div>Connection error loading landing pages.</td></tr>`;
   }
@@ -3459,17 +3460,27 @@ window.loadAnalyticsDashboard = async function() {
     headers['x-admin-token'] = token;
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
   try {
+    const fetchOptions = {
+      signal: controller.signal,
+      credentials: 'same-origin',
+      headers
+    };
+
     // Fetch all analytics datasets in parallel
     const [overviewRes, funnelRes, attrRes, campRes, lpRes, timeRes, devRes] = await Promise.all([
-      fetch(`/api/admin/analytics/overview?${query}`, { credentials: 'same-origin', headers }),
-      fetch(`/api/admin/analytics/funnel?${query}`, { credentials: 'same-origin', headers }),
-      fetch(`/api/admin/analytics/attribution?${query}`, { credentials: 'same-origin', headers }),
-      fetch(`/api/admin/analytics/campaigns?${query}`, { credentials: 'same-origin', headers }),
-      fetch(`/api/admin/analytics/landing-pages?${query}`, { credentials: 'same-origin', headers }),
-      fetch(`/api/admin/analytics/timeline?${query}`, { credentials: 'same-origin', headers }),
-      fetch(`/api/admin/analytics/devices?${query}`, { credentials: 'same-origin', headers }),
+      fetch(`/api/admin/analytics/overview?${query}`, fetchOptions),
+      fetch(`/api/admin/analytics/funnel?${query}`, fetchOptions),
+      fetch(`/api/admin/analytics/attribution?${query}`, fetchOptions),
+      fetch(`/api/admin/analytics/campaigns?${query}`, fetchOptions),
+      fetch(`/api/admin/analytics/landing-pages?${query}`, fetchOptions),
+      fetch(`/api/admin/analytics/timeline?${query}`, fetchOptions),
+      fetch(`/api/admin/analytics/devices?${query}`, fetchOptions),
     ]);
+    clearTimeout(timer);
 
     if (overviewRes.status === 401) {
       console.warn('Analytics API Unauthorized: Admin session required.');
@@ -3495,6 +3506,7 @@ window.loadAnalyticsDashboard = async function() {
     if (devData && devData.success) renderAnalyticsDevices(devData);
 
   } catch (err) {
+    clearTimeout(timer);
     console.error('[Analytics Error]', err);
   }
 };
