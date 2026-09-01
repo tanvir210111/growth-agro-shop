@@ -66,27 +66,32 @@ function sendReq(port, path, method = 'GET', data = null, headers = {}) {
   assert.ok(checkoutRes.body.includes("currency: 'BDT'"), 'currency must be BDT');
   console.log('✅ Main website /checkout page fires InitiateCheckout dynamically.');
 
-  // Test 4: Chicken Booster Landing Page InitiateCheckout Integration
-  console.log('\n--- Test 4: Chicken Booster Landing Page InitiateCheckout Integration ---');
+  // Test 4: Chicken Booster Landing Page AddToCart & InitiateCheckout Integration
+  console.log('\n--- Test 4: Chicken Booster Landing Page AddToCart & InitiateCheckout Integration ---');
   const cbRes = await sendReq(8000, '/product/chicken-booster');
   assert.strictEqual(cbRes.status, 200);
   assert.ok(cbRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire');
   assert.ok(cbRes.body.includes("fbq('track', 'ViewContent'"), 'ViewContent must fire on load');
+  assert.ok(cbRes.body.includes("function fireAddToCart()"), 'fireAddToCart function must exist');
+  assert.ok(cbRes.body.includes("window.fbq('track', 'AddToCart', {"), 'AddToCart call must be in fireAddToCart');
+  assert.ok(cbRes.body.includes("let addToCartFired = false;"), 'Must have AddToCart deduplication guard');
   assert.ok(cbRes.body.includes("function fireCheckoutStarted()"), 'fireCheckoutStarted function must exist');
   assert.ok(cbRes.body.includes("window.fbq('track', 'InitiateCheckout', {"), 'InitiateCheckout call must be in fireCheckoutStarted');
-  assert.ok(cbRes.body.includes("let checkoutStartedFired = false;"), 'Must have deduplication guard');
+  assert.ok(cbRes.body.includes("let checkoutStartedFired = false;"), 'Must have InitiateCheckout deduplication guard');
+  assert.ok(cbRes.body.includes("IntersectionObserver"), 'Must have direct scroll IntersectionObserver for checkout section');
   assert.ok(cbRes.body.includes("content_ids: ['chicken-booster']"), 'content_ids must be chicken-booster');
   assert.ok(cbRes.body.includes("currency: 'BDT'"), 'currency must be BDT');
-  console.log('✅ Chicken Booster landing page has InitiateCheckout properly wired to CTA buttons, option cards, form focusin, and submit.');
+  console.log('✅ Chicken Booster landing page has AddToCart on CTA and InitiateCheckout on CTA/Direct-Scroll properly wired with deduplication.');
 
-  // Test 5: MediaScope IT Landing Page InitiateCheckout Integration
-  console.log('\n--- Test 5: MediaScope IT Landing Page InitiateCheckout Integration ---');
+  // Test 5: MediaScope IT Landing Page AddToCart & InitiateCheckout Integration
+  console.log('\n--- Test 5: MediaScope IT Landing Page AddToCart & InitiateCheckout Integration ---');
   const msRes = await sendReq(8000, '/product/mediascope-it');
   assert.strictEqual(msRes.status, 200);
   assert.ok(msRes.body.includes("fbq('track', 'PageView')"), 'PageView must fire');
   assert.ok(msRes.body.includes("fbq('track', 'ViewContent'"), 'ViewContent must fire on load');
-  assert.ok(cbRes.body.includes("window.fbq('track', 'InitiateCheckout', {"), 'InitiateCheckout must be present');
-  console.log('✅ MediaScope IT landing page has InitiateCheckout properly wired.');
+  assert.ok(msRes.body.includes("window.fbq('track', 'AddToCart', {"), 'AddToCart must be present');
+  assert.ok(msRes.body.includes("window.fbq('track', 'InitiateCheckout', {"), 'InitiateCheckout must be present');
+  console.log('✅ MediaScope IT landing page has AddToCart and InitiateCheckout properly wired.');
 
   // Test 6: Dynamic Future Landing Page InitiateCheckout
   console.log('\n--- Test 6: Dynamic Future Landing Page InitiateCheckout ---');

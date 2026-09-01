@@ -1549,8 +1549,44 @@
       });
     });
 
+    // AddToCart Event (Fires ONLY when user clicks order CTA buttons)
+    let addToCartFired = false;
+    function fireAddToCart() {
+      if (addToCartFired) return;
+      addToCartFired = true;
+
+      if (typeof window.fbq === 'function') {
+        let subtotalVal = 0;
+        let totalItems = 0;
+        if (typeof variantQuantities === 'object') {
+          Object.keys(variantQuantities).forEach(k => {
+            const q = variantQuantities[k] || 0;
+            if (q > 0 && CATALOG[k]) {
+              subtotalVal += CATALOG[k].price * q;
+              totalItems += q;
+            }
+          });
+        }
+
+        const fallbackPrice = {{ (float)($firstPkgPrice ?? 0) }};
+        const orderValue = subtotalVal > 0 ? subtotalVal : fallbackPrice;
+
+        window.fbq('track', 'AddToCart', {
+          content_ids: ['{{ addslashes($landingPage->product_id ?: $landingPage->slug) }}'],
+          content_name: '{{ addslashes($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name)) }}',
+          content_type: 'product',
+          @if(!empty($firstPkgPrice) && $firstPkgPrice > 0)
+          value: orderValue > 0 ? orderValue : fallbackPrice,
+          @endif
+          currency: 'BDT',
+          num_items: totalItems > 0 ? totalItems : 1
+        });
+      }
+    }
+
     // Helper for interactive hero cards
     window.selectAndScroll = function(variantKey) {
+      fireAddToCart();
       fireCheckoutStarted();
       if (variantKey && CATALOG[variantKey]) {
         variantQuantities[variantKey] = Math.max(1, variantQuantities[variantKey] || 0);
@@ -1561,8 +1597,9 @@
     };
 
     // Tracking CTA Clicks
-    document.querySelectorAll('.btn-red-cta, .btn-header-order').forEach(btn => {
+    document.querySelectorAll('.btn-red-cta, .btn-header-order, a[href="#checkout-form-section"]').forEach(btn => {
       btn.addEventListener('click', function() {
+        fireAddToCart();
         fireCheckoutStarted();
         if (window.GrowthAgroTracking) {
           window.GrowthAgroTracking.trackCta('btn_landing_cta', LANDING_PAGE_SLUG);
@@ -1612,6 +1649,31 @@
           currency: 'BDT',
           num_items: totalItems > 0 ? totalItems : 1
         });
+      }
+    }
+
+    // Direct Scroll Visibility Tracking for Checkout Section
+    const checkoutSectionEl = document.getElementById('checkout-form-section');
+    if (checkoutSectionEl) {
+      if ('IntersectionObserver' in window) {
+        const checkoutObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              fireCheckoutStarted();
+              checkoutObserver.disconnect();
+            }
+          });
+        }, { threshold: 0.15 });
+        checkoutObserver.observe(checkoutSectionEl);
+      } else {
+        const onScrollCheck = () => {
+          const rect = checkoutSectionEl.getBoundingClientRect();
+          if (rect.top < window.innerHeight && rect.bottom > 0) {
+            fireCheckoutStarted();
+            window.removeEventListener('scroll', onScrollCheck);
+          }
+        };
+        window.addEventListener('scroll', onScrollCheck, { passive: true });
       }
     }
 

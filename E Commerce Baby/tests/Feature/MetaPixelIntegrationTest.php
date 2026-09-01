@@ -210,6 +210,9 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee("fireCheckoutStarted()", false);
         $response->assertSee("window.fbq('track', 'InitiateCheckout'", false);
+        $response->assertSee("fireAddToCart()", false);
+        $response->assertSee("window.fbq('track', 'AddToCart'", false);
+        $response->assertSee("IntersectionObserver", false);
     }
 
     public function test_main_ecommerce_order_success_page_fires_purchase_event()
