@@ -1600,9 +1600,16 @@
       if (checkout) checkout.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Tracking CTA Clicks
+    // Tracking CTA Clicks (prevent default hash change to stop SPA PageView re-trigger)
     document.querySelectorAll('.btn-red-cta, .btn-header-order, a[href="#checkout-form-section"]').forEach(btn => {
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function(e) {
+        if (this.getAttribute('href') === '#checkout-form-section' || (this.hash && this.hash === '#checkout-form-section')) {
+          e.preventDefault();
+          const targetEl = document.getElementById('checkout-form-section');
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
         fireAddToCartOnce();
         fireInitiateCheckoutOnce();
         if (window.GrowthAgroTracking) {

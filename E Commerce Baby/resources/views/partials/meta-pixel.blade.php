@@ -1,5 +1,6 @@
 @php
   $pixelId = trim(\App\Models\Setting::get('facebook_pixel', '') ?? '');
+  $isLandingSuccess = request()->is('product/*/success/*') || request()->routeIs('landing.success');
   $lpSlug = isset($landingPage) && is_object($landingPage) && !empty($landingPage->slug) ? $landingPage->slug : ($landingPageSlug ?? null);
 @endphp
 @if(!empty($pixelId) && preg_match('/^\d{14,18}$/', $pixelId))
@@ -13,8 +14,9 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
+fbq.disablePushState = true;
 fbq('init', '{{ $pixelId }}');
-@if(!empty($lpSlug))
+@if(!empty($lpSlug) && !$isLandingSuccess)
 (function() {
   var pageViewKey = 'meta_tracked_pageview_{{ $lpSlug }}';
   if (!sessionStorage.getItem(pageViewKey)) {

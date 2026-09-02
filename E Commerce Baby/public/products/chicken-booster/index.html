@@ -1971,16 +1971,17 @@
     };
 
     // Growth Agro Unified CTA Click Tracking
-    document.querySelectorAll('.btn-header-order').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        if (window.GrowthAgroTracking) window.GrowthAgroTracking.trackCta('btn-header-order', 'chicken-booster');
-      }, { passive: true });
-    });
-
-    document.querySelectorAll('.btn-red-cta').forEach(function(btn) {
-      btn.addEventListener('click', function() {
+    document.querySelectorAll('.btn-header-order, .btn-red-cta, a[href="#checkout-form-section"]').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        if (this.getAttribute('href') === '#checkout-form-section' || (this.hash && this.hash === '#checkout-form-section')) {
+          e.preventDefault();
+          var targetEl = document.getElementById('checkout-form-section');
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
         if (window.GrowthAgroTracking) window.GrowthAgroTracking.trackCta('btn-hero-order', 'chicken-booster');
-      }, { passive: true });
+      });
     });
 
     if (btnSubmit) {
