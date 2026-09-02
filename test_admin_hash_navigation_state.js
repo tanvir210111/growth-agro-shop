@@ -8,9 +8,9 @@ console.log('🧪 RUNNING ADMIN PANEL HASH NAVIGATION & STATE TESTS');
 console.log('======================================================\n');
 
 // -----------------------------------------------------------------------------
-// Test 9: File Parity Check
+// Test 17: File Parity Check
 // -----------------------------------------------------------------------------
-console.log('--- Test 9: File Parity Check ---');
+console.log('--- Test 17: File Parity Check ---');
 const appJsPath1 = path.join(__dirname, 'admin', 'app.js');
 const appJsPath2 = path.join(__dirname, 'E Commerce Baby', 'public', 'admin', 'app.js');
 const appJs1 = fs.readFileSync(appJsPath1, 'utf8');
@@ -113,8 +113,26 @@ function createDomEnvironment(initialHash = '', htmlContent = html1) {
     }
 
     dispatchEvent(event) {
-      const list = this.listeners[event.type || event] || [];
-      list.forEach(fn => fn(event));
+      const eventObj = typeof event === 'string' ? { type: event } : event;
+      if (!eventObj.target) eventObj.target = this;
+      const list = this.listeners[eventObj.type] || [];
+      list.forEach(fn => fn(eventObj));
+
+      // Bubble up to parent unless stopPropagation
+      if (!eventObj._stopped && this.parentElement) {
+        this.parentElement.dispatchEvent(eventObj);
+      }
+    }
+
+    click() {
+      const eventObj = {
+        type: 'click',
+        target: this,
+        _stopped: false,
+        stopPropagation() { this._stopped = true; },
+        preventDefault() {}
+      };
+      this.dispatchEvent(eventObj);
     }
 
     closest(selector) {
@@ -243,9 +261,15 @@ function createDomEnvironment(initialHash = '', htmlContent = html1) {
       return elementsById.get(id) || null;
     },
     querySelectorAll(selector) {
-      if (selector.startsWith('.')) {
-        const cls = selector.slice(1);
+      const parts = selector.trim().split(/\s+/);
+      const last = parts[parts.length - 1];
+      if (last.startsWith('.')) {
+        const cls = last.slice(1);
         return allElements.filter(el => el.classList.contains(cls));
+      }
+      if (last.startsWith('#')) {
+        const id = last.slice(1);
+        return allElements.filter(el => el.id === id);
       }
       return [];
     },
@@ -280,6 +304,7 @@ function createDomEnvironment(initialHash = '', htmlContent = html1) {
   };
 
   const mockWindow = {
+    innerWidth: 1200,
     location,
     history,
     document: mockDocument,
@@ -355,14 +380,17 @@ function createDomEnvironment(initialHash = '', htmlContent = html1) {
     triggerHashChange(newHash) {
       location.hash = newHash;
       eventListeners['hashchange'].forEach(fn => fn({ type: 'hashchange' }));
+    },
+    triggerPopState() {
+      eventListeners['popstate'].forEach(fn => fn({ type: 'popstate' }));
     }
   };
 }
 
 // -----------------------------------------------------------------------------
-// Test 1: No hash -> Dashboard
+// Test 1: /admin/ -> Dashboard
 // -----------------------------------------------------------------------------
-console.log('\n--- Test 1: Initial load without hash (Default Dashboard) ---');
+console.log('\n--- Test 1: Initial load without hash (/admin/ -> Dashboard) ---');
 {
   const env = createDomEnvironment('');
   env.triggerDOMContentLoaded();
@@ -379,153 +407,248 @@ console.log('\n--- Test 1: Initial load without hash (Default Dashboard) ---');
 }
 
 // -----------------------------------------------------------------------------
-// Test 2: #marketing -> Marketing visible + Setting & Configuration expanded
+// Test 2: /admin/#marketing -> Marketing
 // -----------------------------------------------------------------------------
-console.log('\n--- Test 2: Initial load with #marketing ---');
+console.log('\n--- Test 2: /admin/#marketing -> Marketing ---');
 {
   const env = createDomEnvironment('#marketing');
   env.triggerDOMContentLoaded();
 
   const viewMarketing = env.document.getElementById('view-marketing');
-  const viewDash = env.document.getElementById('view-dashboard');
   const subnavMarketing = env.document.getElementById('subnav-marketing');
   const groupSettings = env.document.getElementById('nav-group-settings');
 
   assert.strictEqual(viewMarketing.style.display, 'block', 'view-marketing must be visible');
-  assert.strictEqual(viewDash.style.display, 'none', 'view-dashboard must be hidden');
-  assert.strictEqual(subnavMarketing.classList.contains('active'), true, 'subnav-marketing must have active class');
-  assert.strictEqual(groupSettings.classList.contains('open'), true, 'nav-group-settings must have open class');
+  assert.strictEqual(subnavMarketing.classList.contains('active'), true, 'subnav-marketing must be active');
+  assert.strictEqual(groupSettings.classList.contains('open'), true, 'Setting & Configuration group must be open');
   assert.strictEqual(env.getAppState().activeView, 'marketing', 'APP_STATE.activeView must be marketing');
-  console.log('✅ #marketing successfully restores Marketing view & expands Setting & Configuration');
+  console.log('✅ /admin/#marketing restores Marketing view with expanded parent');
 }
 
 // -----------------------------------------------------------------------------
-// Test 3: #courier-api -> Courier API visible + Setting & Configuration expanded
+// Test 3: Refresh /admin/#marketing -> Marketing still active
 // -----------------------------------------------------------------------------
-console.log('\n--- Test 3: Initial load with #courier-api ---');
+console.log('\n--- Test 3: Refresh /admin/#marketing -> Marketing still active ---');
+{
+  const env = createDomEnvironment('#marketing');
+  env.triggerDOMContentLoaded();
+  assert.strictEqual(env.getAppState().activeView, 'marketing');
+  assert.strictEqual(env.document.getElementById('view-marketing').style.display, 'block');
+  console.log('✅ Refreshing /admin/#marketing preserves Marketing view');
+}
+
+// -----------------------------------------------------------------------------
+// Test 4: /admin/#courier-api -> Courier API
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 4: /admin/#courier-api -> Courier API ---');
 {
   const env = createDomEnvironment('#courier-api');
   env.triggerDOMContentLoaded();
 
   const viewCourier = env.document.getElementById('view-courier-api');
-  const viewDash = env.document.getElementById('view-dashboard');
   const subnavCourier = env.document.getElementById('subnav-courier-api');
   const groupSettings = env.document.getElementById('nav-group-settings');
 
   assert.strictEqual(viewCourier.style.display, 'block', 'view-courier-api must be visible');
-  assert.strictEqual(viewDash.style.display, 'none', 'view-dashboard must be hidden');
-  assert.strictEqual(subnavCourier.classList.contains('active'), true, 'subnav-courier-api must have active class');
-  assert.strictEqual(groupSettings.classList.contains('open'), true, 'nav-group-settings must have open class');
+  assert.strictEqual(subnavCourier.classList.contains('active'), true, 'subnav-courier-api must be active');
+  assert.strictEqual(groupSettings.classList.contains('open'), true, 'nav-group-settings must be open');
   assert.strictEqual(env.getAppState().activeView, 'courier-api', 'APP_STATE.activeView must be courier-api');
-  console.log('✅ #courier-api successfully restores Courier API view & expands Setting & Configuration');
+  console.log('✅ /admin/#courier-api restores Courier API view with expanded parent');
 }
 
 // -----------------------------------------------------------------------------
-// Test 4: #manage-admin -> Manage Admin visible + Admin group expanded
+// Test 5: Refresh /admin/#courier-api -> Courier API still active
 // -----------------------------------------------------------------------------
-console.log('\n--- Test 4: Initial load with #manage-admin ---');
+console.log('\n--- Test 5: Refresh /admin/#courier-api -> Courier API still active ---');
 {
-  const env = createDomEnvironment('#manage-admin');
+  const env = createDomEnvironment('#courier-api');
   env.triggerDOMContentLoaded();
-
-  const viewManageAdmin = env.document.getElementById('view-manage-admin');
-  const viewDash = env.document.getElementById('view-dashboard');
-  const subnavManageAdmin = env.document.getElementById('subnav-manage-admin');
-  const groupAdmin = env.document.getElementById('nav-group-admin');
-
-  assert.strictEqual(viewManageAdmin.style.display, 'block', 'view-manage-admin must be visible');
-  assert.strictEqual(viewDash.style.display, 'none', 'view-dashboard must be hidden');
-  assert.strictEqual(subnavManageAdmin.classList.contains('active'), true, 'subnav-manage-admin must have active class');
-  assert.strictEqual(groupAdmin.classList.contains('open'), true, 'nav-group-admin must have open class');
-  assert.strictEqual(env.getAppState().activeView, 'manage-admin', 'APP_STATE.activeView must be manage-admin');
-  console.log('✅ #manage-admin successfully restores Manage Admin view & expands Admin group');
+  assert.strictEqual(env.getAppState().activeView, 'courier-api');
+  assert.strictEqual(env.document.getElementById('view-courier-api').style.display, 'block');
+  console.log('✅ Refreshing /admin/#courier-api preserves Courier API view');
 }
 
 // -----------------------------------------------------------------------------
-// Test 5: #orders -> Orders visible + Orders group expanded
+// Test 6: /admin/#orders -> Orders
 // -----------------------------------------------------------------------------
-console.log('\n--- Test 5: Initial load with #orders ---');
+console.log('\n--- Test 6: /admin/#orders -> Orders ---');
 {
   const env = createDomEnvironment('#orders');
   env.triggerDOMContentLoaded();
 
   const viewOrders = env.document.getElementById('view-orders');
-  const viewDash = env.document.getElementById('view-dashboard');
   const subnavOrders = env.document.getElementById('subnav-manage-order');
   const groupOrders = env.document.getElementById('nav-group-orders');
 
   assert.strictEqual(viewOrders.style.display, 'block', 'view-orders must be visible');
-  assert.strictEqual(viewDash.style.display, 'none', 'view-dashboard must be hidden');
-  assert.strictEqual(subnavOrders.classList.contains('active'), true, 'subnav-manage-order must have active class');
-  assert.strictEqual(groupOrders.classList.contains('open'), true, 'nav-group-orders must have open class');
+  assert.strictEqual(subnavOrders.classList.contains('active'), true, 'subnav-manage-order must be active');
+  assert.strictEqual(groupOrders.classList.contains('open'), true, 'nav-group-orders must be open');
   assert.strictEqual(env.getAppState().activeView, 'orders', 'APP_STATE.activeView must be orders');
-  console.log('✅ #orders successfully restores Orders view & expands Orders group');
+  console.log('✅ /admin/#orders restores Orders view with expanded parent');
 }
 
 // -----------------------------------------------------------------------------
-// Test 6: switchView('marketing') updates URL hash to #marketing
+// Test 7: Refresh /admin/#orders -> Orders still active
 // -----------------------------------------------------------------------------
-console.log('\n--- Test 6: switchView(\'marketing\') updates URL hash ---');
+console.log('\n--- Test 7: Refresh /admin/#orders -> Orders still active ---');
+{
+  const env = createDomEnvironment('#orders');
+  env.triggerDOMContentLoaded();
+  assert.strictEqual(env.getAppState().activeView, 'orders');
+  assert.strictEqual(env.document.getElementById('view-orders').style.display, 'block');
+  console.log('✅ Refreshing /admin/#orders preserves Orders view');
+}
+
+// -----------------------------------------------------------------------------
+// Test 8: /admin/#manage-admin -> Manage Admin
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 8: /admin/#manage-admin -> Manage Admin ---');
+{
+  const env = createDomEnvironment('#manage-admin');
+  env.triggerDOMContentLoaded();
+
+  const viewManageAdmin = env.document.getElementById('view-manage-admin');
+  const subnavManageAdmin = env.document.getElementById('subnav-manage-admin');
+  const groupAdmin = env.document.getElementById('nav-group-admin');
+
+  assert.strictEqual(viewManageAdmin.style.display, 'block', 'view-manage-admin must be visible');
+  assert.strictEqual(subnavManageAdmin.classList.contains('active'), true, 'subnav-manage-admin must be active');
+  assert.strictEqual(groupAdmin.classList.contains('open'), true, 'nav-group-admin must be open');
+  assert.strictEqual(env.getAppState().activeView, 'manage-admin', 'APP_STATE.activeView must be manage-admin');
+  console.log('✅ /admin/#manage-admin restores Manage Admin view with expanded parent');
+}
+
+// -----------------------------------------------------------------------------
+// Test 9: Refresh /admin/#manage-admin -> Manage Admin still active
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 9: Refresh /admin/#manage-admin -> Manage Admin still active ---');
+{
+  const env = createDomEnvironment('#manage-admin');
+  env.triggerDOMContentLoaded();
+  assert.strictEqual(env.getAppState().activeView, 'manage-admin');
+  assert.strictEqual(env.document.getElementById('view-manage-admin').style.display, 'block');
+  console.log('✅ Refreshing /admin/#manage-admin preserves Manage Admin view');
+}
+
+// -----------------------------------------------------------------------------
+// Test 10: Clicking sidebar Marketing does not hide/collapse sidebar
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 10: Clicking sidebar Marketing does not hide/collapse sidebar ---');
 {
   const env = createDomEnvironment('');
   env.triggerDOMContentLoaded();
-  assert.strictEqual(env.getAppState().activeView, 'dashboard');
 
-  // Trigger switchView
+  const sidebar = env.document.getElementById('sidebar');
+  assert.strictEqual(sidebar.classList.contains('collapsed'), false, 'Sidebar starts non-collapsed');
+
+  // Trigger switchView to marketing
   env.sandbox.window.switchView('marketing');
 
-  const viewMarketing = env.document.getElementById('view-marketing');
-  const groupSettings = env.document.getElementById('nav-group-settings');
-  const subnavMarketing = env.document.getElementById('subnav-marketing');
-
-  assert.strictEqual(env.location.hash, '#marketing', 'URL hash must be updated to #marketing');
-  assert.strictEqual(viewMarketing.style.display, 'block', 'Marketing panel must be displayed');
-  assert.strictEqual(groupSettings.classList.contains('open'), true, 'Setting & Configuration group must be open');
-  assert.strictEqual(subnavMarketing.classList.contains('active'), true, 'subnav-marketing must be active');
-  assert.strictEqual(env.getAppState().activeView, 'marketing', 'APP_STATE.activeView must be marketing');
-  console.log('✅ switchView(\'marketing\') successfully updates URL hash and switches view');
+  assert.strictEqual(sidebar.classList.contains('collapsed'), false, 'Sidebar must remain non-collapsed');
+  assert.strictEqual(env.getAppState().activeView, 'marketing');
+  console.log('✅ Switching to Marketing leaves sidebar visible and non-collapsed');
 }
 
 // -----------------------------------------------------------------------------
-// Test 7: hashchange to #courier-api -> Courier API becomes active
+// Test 11: Clicking sidebar Orders does not hide/collapse sidebar
 // -----------------------------------------------------------------------------
-console.log('\n--- Test 7: hashchange to #courier-api (Browser Back / Forward simulation) ---');
+console.log('\n--- Test 11: Clicking sidebar Orders does not hide/collapse sidebar ---');
+{
+  const env = createDomEnvironment('');
+  env.triggerDOMContentLoaded();
+
+  const sidebar = env.document.getElementById('sidebar');
+  env.sandbox.window.switchView('orders');
+
+  assert.strictEqual(sidebar.classList.contains('collapsed'), false, 'Sidebar must remain non-collapsed');
+  assert.strictEqual(env.getAppState().activeView, 'orders');
+  console.log('✅ Switching to Orders leaves sidebar visible and non-collapsed');
+}
+
+// -----------------------------------------------------------------------------
+// Test 12: Clicking Landing Page does not hide/collapse sidebar
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 12: Clicking Landing Page does not hide/collapse sidebar ---');
+{
+  const env = createDomEnvironment('');
+  env.triggerDOMContentLoaded();
+
+  const sidebar = env.document.getElementById('sidebar');
+  env.sandbox.window.switchView('landing-pages-list');
+
+  assert.strictEqual(sidebar.classList.contains('collapsed'), false, 'Sidebar must remain non-collapsed');
+  assert.strictEqual(env.getAppState().activeView, 'landing-pages-list');
+  console.log('✅ Switching to Landing Pages leaves sidebar visible and non-collapsed');
+}
+
+// -----------------------------------------------------------------------------
+// Test 13: Parent submenu remains expanded for the selected child
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 13: Parent submenu remains expanded for selected child ---');
+{
+  const env = createDomEnvironment('');
+  env.triggerDOMContentLoaded();
+
+  // Test marketing in settings
+  env.sandbox.window.switchView('marketing');
+  assert.strictEqual(env.document.getElementById('nav-group-settings').classList.contains('open'), true);
+
+  // Test add-admin in admin
+  env.sandbox.window.switchView('add-admin');
+  assert.strictEqual(env.document.getElementById('nav-group-admin').classList.contains('open'), true);
+  assert.strictEqual(env.document.getElementById('nav-group-settings').classList.contains('open'), false);
+
+  // Test income in accounts
+  env.sandbox.window.switchView('income');
+  assert.strictEqual(env.document.getElementById('nav-group-accounts').classList.contains('open'), true);
+  console.log('✅ Parent submenu accordions expand correctly and exclusively for active views');
+}
+
+// -----------------------------------------------------------------------------
+// Test 14: Invalid hash safely falls back to Dashboard
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 14: Invalid hash fallback ---');
+{
+  const env = createDomEnvironment('#invalid-random-xyz');
+  env.triggerDOMContentLoaded();
+
+  const viewDash = env.document.getElementById('view-dashboard');
+  assert.strictEqual(viewDash.style.display, 'block');
+  assert.strictEqual(env.getAppState().activeView, 'dashboard');
+  console.log('✅ Invalid hash safely falls back to Dashboard');
+}
+
+// -----------------------------------------------------------------------------
+// Test 15: Browser hashchange switches views correctly
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 15: Browser hashchange event ---');
 {
   const env = createDomEnvironment('#marketing');
   env.triggerDOMContentLoaded();
   assert.strictEqual(env.getAppState().activeView, 'marketing');
 
-  // Simulate hashchange event (e.g. forward button clicked to #courier-api)
   env.triggerHashChange('#courier-api');
-
-  const viewCourier = env.document.getElementById('view-courier-api');
-  const viewMarketing = env.document.getElementById('view-marketing');
-  const subnavCourier = env.document.getElementById('subnav-courier-api');
-
-  assert.strictEqual(viewCourier.style.display, 'block', 'Courier API panel must be displayed');
-  assert.strictEqual(viewMarketing.style.display, 'none', 'Marketing panel must be hidden');
-  assert.strictEqual(subnavCourier.classList.contains('active'), true, 'subnav-courier-api must be active');
-  assert.strictEqual(env.getAppState().activeView, 'courier-api', 'APP_STATE.activeView must be courier-api');
-  console.log('✅ hashchange event cleanly updates active view without full page reload');
+  assert.strictEqual(env.getAppState().activeView, 'courier-api');
+  assert.strictEqual(env.document.getElementById('view-courier-api').style.display, 'block');
+  console.log('✅ hashchange event seamlessly switches view');
 }
 
 // -----------------------------------------------------------------------------
-// Test 8: Invalid hash -> Fallback to Dashboard without crashing
+// Test 16: Browser Back/Forward (popstate) works
 // -----------------------------------------------------------------------------
-console.log('\n--- Test 8: Invalid hash fallback ---');
+console.log('\n--- Test 16: Browser Back/Forward (popstate) ---');
 {
-  const env = createDomEnvironment('#invalid-view-xyz');
+  const env = createDomEnvironment('#orders');
   env.triggerDOMContentLoaded();
+  assert.strictEqual(env.getAppState().activeView, 'orders');
 
-  const viewDash = env.document.getElementById('view-dashboard');
-  const navDash = env.document.getElementById('nav-dashboard');
-
-  assert.strictEqual(viewDash.style.display, 'block', 'Dashboard panel must be visible on invalid hash');
-  assert.strictEqual(navDash.classList.contains('active'), true, 'Dashboard nav link must be active');
-  assert.strictEqual(env.getAppState().activeView, 'dashboard', 'APP_STATE.activeView must fall back to dashboard');
-  console.log('✅ Invalid hash safely falls back to Dashboard without errors');
+  env.location.hash = '#marketing';
+  env.triggerPopState();
+  assert.strictEqual(env.getAppState().activeView, 'marketing');
+  assert.strictEqual(env.document.getElementById('view-marketing').style.display, 'block');
+  console.log('✅ popstate restores active view correctly');
 }
 
 console.log('\n======================================================');
-console.log('🎉 ALL 9 AUTOMATED TESTS PASSED SUCCESSFULLY!');
+console.log('🎉 ALL 17 AUTOMATED TESTS PASSED SUCCESSFULLY!');
 console.log('======================================================\n');

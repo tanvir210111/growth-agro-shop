@@ -3068,15 +3068,65 @@ function renderAdminUsersTable() {
 // ==============================================================================
 // 11. VIEW SWITCHER & GLOBAL NAVIGATION (URL HASH SPA PERSISTENCE)
 // ==============================================================================
+const VIEW_ALIASES = {
+  'landing-pages': 'landing-pages-list',
+  'landingpage': 'landing-pages-list',
+  'landingpages': 'landingpages',
+  'landing-page-list': 'landing-pages-list',
+  'landing-page-hub': 'landingpages',
+  'landing-page': 'landing-pages-list',
+  'builder': 'landing-page-builder',
+  'manage-order': 'orders',
+  'manage-orders': 'orders',
+  'all-orders': 'orders',
+  'order': 'orders',
+  'admin': 'manage-admin',
+  'admins': 'manage-admin',
+  'admin-users': 'manage-admin',
+  'manage': 'manage-admin',
+  'profit': 'profit-report',
+  'profit-loss': 'profit-report',
+  'loss-profit': 'profit-report',
+  'loss-profit-report': 'profit-report',
+  'customer': 'customers',
+  'setting': 'marketing',
+  'settings': 'marketing',
+  'config': 'marketing',
+  'configuration': 'marketing',
+  'courier': 'courier-api',
+  'couriers-setup': 'courier-api',
+  'product': 'products',
+  'account': 'income',
+  'accounts': 'income',
+  'website': 'header-setting',
+  'website-setup': 'header-setting',
+  'processing-report': 'report',
+  'order-report': 'report',
+  'dash': 'dashboard'
+};
+
+function normalizeViewName(name) {
+  if (!name || typeof name !== 'string') return null;
+  const cleaned = name.trim().toLowerCase().replace(/^#/, '');
+  if (!cleaned) return null;
+
+  // Check exact panel match first
+  if (document.getElementById(`view-${cleaned}`)) {
+    return cleaned;
+  }
+
+  // Check alias mapping
+  if (VIEW_ALIASES[cleaned] && document.getElementById(`view-${VIEW_ALIASES[cleaned]}`)) {
+    return VIEW_ALIASES[cleaned];
+  }
+
+  return null;
+}
+window.normalizeViewName = normalizeViewName;
+
 function getViewFromHash() {
   if (typeof window === 'undefined' || !window.location || !window.location.hash) return null;
-  const hash = String(window.location.hash).replace(/^#/, '').trim();
-  if (!hash) return null;
-  const panel = document.getElementById(`view-${hash}`);
-  if (panel) {
-    return hash;
-  }
-  return null;
+  return normalizeViewName(window.location.hash);
 }
 window.getViewFromHash = getViewFromHash;
 
@@ -3100,14 +3150,12 @@ window.switchView = function(viewName) {
 };
 
 function doSwitchView(viewName, updateHash = true) {
-  let targetView = viewName;
-  if (!targetView || !document.getElementById(`view-${targetView}`)) {
-    targetView = 'dashboard';
-  }
+  const normalized = normalizeViewName(viewName);
+  const targetView = normalized || 'dashboard';
 
   APP_STATE.activeView = targetView;
 
-  // Toggle view panels
+  // 1. Toggle view panels (display: none / block)
   document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
   const panel = document.getElementById(`view-${targetView}`);
   if (panel) {
@@ -3117,38 +3165,69 @@ function doSwitchView(viewName, updateHash = true) {
     if (dash) dash.style.display = 'block';
   }
 
-  // Reset sidebar active states
+  // 2. Reset navigation links and submenu accordion states without modifying main sidebar element
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.querySelectorAll('.tree-link').forEach(l => l.classList.remove('active'));
   document.querySelectorAll('.nav-has-sub').forEach(g => g.classList.remove('open'));
 
-  // 1. Direct top-level navigation link (e.g. nav-dashboard, nav-analytics)
-  const activeLink = document.getElementById(`nav-${targetView}`);
-  if (activeLink && !activeLink.closest('.nav-has-sub')) {
-    activeLink.classList.add('active');
-  }
+  // 3. Activate target navigation link and expand parent submenu
+  let activated = false;
 
-  // 2. Submenu tree-link & expandable parent group
-  let subLink = document.getElementById(`subnav-${targetView}`);
-  if (!subLink) {
-    subLink = document.querySelector(`.tree-link[onclick*="'${targetView}'"]`);
-  }
-  if (targetView === 'orders' && !subLink) {
-    subLink = document.getElementById('subnav-manage-order');
-  }
-
-  if (subLink) {
-    subLink.classList.add('active');
-    const parentGroup = subLink.closest('.nav-has-sub');
-    if (parentGroup) {
-      parentGroup.classList.add('open');
+  if (targetView === 'orders') {
+    const ordersLink = document.getElementById('subnav-manage-order') || document.querySelector(".tree-link[onclick*='orders']");
+    if (ordersLink) {
+      ordersLink.classList.add('active');
+      const parent = ordersLink.closest('.nav-has-sub') || document.getElementById('nav-group-orders');
+      if (parent) parent.classList.add('open');
+      activated = true;
     }
-  } else if (targetView === 'landing-page-builder') {
+  } else if (targetView === 'report') {
+    const repLink = document.getElementById('subnav-processing-report');
+    if (repLink) {
+      repLink.classList.add('active');
+      const parent = repLink.closest('.nav-has-sub') || document.getElementById('nav-group-orders');
+      if (parent) parent.classList.add('open');
+      activated = true;
+    }
+  } else if (targetView === 'landing-page-builder' || targetView === 'landingpages' || targetView === 'landing-pages-list') {
     const lpGroup = document.getElementById('nav-group-landingpages');
     if (lpGroup) lpGroup.classList.add('open');
+    const lpSub = document.getElementById(`subnav-${targetView}`) || document.getElementById('subnav-landing-pages-list');
+    if (lpSub) lpSub.classList.add('active');
+    activated = true;
   }
 
-  // 3. Update URL hash if requested
+  // Direct subnav match (e.g. #subnav-marketing, #subnav-manage-admin, #subnav-courier-api)
+  if (!activated) {
+    const directSubnav = document.getElementById(`subnav-${targetView}`);
+    if (directSubnav) {
+      directSubnav.classList.add('active');
+      const parentGroup = directSubnav.closest('.nav-has-sub');
+      if (parentGroup) parentGroup.classList.add('open');
+      activated = true;
+    }
+  }
+
+  // Direct top-level match (e.g. #nav-dashboard, #nav-analytics)
+  if (!activated) {
+    const directTopNav = document.getElementById(`nav-${targetView}`);
+    if (directTopNav && !directTopNav.closest('.nav-has-sub')) {
+      directTopNav.classList.add('active');
+      activated = true;
+    }
+  }
+
+  // Fallback tree link match
+  if (!activated) {
+    const matchingTreeLink = document.querySelector(`.tree-link[onclick*="'${targetView}'"]`);
+    if (matchingTreeLink) {
+      matchingTreeLink.classList.add('active');
+      const parent = matchingTreeLink.closest('.nav-has-sub');
+      if (parent) parent.classList.add('open');
+    }
+  }
+
+  // 4. Update URL hash if requested (avoid pushState duplicate if already on target hash)
   if (updateHash) {
     const expectedHash = '#' + targetView;
     if (window.location && window.location.hash !== expectedHash) {
@@ -3160,7 +3239,41 @@ function doSwitchView(viewName, updateHash = true) {
     }
   }
 
-  // 4. View-specific renders and data loaders
+  // 5. Update top navbar title
+  const topTitleEl = document.getElementById('topNavbarTitle') || document.querySelector('.top-navbar .navbar-left span');
+  if (topTitleEl) {
+    const titleMap = {
+      'dashboard': 'Dashboard',
+      'analytics': 'Analytics & Attribution',
+      'orders': 'Orders Management',
+      'report': 'Order Processing Report',
+      'income': 'Income Accounts',
+      'expense': 'Expense Accounts',
+      'balance': 'Balance Sheet',
+      'products': 'Manage Products',
+      'header-setting': 'Header Configuration',
+      'theme-setting': 'Theme Settings',
+      'marketing': 'Marketing & Meta Pixel',
+      'courier-api': 'Courier API Setup',
+      'invoice-address': 'Invoice Address',
+      'delivery-charge': 'Delivery Charges',
+      'cities': 'City Settings',
+      'sub-city': 'Sub City Settings',
+      'couriers': 'Courier Configuration',
+      'order-source': 'Order Sources',
+      'comments': 'Comment Settings',
+      'add-admin': 'Add Admin',
+      'manage-admin': 'Manage Admins',
+      'customers': 'Customer List',
+      'profit-report': 'Profit / Loss Report',
+      'landing-pages-list': 'All Landing Pages',
+      'landing-page-builder': 'Landing Page Builder',
+      'landingpages': 'Landing Page Hub'
+    };
+    topTitleEl.textContent = titleMap[targetView] || 'Dashboard';
+  }
+
+  // 6. View-specific renders and data loaders
   if (targetView === 'dashboard') {
     renderDashboardData();
     renderMonthlyChart();
