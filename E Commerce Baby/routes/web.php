@@ -14,7 +14,7 @@ Route::get('/', [FrontendController::class, 'home'])->name('home');
 
 // Shop & Collections (Universal Catalog & Category Routing)
 Route::get('/shop', [FrontendController::class, 'shop'])->name('shop');
-Route::get('/categories', [FrontendController::class, 'shop'])->name('categories');
+Route::get('/categories', [FrontendController::class, 'categories'])->name('categories');
 Route::get('/collections/{handle}', [FrontendController::class, 'collection'])->name('collection.show');
 Route::get('/category/{slug}', [FrontendController::class, 'collection'])->name('category.show');
 Route::get('/product/{slug}', [FrontendController::class, 'product'])->name('product.show');

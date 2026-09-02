@@ -1,14 +1,21 @@
 <!-- Floating WhatsApp Widget -->
+@php
+    $siteName = \App\Models\Setting::get('site_name', 'Growth Agro');
+    $whatsappNumber = preg_replace('/[^0-9]/', '', \App\Models\Setting::get('whatsapp_number', \App\Models\Setting::get('support_phone', '8801560016740')));
+    if (!\Illuminate\Support\Str::startsWith($whatsappNumber, '88')) {
+        $whatsappNumber = '88' . ltrim($whatsappNumber, '0');
+    }
+@endphp
 <div class="whatsapp-floating-container" id="whatsappContainer">
     <!-- WhatsApp Chat Popup Box -->
     <div class="whatsapp-popup" id="whatsappPopup">
         <div class="whatsapp-popup-header">
             <div class="whatsapp-avatar-wrap">
-                <img src="{{ asset('images/logo.png') }}" alt="Baby Fashion BD Support" class="whatsapp-avatar">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: #25D366; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem;">💬</div>
                 <span class="whatsapp-online-dot"></span>
             </div>
             <div class="whatsapp-header-info">
-                <div class="whatsapp-title">Baby Fashion BD</div>
+                <div class="whatsapp-title">{{ $siteName }}</div>
                 <div class="whatsapp-status">Typically replies within minutes</div>
             </div>
             <button type="button" class="whatsapp-popup-close" id="whatsappCloseBtn" aria-label="Close Chat">&times;</button>
@@ -16,14 +23,14 @@
 
         <div class="whatsapp-popup-body">
             <div class="whatsapp-message-bubble">
-                <p>Hello! 👋 Welcome to Baby Fashion BD.</p>
-                <p style="margin-top: 5px;">How can we assist you today? Let us know if you need help with sizing, orders, or delivery!</p>
+                <p>Hello! 👋 Welcome to {{ $siteName }}.</p>
+                <p style="margin-top: 5px;">How can we assist you today? Let us know if you need help with products, orders, or fast delivery!</p>
                 <span class="whatsapp-msg-time">{{ date('h:i A') }}</span>
             </div>
         </div>
 
         <div class="whatsapp-popup-footer">
-            <a href="https://wa.me/8801560016740?text=Hello%20Baby%20Fashion%20BD,%20I%20have%20an%20inquiry." target="_blank" rel="noopener noreferrer" class="whatsapp-send-btn">
+            <a href="https://wa.me/{{ $whatsappNumber }}?text=Hello%20{{ urlencode($siteName) }},%20I%20have%20an%20inquiry." target="_blank" rel="noopener noreferrer" class="whatsapp-send-btn">
                 <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.36 7.34 9.09 7.4 8.87 7.65C8.65 7.89 8.02 8.48 8.02 9.69C8.02 10.9 8.9 12.07 9.02 12.23C9.15 12.4 10.74 14.85 13.18 15.91C13.76 16.16 14.21 16.31 14.57 16.42C15.15 16.61 15.68 16.58 16.1 16.52C16.57 16.45 17.54 15.93 17.75 15.34C17.95 14.75 17.95 14.25 17.89 14.15C17.83 14.05 17.67 13.99 17.43 13.87C17.19 13.75 16 13.17 15.78 13.09C15.56 13 15.4 12.96 15.24 13.2C15.08 13.45 14.61 14.01 14.47 14.17C14.33 14.34 14.19 14.36 13.95 14.24C13.71 14.12 12.93 13.86 12.01 13.04C11.29 12.4 10.8 11.61 10.66 11.37C10.52 11.13 10.65 11 10.77 10.88C10.88 10.77 11.02 10.59 11.14 10.45C11.26 10.31 11.3 10.21 11.38 10.05C11.46 9.89 11.42 9.75 11.36 9.63C11.3 9.5 10.82 8.33 10.62 7.84C10.42 7.37 10.22 7.43 10.07 7.42C9.93 7.42 9.77 7.34 9.53 7.34Z"/></svg>
                 <span>Chat on WhatsApp</span>
             </a>

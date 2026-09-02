@@ -41,11 +41,11 @@ class UniversalCategoryTest extends TestCase
         $resShop->assertSee('Calf Growth Milk Replacer 1KG');
         $resShop->assertSee('Dairy Supplements');
 
-        // /categories
+        // /categories (All Categories View)
         $resCat = $this->get('/categories');
         $resCat->assertStatus(200);
-        $resCat->assertViewIs('pages.shop');
-        $resCat->assertSee('Calf Growth Milk Replacer 1KG');
+        $resCat->assertViewIs('pages.categories');
+        $resCat->assertSee('Dairy Supplements');
     }
 
     /**

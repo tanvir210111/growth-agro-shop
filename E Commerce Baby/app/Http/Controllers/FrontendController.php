@@ -45,6 +45,14 @@ class FrontendController extends Controller
         ));
     }
 
+    public function categories(Request $request): View
+    {
+        $collections = $this->productService->getCollections();
+        $cartSummary = $this->cartService->getSummary();
+
+        return view('pages.categories', compact('collections', 'cartSummary'));
+    }
+
     public function shop(Request $request): View
     {
         $collections = $this->productService->getCollections();

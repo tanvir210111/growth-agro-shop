@@ -1,69 +1,123 @@
 @extends('layouts.app')
 
 @section('title', ($currentCollection['title'] ?? 'Shop All') . ' | ' . \App\Models\Setting::get('site_title', 'Growth Agro'))
+@section('meta_description', $currentCollection['description'] ?? 'Explore our catalog of quality products at ' . \App\Models\Setting::get('site_title', 'Growth Agro'))
 
 @section('content')
 <div class="container" style="padding: 2rem 1rem 4rem;">
-    <!-- Breadcrumb & Header -->
-    <div style="margin-bottom: 2rem;">
-        <div style="font-size: 0.85rem; color: var(--color-text-light); margin-bottom: 0.5rem;">
-            <a href="{{ route('home') }}">Home</a> &rsaquo; <span>{{ $currentCollection['title'] ?? 'Shop' }}</span>
-        </div>
-        <h1 style="font-family: var(--font-heading); font-size: 2.2rem; color: var(--color-text-main); margin-bottom: 0.4rem;">
+    <!-- Breadcrumb -->
+    <div style="font-size: 0.85rem; color: var(--color-text-light); margin-bottom: 1.25rem;">
+        <a href="{{ route('home') }}">Home</a> &rsaquo;
+        @if(($currentCollection['handle'] ?? '') !== 'all-collection')
+            <a href="{{ route('categories') }}">Categories</a> &rsaquo;
+        @endif
+        <span>{{ $currentCollection['title'] ?? 'Shop' }}</span>
+    </div>
+
+    <!-- Category Header Area -->
+    <div style="margin-bottom: 2rem; background: #fff; padding: 2rem; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+        <h1 style="font-family: var(--font-heading); font-size: 2rem; color: var(--color-text-main); margin-bottom: 0.4rem;">
             {{ $currentCollection['title'] ?? 'All Collection' }}
         </h1>
-        <p style="color: var(--color-text-muted); font-size: 0.95rem; max-width: 650px;">
+        <p style="color: var(--color-text-muted); font-size: 0.95rem; margin: 0; max-width: 750px; line-height: 1.6;">
             {{ $currentCollection['description'] ?? 'Browse through our complete selection of quality curated products.' }}
         </p>
     </div>
 
-    <!-- Category Filters -->
-    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 2rem;">
-        <a href="{{ route('collection.show', 'all-collection') }}" class="size-pill-lg {{ ($currentCollection['handle'] ?? '') === 'all-collection' ? 'selected' : '' }}">
-            All Collection
-        </a>
-        @foreach($collections as $col)
-            @if($col['handle'] !== 'all-collection')
-                <a href="{{ route('collection.show', $col['handle']) }}" class="size-pill-lg {{ ($currentCollection['handle'] ?? '') === $col['handle'] ? 'selected' : '' }}">
-                    {{ $col['title'] }}
-                </a>
+    <!-- Layout Grid: Sidebar + Product Catalog -->
+    <div style="display: grid; grid-template-columns: 240px 1fr; gap: 2rem;" class="catalog-layout-grid">
+        <!-- Sidebar Filter -->
+        <aside class="catalog-sidebar" style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; height: fit-content;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.75rem;">
+                <h4 style="font-size: 1rem; font-weight: 700; margin: 0; color: #0f172a;">Filter By</h4>
+                <a href="{{ route('shop') }}" style="font-size: 0.8rem; color: #ea580c; font-weight: 600;">Clear All</a>
+            </div>
+
+            <!-- Category Filter List -->
+            <div style="margin-bottom: 1.5rem;">
+                <h5 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.75rem; color: #334155;">Categories</h5>
+                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <li>
+                        <a href="{{ route('collection.show', 'all-collection') }}" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; color: {{ ($currentCollection['handle'] ?? '') === 'all-collection' ? '#ea580c' : '#475569' }}; font-weight: {{ ($currentCollection['handle'] ?? '') === 'all-collection' ? '700' : '500' }};">
+                            <span>All Products</span>
+                        </a>
+                    </li>
+                    @foreach($collections as $col)
+                        @if($col['handle'] !== 'all-collection')
+                            <li>
+                                <a href="{{ route('collection.show', $col['handle']) }}" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; color: {{ ($currentCollection['handle'] ?? '') === $col['handle'] ? '#ea580c' : '#475569' }}; font-weight: {{ ($currentCollection['handle'] ?? '') === $col['handle'] ? '700' : '500' }};">
+                                    <span>{{ $col['title'] }}</span>
+                                    <span style="font-size: 0.75rem; color: #94a3b8; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{{ $col['item_count'] ?? 0 }}</span>
+                                </a>
+                            </li>
+                        @endif
+                    @endforeach
+                </ul>
+            </div>
+
+            <!-- Price Range Filter Form -->
+            <div>
+                <h5 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.75rem; color: #334155;">Price Range</h5>
+                <form method="GET" action="{{ url()->current() }}">
+                    <input type="hidden" name="sort" value="{{ $sort ?? 'newest' }}">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <input type="number" name="min_price" value="{{ request('min_price') }}" placeholder="Min ৳" style="width: 50%; padding: 0.45rem 0.6rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem;">
+                        <input type="number" name="max_price" value="{{ request('max_price') }}" placeholder="Max ৳" style="width: 50%; padding: 0.45rem 0.6rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.85rem;">
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; padding: 0.5rem; font-size: 0.85rem; justify-content: center;">
+                        Apply Filter
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Main Product Grid Area -->
+        <main>
+            <!-- Sort & Count Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 0.85rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <div style="font-size: 0.9rem; font-weight: 600; color: #64748b;">
+                    Showing <strong style="color: #ea580c;">{{ count($products) }}</strong> products
+                </div>
+
+                <form method="GET" action="{{ url()->current() }}" style="display: flex; align-items: center; gap: 0.6rem;">
+                    @if(request('min_price')) <input type="hidden" name="min_price" value="{{ request('min_price') }}"> @endif
+                    @if(request('max_price')) <input type="hidden" name="max_price" value="{{ request('max_price') }}"> @endif
+                    <label for="sortSelect" style="font-size: 0.88rem; font-weight: 600; color: #475569;">Sort By:</label>
+                    <select id="sortSelect" name="sort" onchange="this.form.submit()" style="padding: 0.45rem 0.85rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 0.88rem; background: #fff; color: #1e293b;">
+                        <option value="newest" {{ ($sort ?? '') === 'newest' ? 'selected' : '' }}>Newest First</option>
+                        <option value="price_asc" {{ ($sort ?? '') === 'price_asc' ? 'selected' : '' }}>Price: Low to High</option>
+                        <option value="price_desc" {{ ($sort ?? '') === 'price_desc' ? 'selected' : '' }}>Price: High to Low</option>
+                        <option value="rating" {{ ($sort ?? '') === 'rating' ? 'selected' : '' }}>Top Rated</option>
+                    </select>
+                </form>
+            </div>
+
+            <!-- Products Grid -->
+            @if(count($products) > 0)
+                <div class="products-grid">
+                    @foreach($products as $product)
+                        @include('partials.product-card', ['product' => $product])
+                    @endforeach
+                </div>
+            @else
+                <div style="text-align: center; padding: 4rem 1rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
+                    <h3 style="color: #1e293b; margin-bottom: 0.4rem;">No products found</h3>
+                    <p style="color: #64748b; margin: 0 0 1.5rem;">Try choosing another category or clearing your filters.</p>
+                    <a href="{{ route('shop') }}" class="btn-primary" style="padding: 0.75rem 2rem;">View All Products</a>
+                </div>
             @endif
-        @endforeach
+        </main>
     </div>
-
-    <!-- Filter & Sort Bar -->
-    <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 1rem 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-        <div style="font-size: 0.9rem; font-weight: 600; color: var(--color-text-muted);">
-            Showing <strong style="color: var(--color-primary);">{{ count($products) }}</strong> items
-        </div>
-
-        <form method="GET" action="{{ url()->current() }}" style="display: flex; align-items: center; gap: 0.8rem;">
-            <label for="sortSelect" style="font-size: 0.88rem; font-weight: 600;">Sort By:</label>
-            <select id="sortSelect" name="sort" onchange="this.form.submit()" style="padding: 0.5rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 0.88rem; background: #fff;">
-                <option value="newest" {{ ($sort ?? '') === 'newest' ? 'selected' : '' }}>Newest Items</option>
-                <option value="price_asc" {{ ($sort ?? '') === 'price_asc' ? 'selected' : '' }}>Price: Low to High</option>
-                <option value="price_desc" {{ ($sort ?? '') === 'price_desc' ? 'selected' : '' }}>Price: High to Low</option>
-                <option value="rating" {{ ($sort ?? '') === 'rating' ? 'selected' : '' }}>Top Rated</option>
-            </select>
-        </form>
-    </div>
-
-    <!-- Products Grid -->
-    @if(count($products) > 0)
-        <div class="products-grid">
-            @foreach($products as $product)
-                @include('partials.product-card', ['product' => $product])
-            @endforeach
-        </div>
-    @else
-        <div style="text-align: center; padding: 4rem 1rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
-            <h3>No products found</h3>
-            <p style="color: #777; margin: 0.5rem 0 1.5rem;">Try choosing another category or clearing your filters.</p>
-            <a href="{{ route('shop') }}" class="btn-primary">View All Products</a>
-        </div>
-    @endif
 </div>
+
+<style>
+@media (max-width: 860px) {
+    .catalog-layout-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
 
 @push('scripts')
 <script>

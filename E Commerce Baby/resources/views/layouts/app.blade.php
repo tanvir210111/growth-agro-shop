@@ -6,11 +6,14 @@
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
-    <title>@yield('title', 'Baby Fashion BD | Premium Organic Baby Clothing Bangladesh')</title>
-    <meta name="description" content="@yield('meta_description', 'Baby Fashion BD - Premium, breathable, 100% pure organic cotton baby sets, romper, dresses, and clothing.')">
-    
+    <title>@yield('title', \App\Models\Setting::get('site_title', 'Growth Agro | Universal E-Commerce & Online Store'))</title>
+    <meta name="description" content="@yield('meta_description', \App\Models\Setting::get('meta_description', 'Discover quality products at the best prices with fast nationwide Cash on Delivery.'))">
+
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    @php
+        $siteFavicon = \App\Models\Setting::get('site_favicon', 'images/logo.png');
+    @endphp
+    <link rel="icon" type="image/png" href="{{ \Illuminate\Support\Str::startsWith($siteFavicon, ['http://', 'https://', '/']) ? $siteFavicon : asset($siteFavicon) }}">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
