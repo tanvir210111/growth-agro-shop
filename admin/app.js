@@ -3735,7 +3735,14 @@ window.checkCourierRatio = function(phone, customerName, invoice, btnEl) {
   });
 };
 
-window.testBdCourierConnection = function() {
+let isTestingCourierConnection = false;
+window.testBdCourierConnection = function(btnEl) {
+  if (isTestingCourierConnection) return;
+  isTestingCourierConnection = true;
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerText = 'Testing...';
+  }
   showToast('BD Courier API এর সাথে সার্ভার কানেকশন পরীক্ষা করা হচ্ছে...');
   const token = localStorage.getItem('admin_token') || '';
 
@@ -3757,6 +3764,13 @@ window.testBdCourierConnection = function() {
   })
   .catch(err => {
     alert(`Connection Error: ${err.message}`);
+  })
+  .finally(() => {
+    isTestingCourierConnection = false;
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.innerText = '🔍 Test Connection';
+    }
   });
 };
 

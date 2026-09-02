@@ -1134,6 +1134,21 @@ class AdminAnalyticsController extends Controller
         $cancelled = (int) $result['cancelled_parcels'];
         $ratio     = (float) $result['success_ratio'];
 
+        // Persist verified courier data on the order if matched
+        if (!empty($invoice)) {
+            $matchedOrder = Order::where('invoice_no', $invoice)->first();
+        } else {
+            $matchedOrder = Order::where('customer_phone', $phone)->latest()->first();
+        }
+        if ($matchedOrder) {
+            $matchedOrder->courier_success_rate   = $ratio;
+            $matchedOrder->courier_total_orders   = $total;
+            $matchedOrder->courier_delivered      = $delivered;
+            $matchedOrder->courier_cancelled      = $cancelled;
+            $matchedOrder->courier_checked_at     = now();
+            $matchedOrder->save();
+        }
+
         $level = 'safe';
         $label = 'বিশ্বস্ত কাস্টমার (High Trust)';
         if ($total === 0) {

@@ -1357,56 +1357,13 @@
     const addressInput = document.getElementById('customer-address');
     const phoneInput = document.getElementById('customer-phone');
 
-    function sanitize(str) { return String(str || '').replace(/[<>]/g, '').trim(); }
-    function validatePhone(phone) { return /^01[3-9]\d{8}$/.test(phone.replace(/[^0-9]/g, '')); }
-
-    // BD Courier Server-Side Risk Verification
-    async function checkPhoneRisk() {
-      if (!phoneInput) return;
-      const raw = phoneInput.value.trim().replace(/[^0-9]/g, '');
-      const badge = document.getElementById('courier-risk-badge');
-      if (!/^01[3-9]\d{8}$/.test(raw)) {
-        if (badge) badge.style.display = 'none';
-        customerRiskData = null;
-        recalculate();
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/checkout/courier-check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: raw, deliveryZone: currentDeliveryZone })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          customerRiskData = data;
-          if (badge) {
-            badge.style.display = 'block';
-            if (data.requires_advance) {
-              badge.innerHTML = '<div style="padding: 10px 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; font-size: 13px; color: #9f1239; line-height: 1.5;">' +
-                '⚠️ <b>ডেলিভারি চার্জ অগ্রিম প্রযোজ্য:</b> কুরিয়ার হিস্ট্রি অনুযায়ী আপনার ডেলিভারি সাকসেস রেট <b>' + data.success_rate + '% (≤ ৮০%)</b>। অর্ডারটি নিশ্চিত করতে ডেলিভারি চার্জ অগ্রিম বিকাশ/নগদে পরিশোধ করতে হবে।' +
-                '</div>';
-            } else {
-              badge.innerHTML = '<div style="padding: 8px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 13px; color: #166534; line-height: 1.4;">' +
-                '✅ <b>১০০% ক্যাশ অন ডেলিভারি প্রযোজ্য:</b> আপনার জন্য কোনো অগ্রিম পেমেন্টের প্রয়োজন নেই। সম্পূর্ণ মূল্য পণ্য পেয়ে পরিশোধ করুন।' +
-                '</div>';
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('[Courier Risk Check]', e.message);
-      } finally {
-        recalculate();
-      }
-    }
-
     if (phoneInput) {
       phoneInput.addEventListener('input', function() {
-        clearTimeout(phoneCheckTimer);
-        phoneCheckTimer = setTimeout(checkPhoneRisk, 500);
+        recalculate();
       });
-      phoneInput.addEventListener('blur', checkPhoneRisk);
+      phoneInput.addEventListener('blur', function() {
+        recalculate();
+      });
     }
 
     // Calculation Engine

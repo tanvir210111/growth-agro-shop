@@ -334,57 +334,27 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // 1.5. Public Fast Checkout Courier & Risk Check (POST /api/checkout/courier-check)
+    // 1.5. Public Fast Checkout Delivery Calculation (POST /api/checkout/courier-check)
     if (reqPath === '/api/checkout/courier-check' && method === 'POST') {
-      const limit = checkRateLimit(clientIp, 'checkout_courier_check', 30, 60000);
-      if (!limit.allowed) {
-        return sendJson(res, 429, {
-          success: false,
-          error: `অনুরোধের মাত্রা ছাড়িয়েছে। দয়া করে ${limit.retryAfterSec} সেকেন্ড অপেক্ষা করুন।`
-        });
-      }
-
       try {
         const body = await parseJsonBody(req);
         const rawPhone = body && typeof body === 'object' ? (body.phone || '') : '';
         const deliveryZone = body && typeof body === 'object' ? (body.deliveryZone || body.delivery_zone || 'inside') : 'inside';
         const validation = validateBdPhone(rawPhone);
-
-        if (!validation.valid) {
-          return sendJson(res, 400, { success: false, error: validation.error });
-        }
-
-        const phone = validation.normalized;
-        let courierResult = null;
-        try {
-          courierResult = await checkBdCourier(phone);
-        } catch (e) {
-          courierResult = null;
-        }
-
-        let totalParcels = 0;
-        let delivered = 0;
-        let cancelled = 0;
-
-        if (courierResult && courierResult.success && courierResult.data) {
-          totalParcels = courierResult.data.total_parcels || 0;
-          delivered = courierResult.data.delivered || 0;
-          cancelled = courierResult.data.cancelled_or_returned || 0;
-        }
-
-        const decision = calculateDeliveryDecision(totalParcels, delivered, cancelled, deliveryZone);
+        const phone = validation.valid ? validation.normalized : rawPhone;
+        const decision = calculateDeliveryDecision(0, 0, 0, deliveryZone);
 
         return sendJson(res, 200, {
           success: true,
-          phone: phone.slice(0, 3) + '****' + phone.slice(-4),
-          total_parcels: totalParcels,
-          delivered: delivered,
-          cancelled: cancelled,
-          success_rate: decision.success_rate,
+          phone: phone ? (phone.slice(0, 3) + '****' + phone.slice(-4)) : '',
+          total_parcels: 0,
+          delivered: 0,
+          cancelled: 0,
+          success_rate: 100,
           risk_level: decision.level,
           risk_label: decision.label,
-          requires_advance: decision.requires_advance,
-          advance_amount: decision.advance_amount,
+          requires_advance: false,
+          advance_amount: 0,
           advance_delivery_dhaka: decision.advance_delivery_dhaka,
           advance_delivery_outside: decision.advance_delivery_outside,
           delivery_charge: decision.delivery_charge,
@@ -392,7 +362,13 @@ const server = http.createServer(async (req, res) => {
           payment_message: decision.message
         });
       } catch (err) {
-        return sendJson(res, 500, { success: false, error: 'সার্ভার ভেরিফিকেশনে ত্রুটি হয়েছে।' });
+        return sendJson(res, 200, {
+          success: true,
+          requires_advance: false,
+          advance_amount: 0,
+          delivery_charge: 60,
+          payment_decision: 'cod'
+        });
       }
     }
 
@@ -461,24 +437,10 @@ const server = http.createServer(async (req, res) => {
           return sendJson(res, 400, { success: false, error: err.message });
         }
 
-        // Evaluate customer risk via Courier check
-        let fraudLevel = 'new_customer';
-        let fraudScore = 100;
+        // Customer risk assessment (manual admin check only — auto courier check disabled)
+        let fraudLevel = 'low';
+        let fraudScore = 0;
         let advanceAmount = 0;
-        try {
-          const courierCheck = await checkBdCourier(phone);
-          if (courierCheck && courierCheck.success && courierCheck.data) {
-            const dec = calculateDeliveryDecision(
-              courierCheck.data.total_parcels,
-              courierCheck.data.delivered,
-              courierCheck.data.cancelled_or_returned,
-              calculated.deliveryZone
-            );
-            fraudLevel = dec.level;
-            fraudScore = dec.success_rate;
-            advanceAmount = dec.advance_amount;
-          }
-        } catch (e) {}
 
         // Server-Side Deduplication / Idempotency Check
         const existingOrder = findDuplicateOrder(phone, productId, variantId, idempotencyKey);
@@ -725,83 +687,18 @@ const server = http.createServer(async (req, res) => {
     // ==========================================
 
     // 7. Internal: Fraud Check for Checkout (POST /api/internal/courier-check)
-    // Called by Laravel during checkout — no browser session needed
+    // Called by Laravel during checkout — no automatic external courier API call
     if (reqPath === '/api/internal/courier-check' && method === 'POST') {
       const incomingSecret = req.headers['x-internal-secret'];
       if (incomingSecret !== INTERNAL_API_SECRET) {
         return sendJson(res, 403, { success: false, error: 'Forbidden: Invalid internal secret.' });
       }
 
-      const rateLimit = checkCourierRateLimit(clientIp);
-      if (!rateLimit.allowed) {
-        // Fail-open: allow COD if rate limit hit
-        return sendJson(res, 200, {
-          success: true,
-          rate_limited: true,
-          payment_decision: 'cod',
-          message: 'Rate limit reached — defaulting to COD (fail-open).'
-        });
-      }
-
-      try {
-        const body = await parseJsonBody(req);
-        const rawPhone = body && typeof body === 'object' ? body.phone : null;
-        const validation = validateBdPhone(rawPhone);
-
-        if (!validation.valid) {
-          // Fail-open: allow COD on invalid phone
-          return sendJson(res, 200, {
-            success: true,
-            phone_invalid: true,
-            payment_decision: 'cod',
-            message: 'Phone validation failed — defaulting to COD.'
-          });
-        }
-
-        const courierResult = await checkBdCourier(validation.normalized);
-
-        if (!courierResult.success) {
-          // Fail-open: courier API unavailable → allow COD
-          return sendJson(res, 200, {
-            success: true,
-            courier_unavailable: true,
-            payment_decision: 'cod',
-            message: 'Courier API unavailable — defaulting to COD (fail-open).'
-          });
-        }
-
-        const decision = calculateDeliveryDecision(
-          courierResult.data.total_parcels,
-          courierResult.data.delivered,
-          courierResult.data.cancelled_or_returned,
-          deliveryZone
-        );
-
-        return sendJson(res, 200, {
-          success: true,
-          phone: courierResult.data.phone,
-          success_rate: decision.success_rate,
-          trust_level: decision.level,
-          trust_label: decision.label,
-          total_parcels: courierResult.data.total_parcels,
-          delivered: courierResult.data.delivered,
-          cancelled: courierResult.data.cancelled_or_returned,
-          requires_advance: decision.requires_advance,
-          advance_amount: decision.advance_amount,
-          advance_delivery_dhaka: decision.advance_delivery_dhaka,
-          advance_delivery_outside: decision.advance_delivery_outside,
-          payment_decision: decision.requires_advance ? 'advance_required' : 'cod',
-          payment_message: decision.message
-        });
-      } catch (err) {
-        // Fail-open on any error
-        return sendJson(res, 200, {
-          success: true,
-          error: true,
-          payment_decision: 'cod',
-          message: 'Internal error during fraud check — defaulting to COD.'
-        });
-      }
+      return sendJson(res, 200, {
+        success: true,
+        payment_decision: 'cod',
+        message: 'Default COD applied.'
+      });
     }
 
     // 8. Internal: Sync Order from Laravel to Node.js SQLite (POST /api/internal/sync-order)

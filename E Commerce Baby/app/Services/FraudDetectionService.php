@@ -175,6 +175,10 @@ class FraudDetectionService
     // ══════════════════════════════════════════════════════════════════
 
     /**
+     * Signal A: BD Courier delivery ratio.
+     * Evaluates cached courier metrics if an admin has previously checked the order.
+     * Automatic live courier API checking is disabled to prevent unintended API usage.
+     *
      * @return array{int, array, array}  [points, reasons, courierData]
      */
     private function scoreSignalCourier(Order $order): array
@@ -184,12 +188,12 @@ class FraudDetectionService
             return [0, [], []];
         }
 
-        // Idempotency: if already checked, re-use stored values
+        // Only evaluate Signal A if an admin has explicitly checked this order (courier_checked_at is set)
         if ($order->courier_checked_at) {
-            $successRatio  = (float)  ($order->courier_success_rate   ?? 0.0);
-            $totalParcels  = (int)    ($order->courier_total_orders    ?? 0);
-            $successParcels = (int)   ($order->courier_delivered       ?? 0);
-            $cancelledParcels = (int) ($order->courier_cancelled       ?? 0);
+            $successRatio     = (float)  ($order->courier_success_rate   ?? 0.0);
+            $totalParcels     = (int)    ($order->courier_total_orders    ?? 0);
+            $successParcels   = (int)    ($order->courier_delivered       ?? 0);
+            $cancelledParcels = (int)    ($order->courier_cancelled       ?? 0);
 
             $courier = [
                 'success'           => true,
@@ -203,27 +207,8 @@ class FraudDetectionService
             return $this->evaluateCourierData($successRatio, $totalParcels, $courier);
         }
 
-        // Live check (fail-open)
-        $result = $this->courierService->check($phone);
-
-        if (!$result['success']) {
-            // API failure → 0 points, no false fraud signal
-            return [0, [], $result];
-        }
-
-        $successRatio     = (float) $result['success_ratio'];
-        $totalParcels     = (int)   $result['total_parcels'];
-        $successParcels   = (int)   $result['success_parcels'];
-        $cancelledParcels = (int)   $result['cancelled_parcels'];
-
-        // Store courier metrics on the order (will be saved in persistResult)
-        $order->courier_success_rate   = $successRatio;
-        $order->courier_total_orders   = $totalParcels;
-        $order->courier_delivered      = $successParcels;
-        $order->courier_cancelled      = $cancelledParcels;
-        $order->courier_checked_at     = now();
-
-        return $this->evaluateCourierData($successRatio, $totalParcels, $result);
+        // Automatic live check disabled — courier checks only occur on explicit admin action
+        return [0, [], []];
     }
 
     private function evaluateCourierData(float $ratio, int $total, array $courierData): array

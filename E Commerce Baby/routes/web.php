@@ -148,27 +148,15 @@ Route::post('/api/orders', function (\Illuminate\Http\Request $request) {
 })->name('api.orders.post');
 
 Route::post('/api/checkout/courier-check', function (\Illuminate\Http\Request $request) {
-    try {
-        $nodeHost = env('NODE_HOST', '127.0.0.1');
-        $nodePort = env('NODE_PORT', 3000);
-        $nodeUrl = "http://{$nodeHost}:{$nodePort}/api/checkout/courier-check";
-
-        $response = \Illuminate\Support\Facades\Http::timeout(10)
-            ->withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept'       => 'application/json',
-            ])
-            ->withBody($request->getContent(), 'application/json')
-            ->post($nodeUrl);
-
-        return response($response->body(), $response->status())
-            ->header('Content-Type', 'application/json');
-    } catch (\Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'error'   => 'Courier check unavailable.'
-        ], 503);
-    }
+    $deliveryZone = $request->input('deliveryZone', $request->input('delivery_zone', 'inside'));
+    return response()->json([
+        'success'          => true,
+        'requires_advance' => false,
+        'advance_amount'   => 0,
+        'delivery_charge'  => $deliveryZone === 'outside' ? 120 : 60,
+        'payment_decision' => 'cod',
+        'message'          => 'Default COD delivery applied.',
+    ]);
 })->name('api.checkout.courier-check');
 
 // Central Landing Page Builder / CMS Endpoints
