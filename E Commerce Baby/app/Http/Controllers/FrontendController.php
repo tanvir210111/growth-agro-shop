@@ -28,6 +28,7 @@ class FrontendController extends Controller
 
     public function home(): View
     {
+        $sliders = $this->productService->getSliders();
         $collections = $this->productService->getCollections();
         $newArrivals = $this->productService->getNewArrivals(8);
         $bestsellers = $this->productService->getBestsellers(8);
@@ -35,6 +36,7 @@ class FrontendController extends Controller
         $cartSummary = $this->cartService->getSummary();
 
         return view('pages.home', compact(
+            'sliders',
             'collections',
             'newArrivals',
             'bestsellers',
