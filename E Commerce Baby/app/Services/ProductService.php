@@ -392,4 +392,39 @@ class ProductService
             return [];
         }
     }
+
+    /**
+     * Retrieve related products based on category with fallback to active products.
+     */
+    public function getRelatedProducts(int $currentProductId, ?int $categoryId = null, ?string $categoryHandle = null, int $limit = 4): array
+    {
+        try {
+            $query = Product::where('status', true)
+                ->where('id', '!=', $currentProductId)
+                ->with('category');
+
+            if ($categoryId) {
+                $query->where('category_id', $categoryId);
+            } elseif ($categoryHandle && $categoryHandle !== 'all-collection') {
+                $query->where('category_handle', $categoryHandle);
+            }
+
+            $products = $query->latest()->take($limit)->get();
+
+            if ($products->count() < $limit) {
+                $additional = Product::where('status', true)
+                    ->where('id', '!=', $currentProductId)
+                    ->whereNotIn('id', $products->pluck('id'))
+                    ->with('category')
+                    ->latest()
+                    ->take($limit - $products->count())
+                    ->get();
+                $products = $products->concat($additional);
+            }
+
+            return $products->map(fn($p) => $this->formatProduct($p))->toArray();
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
 }

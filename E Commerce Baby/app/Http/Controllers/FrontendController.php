@@ -160,11 +160,12 @@ class FrontendController extends Controller
             abort(404, 'Product not found');
         }
 
-        $relatedProducts = array_filter(
-            $this->productService->getAllProducts(),
-            fn($p) => $p['id'] !== $product['id'] && ($p['category_handle'] === $product['category_handle'] || $p['is_featured'])
+        $relatedProducts = $this->productService->getRelatedProducts(
+            $product['id'],
+            $product['category_id'] ?? null,
+            $product['category_handle'] ?? null,
+            4
         );
-        $relatedProducts = array_slice(array_values($relatedProducts), 0, 4);
         $cartSummary = $this->cartService->getSummary();
 
         return view('pages.product-detail', compact('product', 'relatedProducts', 'cartSummary'));
