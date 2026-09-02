@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="grad_automotive" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" rx="36" fill="#F8FAFC"/>
+  <circle cx="100" cy="100" r="68" fill="url(#grad_automotive)" filter="url(#shadow)"/>
+  <g transform="translate(0, 0)">
+    <path d="M55 110 L68 75 Q78 62 100 62 Q122 62 132 75 L145 110 L152 110 Q156 110 156 116 L154 132 Q154 138 148 138 L142 138 L142 144 Q142 148 136 148 L126 148 Q120 148 120 144 L120 138 L80 138 L80 144 Q80 148 74 148 L64 148 Q58 148 58 144 L58 138 L52 138 Q46 138 44 132 L44 116 Q44 110 48 110 Z" fill="white" stroke="#1E293B" stroke-width="5" stroke-linejoin="round"/>
+      <circle cx="68" cy="122" r="8" fill="#94A3B8"/>
+      <circle cx="132" cy="122" r="8" fill="#94A3B8"/>
+      <rect x="74" y="76" width="52" height="24" rx="4" fill="#CBD5E1"/>
+  </g>
+</svg>

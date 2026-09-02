@@ -96,15 +96,44 @@ class UniversalCatalogSeeder extends Seeder
 
         $categoryMap = [];
         foreach ($categoriesData as $catData) {
-            $cat = Category::updateOrCreate(
-                ['handle' => $catData['handle']],
-                [
-                    'title'       => $catData['title'],
-                    'description' => $catData['description'],
-                    'sort_order'  => $catData['sort_order'],
-                    'status'      => $catData['status'],
-                ]
-            );
+            $seedImage = '/images/categories/' . $catData['handle'] . '.svg';
+            $existingCat = Category::where('handle', $catData['handle'])->first();
+
+            if (!$existingCat) {
+                $cat = Category::create([
+                    'title'        => $catData['title'],
+                    'handle'       => $catData['handle'],
+                    'description'  => $catData['description'],
+                    'sort_order'   => $catData['sort_order'],
+                    'status'       => $catData['status'],
+                    'image'        => $seedImage,
+                    'banner_image' => $seedImage,
+                ]);
+            } else {
+                // Safe preservation of admin custom media
+                $isSeedOrEmptyImage = empty($existingCat->image)
+                    || $existingCat->image === '/images/banners/all-collection.jpg'
+                    || $existingCat->image === 'images/banners/all-collection.jpg'
+                    || $existingCat->image === '/images/placeholder.webp'
+                    || str_starts_with($existingCat->image, '/images/categories/');
+
+                $isSeedOrEmptyBanner = empty($existingCat->banner_image)
+                    || $existingCat->banner_image === '/images/banners/all-collection.jpg'
+                    || $existingCat->banner_image === 'images/banners/all-collection.jpg'
+                    || $existingCat->banner_image === '/images/placeholder.webp'
+                    || str_starts_with($existingCat->banner_image, '/images/categories/');
+
+                $existingCat->update([
+                    'title'        => $catData['title'],
+                    'description'  => $catData['description'],
+                    'sort_order'   => $catData['sort_order'],
+                    'status'       => $catData['status'],
+                    'image'        => $isSeedOrEmptyImage ? $seedImage : $existingCat->image,
+                    'banner_image' => $isSeedOrEmptyBanner ? $seedImage : $existingCat->banner_image,
+                ]);
+                $cat = $existingCat;
+            }
+
             $categoryMap[$cat->handle] = $cat;
         }
 
@@ -1015,10 +1044,49 @@ class UniversalCatalogSeeder extends Seeder
 
         foreach ($productsData as $prodData) {
             $cat = $categoryMap[$prodData['category_handle']] ?? null;
+            $seedFeatured = '/uploads/products/' . $prodData['slug'] . '.svg';
+            $existingProd = Product::where('sku', $prodData['sku'])->first();
 
-            Product::updateOrCreate(
-                ['sku' => $prodData['sku']],
-                [
+            if (!$existingProd) {
+                Product::create([
+                    'title'             => $prodData['title'],
+                    'slug'              => $prodData['slug'],
+                    'sku'               => $prodData['sku'],
+                    'category_id'       => $cat ? $cat->id : null,
+                    'category_handle'   => $prodData['category_handle'],
+                    'regular_price'     => $prodData['regular_price'],
+                    'sale_price'        => $prodData['sale_price'],
+                    'cost_price'        => $prodData['cost_price'] ?? 0,
+                    'stock'             => $prodData['stock'] ?? 50,
+                    'sizes'             => $prodData['sizes'] ?? [],
+                    'featured_image'    => $seedFeatured,
+                    'hover_image'       => null,
+                    'gallery_images'    => [$seedFeatured],
+                    'short_description' => $prodData['short_description'],
+                    'description'       => $prodData['description'],
+                    'is_featured'       => (bool)($prodData['is_featured'] ?? false),
+                    'is_new_arrival'    => (bool)($prodData['is_new_arrival'] ?? false),
+                    'is_bestseller'     => (bool)($prodData['is_bestseller'] ?? false),
+                    'is_clearance'      => false,
+                    'status'            => true,
+                ]);
+            } else {
+                // Safe preservation of admin custom media
+                $isSeedOrEmptyFeatured = empty($existingProd->featured_image)
+                    || $existingProd->featured_image === '/images/logo.png'
+                    || $existingProd->featured_image === '/images/placeholder.webp'
+                    || $existingProd->featured_image === $seedFeatured;
+
+                $featuredImage = $isSeedOrEmptyFeatured ? $seedFeatured : $existingProd->featured_image;
+
+                $isSeedOrEmptyGallery = empty($existingProd->gallery_images)
+                    || $existingProd->gallery_images === [$seedFeatured]
+                    || $existingProd->gallery_images === ['/images/logo.png']
+                    || $existingProd->gallery_images === [];
+
+                $galleryImages = $isSeedOrEmptyGallery ? [$seedFeatured] : $existingProd->gallery_images;
+
+                $existingProd->update([
                     'title'             => $prodData['title'],
                     'slug'              => $prodData['slug'],
                     'category_id'       => $cat ? $cat->id : null,
@@ -1028,9 +1096,9 @@ class UniversalCatalogSeeder extends Seeder
                     'cost_price'        => $prodData['cost_price'] ?? 0,
                     'stock'             => $prodData['stock'] ?? 50,
                     'sizes'             => $prodData['sizes'] ?? [],
-                    'featured_image'    => null,
-                    'hover_image'       => null,
-                    'gallery_images'    => [],
+                    'featured_image'    => $featuredImage,
+                    'hover_image'       => $existingProd->hover_image,
+                    'gallery_images'    => $galleryImages,
                     'short_description' => $prodData['short_description'],
                     'description'       => $prodData['description'],
                     'is_featured'       => (bool)($prodData['is_featured'] ?? false),
@@ -1038,8 +1106,8 @@ class UniversalCatalogSeeder extends Seeder
                     'is_bestseller'     => (bool)($prodData['is_bestseller'] ?? false),
                     'is_clearance'      => false,
                     'status'            => true,
-                ]
-            );
+                ]);
+            }
         }
     }
 }

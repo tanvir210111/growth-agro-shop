@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="grad_books" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" rx="36" fill="#F5F3FF"/>
+  <circle cx="100" cy="100" r="68" fill="url(#grad_books)" filter="url(#shadow)"/>
+  <g transform="translate(0, 0)">
+    <path d="M50 70 Q100 55 100 70 Q100 55 150 70 L150 140 Q100 125 100 140 Q100 125 50 140 Z" fill="white" stroke="#6D28D9" stroke-width="5" stroke-linejoin="round"/>
+      <line x1="100" y1="70" x2="100" y2="140" stroke="#6D28D9" stroke-width="5"/>
+      <line x1="62" y1="92" x2="88" y2="88" stroke="#DDD6FE" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="62" y1="108" x2="88" y2="104" stroke="#DDD6FE" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="112" y1="88" x2="138" y2="92" stroke="#DDD6FE" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="112" y1="104" x2="138" y2="108" stroke="#DDD6FE" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+</svg>

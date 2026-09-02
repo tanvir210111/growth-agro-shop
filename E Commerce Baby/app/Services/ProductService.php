@@ -86,7 +86,7 @@ class ProductService
             'stock' => (int) ($product->stock ?? 50),
             'sizes' => $sizes,
             'colors' => ['Default'],
-            'primary_image' => $product->featured_image ?: '/images/logo.png',
+            'primary_image' => $product->featured_image ?: '/images/placeholder.webp',
             'secondary_image' => $product->hover_image,
             'gallery' => $gallery,
             'short_description' => $product->short_description ?: strip_tags(substr($product->description ?: '', 0, 150)),
@@ -103,8 +103,8 @@ class ProductService
             'id' => $category->handle,
             'title' => $category->title,
             'handle' => $category->handle,
-            'image' => $category->image ?: '/images/banners/all-collection.jpg',
-            'banner_image' => $category->banner_image ?: ($category->image ?: 'images/banners/all-collection.jpg'),
+            'image' => $category->image ?: '/images/placeholder.webp',
+            'banner_image' => $category->banner_image ?: ($category->image ?: '/images/placeholder.webp'),
             'description' => $category->description ?: '',
             'item_count' => $category->products()->where('status', true)->count(),
         ];
@@ -130,8 +130,8 @@ class ProductService
                 'id' => 'all-collection',
                 'title' => 'All Collection',
                 'handle' => 'all-collection',
-                'image' => '/images/banners/all-collection.jpg',
-                'banner_image' => 'images/banners/all-collection.jpg',
+                'image' => '/images/placeholder.webp',
+                'banner_image' => '/images/placeholder.webp',
                 'description' => 'Explore our complete selection of products.',
                 'item_count' => 0
             ]
@@ -148,8 +148,8 @@ class ProductService
                 'id' => 'all-collection',
                 'title' => 'All Collection',
                 'handle' => 'all-collection',
-                'image' => '/images/banners/all-collection.jpg',
-                'banner_image' => 'images/banners/all-collection.jpg',
+                'image' => '/images/placeholder.webp',
+                'banner_image' => '/images/placeholder.webp',
                 'description' => 'Explore our complete selection of products.',
                 'item_count' => Product::where('status', true)->count()
             ];

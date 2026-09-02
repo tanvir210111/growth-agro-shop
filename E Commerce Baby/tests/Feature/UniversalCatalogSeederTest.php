@@ -187,6 +187,143 @@ class UniversalCatalogSeederTest extends TestCase
         $cartRes->assertJsonPath('cart.subtotal', 2850);
     }
 
+    public function test_all_11_categories_have_valid_media_and_files_exist()
+    {
+        $this->seed(UniversalCatalogSeeder::class);
+
+        $categories = Category::all();
+        $this->assertCount(11, $categories);
+
+        foreach ($categories as $cat) {
+            $this->assertNotEmpty($cat->image, "Category {$cat->handle} has empty image.");
+            $this->assertStringStartsWith('/images/categories/', $cat->image, "Category {$cat->handle} image path must start with /images/categories/");
+            $this->assertStringEndsWith('.svg', $cat->image);
+            $this->assertStringNotContainsString('landing-pages', $cat->image);
+            $this->assertStringNotContainsString('uploads/products', $cat->image);
+
+            $relative = ltrim($cat->image, '/');
+            $this->assertFileExists(public_path($relative), "Media file {$cat->image} for category {$cat->handle} does not exist on disk.");
+        }
+    }
+
+    public function test_all_55_products_have_featured_media_and_files_exist()
+    {
+        $this->seed(UniversalCatalogSeeder::class);
+
+        $products = Product::all();
+        $this->assertCount(55, $products);
+
+        foreach ($products as $prod) {
+            $this->assertNotEmpty($prod->featured_image, "Product {$prod->sku} has empty featured_image.");
+            $this->assertStringStartsWith('/uploads/products/', $prod->featured_image, "Product {$prod->sku} media must start with /uploads/products/");
+            $this->assertStringNotContainsString('landing-pages', $prod->featured_image);
+            $this->assertStringNotContainsString('/images/logo.png', $prod->featured_image);
+
+            $relative = ltrim($prod->featured_image, '/');
+            $this->assertFileExists(public_path($relative), "Media file {$prod->featured_image} for product {$prod->sku} does not exist on disk.");
+
+            // Gallery check
+            $this->assertIsArray($prod->gallery_images);
+            $this->assertNotEmpty($prod->gallery_images);
+            foreach ($prod->gallery_images as $gImg) {
+                $this->assertStringStartsWith('/uploads/products/', $gImg);
+                $this->assertStringNotContainsString('landing-pages', $gImg);
+            }
+        }
+    }
+
+    public function test_seeder_does_not_overwrite_admin_replaced_product_media()
+    {
+        // 1. Initial seed
+        $this->seed(UniversalCatalogSeeder::class);
+
+        $prod = Product::where('slug', 'smart-watch-pro-4')->first();
+        $this->assertEquals('/uploads/products/smart-watch-pro-4.svg', $prod->featured_image);
+
+        // 2. Admin replaces product image
+        $customAdminImage = '/uploads/products/custom-admin-watch-' . time() . '.webp';
+        $customGallery = ['/uploads/products/custom-admin-gallery-1.webp'];
+
+        $updateRes = $this->withHeaders(['x-admin-token' => 'adm_session'])
+            ->putJson("/api/admin/products/{$prod->id}", [
+                'title'          => 'Smart Watch Pro 4 (Custom Edition)',
+                'featured_image' => $customAdminImage,
+                'gallery_images' => $customGallery,
+            ]);
+        $updateRes->assertStatus(200);
+
+        $prod->refresh();
+        $this->assertEquals($customAdminImage, $prod->featured_image);
+        $this->assertEquals($customGallery, $prod->gallery_images);
+
+        // 3. Run seeder again
+        $this->seed(UniversalCatalogSeeder::class);
+
+        // 4. Verify custom media is strictly preserved
+        $prod->refresh();
+        $this->assertEquals($customAdminImage, $prod->featured_image, "Seeder overwrote admin custom featured_image!");
+        $this->assertEquals($customGallery, $prod->gallery_images, "Seeder overwrote admin custom gallery_images!");
+    }
+
+    public function test_seeder_does_not_overwrite_admin_replaced_category_media()
+    {
+        // 1. Initial seed
+        $this->seed(UniversalCatalogSeeder::class);
+
+        $cat = Category::where('handle', 'electronics')->first();
+        $this->assertEquals('/images/categories/electronics.svg', $cat->image);
+
+        // 2. Admin replaces category image
+        $customCatImage = '/uploads/products/custom-electronics-icon-' . time() . '.webp';
+        $updateRes = $this->withHeaders(['x-admin-token' => 'adm_session'])
+            ->putJson("/api/admin/categories/{$cat->id}", [
+                'title' => 'Electronics & Smart Tech',
+                'image' => $customCatImage,
+            ]);
+        $updateRes->assertStatus(200);
+
+        $cat->refresh();
+        $this->assertEquals($customCatImage, $cat->image);
+
+        // 3. Run seeder again
+        $this->seed(UniversalCatalogSeeder::class);
+
+        // 4. Verify custom category media is preserved
+        $cat->refresh();
+        $this->assertEquals($customCatImage, $cat->image, "Seeder overwrote admin custom category image!");
+    }
+
+    public function test_product_service_fallback_uses_universal_placeholder()
+    {
+        $service = new \App\Services\ProductService();
+
+        // Product without image
+        $blankProduct = new Product([
+            'id'             => 999,
+            'title'          => 'Test Blank Product',
+            'slug'           => 'test-blank-product',
+            'sku'            => 'TEST-BLANK-999',
+            'regular_price'  => 1000,
+            'sale_price'     => 800,
+            'featured_image' => null,
+        ]);
+
+        $formatted = $service->formatProduct($blankProduct);
+        $this->assertNotEquals('/images/logo.png', $formatted['primary_image']);
+        $this->assertEquals('/images/placeholder.webp', $formatted['primary_image']);
+
+        // Category without image
+        $blankCategory = new Category([
+            'title'  => 'Blank Category',
+            'handle' => 'blank-cat',
+            'image'  => null,
+        ]);
+
+        $formattedCat = $service->formatCategory($blankCategory);
+        $this->assertNotEquals('/images/banners/all-collection.jpg', $formattedCat['image']);
+        $this->assertEquals('/images/placeholder.webp', $formattedCat['image']);
+    }
+
     public function test_landing_page_priority_remains_intact_over_seeded_product()
     {
         $this->seed(UniversalCatalogSeeder::class);

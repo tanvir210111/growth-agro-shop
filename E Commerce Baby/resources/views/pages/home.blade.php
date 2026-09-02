@@ -89,7 +89,7 @@
             <div class="categories-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.25rem;">
                 @forelse($collections as $col)
                     @php
-                        $colImg = !empty($col['image']) ? $col['image'] : 'images/banners/all-collection.jpg';
+                        $colImg = !empty($col['image']) ? $col['image'] : '/images/placeholder.webp';
                     @endphp
                     <a href="{{ route('collection.show', $col['handle']) }}" class="category-card" style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem 0.75rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s ease;">
                         <div class="category-img-wrap" style="width: 60px; height: 60px; margin-bottom: 0.75rem; border-radius: 50%; background: #FFF7ED; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 4px;">

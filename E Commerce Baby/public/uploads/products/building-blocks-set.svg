@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <defs>
+    <linearGradient id="bgGrad_building-blocks-set" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#EDF2F7"/>
+    </linearGradient>
+    <linearGradient id="accentGrad_building-blocks-set" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#CA8A04"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="600" rx="32" fill="url(#bgGrad_building-blocks-set)"/>
+  
+  <!-- Studio Pedestal -->
+  <ellipse cx="300" cy="460" rx="180" ry="32" fill="#E2E8F0" opacity="0.7"/>
+
+  <!-- Category & Brand Ribbon -->
+  <rect x="40" y="40" width="130" height="28" rx="14" fill="#CA8A04" opacity="0.15"/>
+  <text x="105" y="58" fill="#CA8A04" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.5">TOYS & GAMES</text>
+
+  <rect x="430" y="40" width="130" height="28" rx="14" fill="#0F172A" opacity="0.06"/>
+  <text x="495" y="58" fill="#475569" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="0.5">GROWTH AGRO</text>
+
+  <!-- Product Artwork -->
+  <g id="productArtwork">
+    <rect x="200" y="280" width="90" height="70" rx="8" fill="#EF4444" stroke="#991B1B" stroke-width="4"/>
+      <circle cx="225" cy="275" r="8" fill="#EF4444"/>
+      <circle cx="265" cy="275" r="8" fill="#EF4444"/>
+      <rect x="310" y="280" width="90" height="70" rx="8" fill="#3B82F6" stroke="#1D4ED8" stroke-width="4"/>
+      <circle cx="335" cy="275" r="8" fill="#3B82F6"/>
+      <circle cx="375" cy="275" r="8" fill="#3B82F6"/>
+      <rect x="255" y="210" width="90" height="70" rx="8" fill="#F59E0B" stroke="#B45309" stroke-width="4"/>
+      <circle cx="280" cy="205" r="8" fill="#F59E0B"/>
+      <circle cx="320" cy="205" r="8" fill="#F59E0B"/>
+  </g>
+
+  <!-- Product Badge Pill -->
+  <g transform="translate(300, 525)" filter="url(#cardShadow)">
+    <rect x="-110" y="-18" width="220" height="36" rx="18" fill="white" stroke="#E2E8F0" stroke-width="2"/>
+    <text x="0" y="5" fill="#0F172A" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.75">ABS NON-TOXIC 250PC</text>
+  </g>
+</svg>

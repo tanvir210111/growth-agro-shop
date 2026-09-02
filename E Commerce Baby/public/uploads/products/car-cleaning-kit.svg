@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <defs>
+    <linearGradient id="bgGrad_car-cleaning-kit" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#EDF2F7"/>
+    </linearGradient>
+    <linearGradient id="accentGrad_car-cleaning-kit" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="600" rx="32" fill="url(#bgGrad_car-cleaning-kit)"/>
+  
+  <!-- Studio Pedestal -->
+  <ellipse cx="300" cy="460" rx="180" ry="32" fill="#E2E8F0" opacity="0.7"/>
+
+  <!-- Category & Brand Ribbon -->
+  <rect x="40" y="40" width="130" height="28" rx="14" fill="#334155" opacity="0.15"/>
+  <text x="105" y="58" fill="#334155" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.5">AUTOMOTIVE</text>
+
+  <rect x="430" y="40" width="130" height="28" rx="14" fill="#0F172A" opacity="0.06"/>
+  <text x="495" y="58" fill="#475569" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="0.5">GROWTH AGRO</text>
+
+  <!-- Product Artwork -->
+  <g id="productArtwork">
+    <rect x="210" y="200" width="180" height="170" rx="20" fill="#F1F5F9" stroke="#334155" stroke-width="8"/>
+      <rect x="235" y="230" width="55" height="100" rx="8" fill="#38BDF8"/>
+      <rect x="310" y="230" width="55" height="100" rx="8" fill="#F59E0B"/>
+  </g>
+
+  <!-- Product Badge Pill -->
+  <g transform="translate(300, 525)" filter="url(#cardShadow)">
+    <rect x="-110" y="-18" width="220" height="36" rx="18" fill="white" stroke="#E2E8F0" stroke-width="2"/>
+    <text x="0" y="5" fill="#0F172A" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.75">5-PIECE DETAILING</text>
+  </g>
+</svg>

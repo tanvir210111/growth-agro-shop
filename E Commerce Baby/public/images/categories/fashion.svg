@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="grad_fashion" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#BE185D"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" rx="36" fill="#FDF2F8"/>
+  <circle cx="100" cy="100" r="68" fill="url(#grad_fashion)" filter="url(#shadow)"/>
+  <g transform="translate(0, 0)">
+    <path d="M70 55 L85 45 C95 55, 105 55, 115 45 L130 55 L150 85 L135 95 L125 78 L125 155 L75 155 L75 78 L65 95 L50 85 Z" fill="white" stroke="#BE185D" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M90 75 L110 75 M100 70 L100 120" stroke="#F472B6" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>
