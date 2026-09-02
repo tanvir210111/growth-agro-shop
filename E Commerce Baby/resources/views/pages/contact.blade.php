@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Contact Us | Baby Fashion BD')
+@section('title', 'Contact Us | ' . \App\Models\Setting::get('site_title', 'Growth Agro'))
 
 @section('content')
 <div class="container" style="padding: 3rem 1rem 5rem;">
     <div style="text-align: center; margin-bottom: 2.5rem;">
         <span class="hero-tag" style="background: var(--color-primary-light); color: var(--color-primary);">Customer Support</span>
         <h1 style="font-family: var(--font-heading); font-size: 2.2rem; margin-top: 0.4rem;">Get in Touch With Us</h1>
-        <p style="color: var(--color-text-muted);">Have questions about sizes, delivery status or bulk orders? We are here 24/7 to assist you!</p>
+        <p style="color: var(--color-text-muted);">Have questions about product details, delivery status or bulk orders? We are here to assist you!</p>
     </div>
 
     <div class="checkout-grid" style="max-width: 960px; margin: 0 auto;">
@@ -19,7 +19,7 @@
                     <div style="font-size: 1.5rem;">📍</div>
                     <div>
                         <strong>Store Address:</strong>
-                        <p style="color: var(--color-text-muted);">Kuwaiti Moshjid Road, Dhali Bari, Bashundhara R/A 1229, Dhaka, Bangladesh</p>
+                        <p style="color: var(--color-text-muted);">{{ \App\Models\Setting::get('store_address', 'Mirpur, Dhaka-1216, Bangladesh') }}</p>
                     </div>
                 </div>
 
@@ -27,7 +27,7 @@
                     <div style="font-size: 1.5rem;">📞</div>
                     <div>
                         <strong>Helpline (10:00 AM - 10:00 PM):</strong>
-                        <p><a href="tel:+8801560016740" style="color: var(--color-primary); font-weight:700;">+880 1560-016740</a></p>
+                        <p><a href="tel:{{ preg_replace('/[^0-9+]/', '', \App\Models\Setting::get('support_phone', '01560-016740')) }}" style="color: var(--color-primary); font-weight:700;">{{ \App\Models\Setting::get('support_phone', '01560-016740') }}</a></p>
                     </div>
                 </div>
 
@@ -35,7 +35,7 @@
                     <div style="font-size: 1.5rem;">💬</div>
                     <div>
                         <strong>Direct WhatsApp Support:</strong>
-                        <p><a href="https://wa.me/8801560016740" target="_blank" style="color: #25D366; font-weight:700;">Chat on WhatsApp &rarr;</a></p>
+                        <p><a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', \App\Models\Setting::get('whatsapp_number', '8801560016740')) }}" target="_blank" style="color: #25D366; font-weight:700;">Chat on WhatsApp &rarr;</a></p>
                     </div>
                 </div>
 
@@ -43,7 +43,7 @@
                     <div style="font-size: 1.5rem;">✉️</div>
                     <div>
                         <strong>Official Email:</strong>
-                        <p style="color: var(--color-text-muted);">support@babyfashionbd.com</p>
+                        <p style="color: var(--color-text-muted);">{{ \App\Models\Setting::get('support_email', 'support@growthagro.shop') }}</p>
                     </div>
                 </div>
             </div>

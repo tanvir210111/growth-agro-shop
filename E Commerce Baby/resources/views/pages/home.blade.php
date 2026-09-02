@@ -7,7 +7,7 @@
     <!-- Hero Banner Slider -->
     <section class="hero-slider-section">
         <div class="container">
-            <div class="hero-slider-container" style="border-radius: var(--radius-lg); overflow: hidden; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); min-height: 380px; position: relative; border: 1px solid #FED7AA;">
+            <div class="hero-slider-container" style="border-radius: var(--radius-lg); overflow: hidden; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); min-height: 320px; position: relative; border: 1px solid #FED7AA; box-shadow: var(--shadow-sm);">
                 @php
                     $slides = !empty($sliders) ? $sliders : [];
                 @endphp
@@ -24,39 +24,39 @@
                                 @if(!empty($slideImg))
                                     <img src="{{ \Illuminate\Support\Str::startsWith($slideImg, ['http://', 'https://', '/']) ? $slideImg : asset($slideImg) }}" alt="{{ $slideTitle }}" style="width: 100%; height: 100%; object-fit: cover;">
                                 @else
-                                    <div style="padding: 3.5rem 2.5rem; max-width: 600px;">
-                                        <span style="display: inline-block; font-size: 0.85rem; font-weight: 700; color: #EA580C; background: #FFEDD5; padding: 4px 12px; border-radius: 9999px; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">Special Offer</span>
-                                        <h1 style="font-family: var(--font-heading); font-size: 2.5rem; font-weight: 800; color: #0F172A; line-height: 1.2; margin-bottom: 1rem;">{{ $slideTitle }}</h1>
-                                        <p style="color: #64748B; font-size: 1.05rem; margin-bottom: 1.75rem;">Discover amazing deals on all curated products with fast delivery.</p>
-                                        <span class="btn-primary" style="padding: 0.85rem 2.2rem; font-size: 1rem; display: inline-flex;">SHOP NOW &rarr;</span>
+                                    <div style="padding: 2.5rem 2.5rem; max-width: 580px;">
+                                        <span style="display: inline-block; font-size: 0.78rem; font-weight: 800; color: #EA580C; background: #FFEDD5; padding: 3px 10px; border-radius: 9999px; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Special Promotion</span>
+                                        <h1 style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: #0F172A; line-height: 1.2; margin-bottom: 0.75rem;">{{ $slideTitle }}</h1>
+                                        <p style="color: #64748B; font-size: 0.95rem; margin-bottom: 1.4rem;">Discover verified quality products with nationwide Cash on Delivery.</p>
+                                        <span class="btn-primary" style="padding: 0.75rem 1.8rem; font-size: 0.92rem; display: inline-flex;">SHOP NOW &rarr;</span>
                                     </div>
                                 @endif
                             </a>
                         </div>
                     @endforeach
                 @else
-                    <!-- Clean Modern Fallback Hero -->
+                    <!-- Clean Modern Universal Fallback Hero -->
                     <div class="hero-slide active">
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 3.5rem 3rem; min-height: 380px; flex-wrap: wrap; gap: 2rem;">
-                            <div style="max-width: 550px;">
-                                <span style="display: inline-block; font-size: 0.82rem; font-weight: 800; color: #EA580C; background: #FFEDD5; padding: 4px 12px; border-radius: 9999px; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                                    Trending Now
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 2.5rem 2.5rem; min-height: 320px; flex-wrap: wrap; gap: 1.5rem;">
+                            <div style="max-width: 520px;">
+                                <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #EA580C; background: #FFEDD5; padding: 3px 10px; border-radius: 9999px; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                    Growth Agro Special
                                 </span>
-                                <h1 style="font-family: var(--font-heading); font-size: 2.6rem; font-weight: 800; color: #0F172A; line-height: 1.15; margin-bottom: 0.85rem;">
+                                <h1 style="font-family: var(--font-heading); font-size: 2.3rem; font-weight: 800; color: #0F172A; line-height: 1.15; margin-bottom: 0.65rem;">
                                     SUPER SALE <br><span style="color: #EA580C;">UP TO 40% OFF</span>
                                 </h1>
-                                <p style="color: #64748B; font-size: 1.05rem; margin-bottom: 1.75rem; line-height: 1.5;">
-                                    Discover amazing deals on all quality verified products with nationwide Cash on Delivery.
+                                <p style="color: #64748B; font-size: 0.95rem; margin-bottom: 1.4rem; line-height: 1.5;">
+                                    Explore quality guaranteed catalog essentials with fast doorstep dispatch nationwide.
                                 </p>
-                                <a href="{{ route('shop') }}" class="btn-primary" style="padding: 0.9rem 2.5rem; font-size: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);">
+                                <a href="{{ route('shop') }}" class="btn-primary" style="padding: 0.75rem 2rem; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);">
                                     SHOP NOW &rarr;
                                 </a>
                             </div>
-                            <div style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex: 1; min-width: 260px;">
-                                <div style="background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); padding: 2rem; border-radius: var(--radius-lg); text-align: center; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-                                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🛍️</div>
-                                    <div style="font-weight: 700; font-size: 1.1rem; color: #0F172A;">Quality Products</div>
-                                    <div style="font-size: 0.85rem; color: #64748B;">Curated for your daily needs</div>
+                            <div style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex: 1; min-width: 240px;">
+                                <div style="background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); padding: 1.5rem 2rem; border-radius: var(--radius-lg); text-align: center; border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 8px 20px rgba(0,0,0,0.04);">
+                                    <div style="font-size: 2.5rem; margin-bottom: 0.35rem;">🛍️</div>
+                                    <div style="font-weight: 800; font-size: 1.05rem; color: #0F172A;">Universal Marketplace</div>
+                                    <div style="font-size: 0.8rem; color: #64748B;">Curated for high performance & value</div>
                                 </div>
                             </div>
                         </div>
@@ -86,17 +86,17 @@
                 <h2 class="section-title">Shop Our Top Categories</h2>
             </div>
 
-            <div class="categories-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.25rem;">
+            <div class="categories-grid">
                 @forelse($collections as $col)
                     @php
                         $colImg = !empty($col['image']) ? $col['image'] : '/images/placeholder.webp';
                     @endphp
-                    <a href="{{ route('collection.show', $col['handle']) }}" class="category-card" style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem 0.75rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s ease;">
-                        <div class="category-img-wrap" style="width: 60px; height: 60px; margin-bottom: 0.75rem; border-radius: 50%; background: #FFF7ED; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 4px;">
-                            <img src="{{ \Illuminate\Support\Str::startsWith($colImg, ['http://', 'https://', '/']) ? $colImg : asset($colImg) }}" alt="{{ $col['title'] }}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;">
+                    <a href="{{ route('collection.show', $col['handle']) }}" class="category-card">
+                        <div class="category-img-wrap">
+                            <img src="{{ \Illuminate\Support\Str::startsWith($colImg, ['http://', 'https://', '/']) ? $colImg : asset($colImg) }}" alt="{{ $col['title'] }}" loading="lazy">
                         </div>
-                        <h4 class="category-title" style="font-size: 0.92rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 0.2rem;">{{ $col['title'] }}</h4>
-                        <span class="category-count" style="font-size: 0.75rem; color: #64748b;">{{ $col['item_count'] ?? 0 }} Items</span>
+                        <h4 class="category-title">{{ $col['title'] }}</h4>
+                        <span class="category-count">{{ $col['item_count'] ?? 0 }} Items</span>
                     </a>
                 @empty
                     <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #64748b;">
@@ -183,15 +183,15 @@
     </section>
 
     <!-- Proven Bestsellers Section -->
-    <section class="products-section" style="background: #FAFAFA; padding: 3.5rem 0;">
+    <section class="products-section" style="background: #FAFAFA; padding: 2rem 0;">
         <div class="container">
-            <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.25rem;">
                 <div>
                     <span class="section-subtitle" style="text-transform: uppercase; font-size: 0.75rem; font-weight: 800; color: #EA580C; letter-spacing: 0.05em;">POPULAR & TRENDING</span>
-                    <h2 class="section-title" style="font-size: 1.75rem; font-weight: 800; margin: 0.2rem 0 0;">Proven Bestsellers</h2>
+                    <h2 class="section-title" style="font-size: 1.6rem; font-weight: 800; margin: 0.15rem 0 0;">Proven Bestsellers</h2>
                 </div>
                 <div>
-                    <a href="{{ route('shop') }}" style="color: #EA580C; font-weight: 700; font-size: 0.9rem; text-decoration: none;">
+                    <a href="{{ route('shop') }}" style="color: #EA580C; font-weight: 700; font-size: 0.88rem; text-decoration: none;">
                         Explore All &rarr;
                     </a>
                 </div>
@@ -212,46 +212,46 @@
     </section>
 
     <!-- Trust / Features Strip -->
-    <section class="trust-badges-section" style="padding: 3rem 0; background: #ffffff; border-top: 1px solid var(--color-border);">
+    <section class="trust-badges-section" style="padding: 1.75rem 0; background: #ffffff; border-top: 1px solid var(--color-border);">
         <div class="container">
-            <div class="trust-badges-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
-                <div class="trust-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
-                    <div class="trust-icon" style="font-size: 2rem;">🚚</div>
+            <div class="trust-badges-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                <div class="trust-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
+                    <div class="trust-icon" style="font-size: 1.6rem; width: 44px; height: 44px;">🚚</div>
                     <div class="trust-info">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.15rem; color: #0F172A;">Cash on Delivery</h4>
-                        <p style="font-size: 0.8rem; color: #64748B; margin: 0;">Pay when you receive</p>
+                        <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.1rem; color: #0F172A;">Cash on Delivery</h4>
+                        <p style="font-size: 0.75rem; color: #64748B; margin: 0;">Pay when you receive</p>
                     </div>
                 </div>
 
-                <div class="trust-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
-                    <div class="trust-icon" style="font-size: 2rem;">⚡</div>
+                <div class="trust-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
+                    <div class="trust-icon" style="font-size: 1.6rem; width: 44px; height: 44px;">⚡</div>
                     <div class="trust-info">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.15rem; color: #0F172A;">Fast Delivery</h4>
-                        <p style="font-size: 0.8rem; color: #64748B; margin: 0;">Inside 1-3 working days</p>
+                        <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.1rem; color: #0F172A;">Fast Delivery</h4>
+                        <p style="font-size: 0.75rem; color: #64748B; margin: 0;">Inside 1-3 working days</p>
                     </div>
                 </div>
 
-                <div class="trust-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
-                    <div class="trust-icon" style="font-size: 2rem;">🔄</div>
+                <div class="trust-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
+                    <div class="trust-icon" style="font-size: 1.6rem; width: 44px; height: 44px;">🔄</div>
                     <div class="trust-info">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.15rem; color: #0F172A;">Easy Returns</h4>
-                        <p style="font-size: 0.8rem; color: #64748B; margin: 0;">7-day easy return</p>
+                        <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.1rem; color: #0F172A;">Easy Returns</h4>
+                        <p style="font-size: 0.75rem; color: #64748B; margin: 0;">7-day easy return</p>
                     </div>
                 </div>
 
-                <div class="trust-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
-                    <div class="trust-icon" style="font-size: 2rem;">🔒</div>
+                <div class="trust-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
+                    <div class="trust-icon" style="font-size: 1.6rem; width: 44px; height: 44px;">🔒</div>
                     <div class="trust-info">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.15rem; color: #0F172A;">100% Secure</h4>
-                        <p style="font-size: 0.8rem; color: #64748B; margin: 0;">Secure verified payments</p>
+                        <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.1rem; color: #0F172A;">100% Secure</h4>
+                        <p style="font-size: 0.75rem; color: #64748B; margin: 0;">Secure verified payments</p>
                     </div>
                 </div>
 
-                <div class="trust-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
-                    <div class="trust-icon" style="font-size: 2rem;">⭐</div>
+                <div class="trust-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: #F8FAFC; border: 1px solid var(--color-border);">
+                    <div class="trust-icon" style="font-size: 1.6rem; width: 44px; height: 44px;">⭐</div>
                     <div class="trust-info">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.15rem; color: #0F172A;">Best Quality</h4>
-                        <p style="font-size: 0.8rem; color: #64748B; margin: 0;">Premium quality products</p>
+                        <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.1rem; color: #0F172A;">Best Quality</h4>
+                        <p style="font-size: 0.75rem; color: #64748B; margin: 0;">Premium quality products</p>
                     </div>
                 </div>
             </div>

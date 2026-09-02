@@ -29,18 +29,18 @@
     </div>
 
     <!-- Categories Grid -->
-    <div class="categories-grid" id="allCategoriesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem;">
+    <div class="categories-grid" id="allCategoriesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 1.15rem;">
         @forelse($collections as $col)
             @php
                 $colImg = !empty($col['image']) ? $col['image'] : '/images/placeholder.webp';
                 $isAllCol = ($col['handle'] === 'all-collection');
             @endphp
-            <a href="{{ $isAllCol ? route('shop') : route('collection.show', $col['handle']) }}" class="category-card cat-item-card" data-title="{{ strtolower($col['title']) }}" style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem 1rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s ease;">
-                <div class="category-img-wrap" style="width: 72px; height: 72px; margin-bottom: 0.85rem; border-radius: 50%; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 6px;">
+            <a href="{{ $isAllCol ? route('shop') : route('collection.show', $col['handle']) }}" class="category-card cat-item-card" data-title="{{ strtolower($col['title']) }}" style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.15rem 0.75rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s ease;">
+                <div class="category-img-wrap" style="width: 64px; height: 64px; margin-bottom: 0.65rem; border-radius: 50%; background: #FFF7ED; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 4px;">
                     <img src="{{ \Illuminate\Support\Str::startsWith($colImg, ['http://', 'https://', '/']) ? $colImg : asset($colImg) }}" alt="{{ $col['title'] }}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;">
                 </div>
-                <h4 class="category-title" style="font-size: 1rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 0.25rem;">{{ $col['title'] }}</h4>
-                <span class="category-count" style="font-size: 0.8rem; color: #64748b;">{{ $col['item_count'] ?? 0 }} items</span>
+                <h4 class="category-title" style="font-size: 0.92rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 0.2rem;">{{ $col['title'] }}</h4>
+                <span class="category-count" style="font-size: 0.75rem; color: #64748b;">{{ $col['item_count'] ?? 0 }} items</span>
             </a>
         @empty
             <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #64748b;">

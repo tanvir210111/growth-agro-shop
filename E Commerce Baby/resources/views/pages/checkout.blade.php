@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Checkout (Cash on Delivery) | Baby Fashion BD')
+@section('title', 'Checkout (Cash on Delivery) | ' . \App\Models\Setting::get('site_title', 'Growth Agro'))
 
 @section('content')
 <div class="container checkout-section">

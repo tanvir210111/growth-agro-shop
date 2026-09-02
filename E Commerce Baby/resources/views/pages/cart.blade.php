@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Your Shopping Bag | Baby Fashion BD')
+@section('title', 'Your Shopping Bag | ' . \App\Models\Setting::get('site_title', 'Growth Agro'))
 
 @section('content')
 <div class="container" style="padding: 2.5rem 1rem 4rem;">
@@ -12,7 +12,7 @@
         <div style="text-align: center; padding: 4rem 1rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
             <div style="font-size: 3.5rem; margin-bottom: 1rem;">🛍️</div>
             <h2 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 0.5rem;">Your bag is currently empty</h2>
-            <p style="color: var(--color-text-muted); margin-bottom: 1.5rem;">Explore our adorable matching sets and baby clothes!</p>
+            <p style="color: var(--color-text-muted); margin-bottom: 1.5rem;">Explore our curated selection of quality catalog products!</p>
             <a href="{{ route('shop') }}" class="btn-primary" style="padding: 0.85rem 2rem;">Shop All Collections &rarr;</a>
         </div>
     @else

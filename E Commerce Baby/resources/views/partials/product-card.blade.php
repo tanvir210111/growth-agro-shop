@@ -9,11 +9,16 @@
             <span class="product-badge badge-new">NEW</span>
         @endif
 
+        @php
+            $primaryImg = !empty($product['primary_image']) ? $product['primary_image'] : '/images/placeholder.webp';
+            $secondaryImg = !empty($product['secondary_image']) ? $product['secondary_image'] : '';
+        @endphp
+
         <!-- Images -->
-        <a href="{{ route('product.show', $product['slug']) }}">
-            <img src="{{ $product['primary_image'] }}" alt="{{ $product['title'] }}" class="product-img main-img" loading="lazy">
-            @if(!empty($product['secondary_image']))
-                <img src="{{ $product['secondary_image'] }}" alt="{{ $product['title'] }}" class="product-img hover-img" loading="lazy">
+        <a href="{{ route('product.show', $product['slug']) }}" style="display:flex; width:100%; height:100%; align-items:center; justify-content:center;">
+            <img src="{{ \Illuminate\Support\Str::startsWith($primaryImg, ['http://', 'https://', '/']) ? $primaryImg : asset($primaryImg) }}" alt="{{ $product['title'] }}" class="product-img main-img" loading="lazy">
+            @if(!empty($secondaryImg))
+                <img src="{{ \Illuminate\Support\Str::startsWith($secondaryImg, ['http://', 'https://', '/']) ? $secondaryImg : asset($secondaryImg) }}" alt="{{ $product['title'] }}" class="product-img hover-img" loading="lazy">
             @endif
         </a>
 

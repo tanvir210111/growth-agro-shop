@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Store Policies | Baby Fashion BD')
+@section('title', 'Store Policies | ' . \App\Models\Setting::get('site_title', 'Growth Agro'))
 
 @section('content')
 <div class="container" style="padding: 3rem 1rem 5rem; max-width: 860px;">
     <div style="background: #ffffff; border-radius: var(--radius-lg); border: 1px solid var(--color-border); padding: 3rem; box-shadow: var(--shadow-sm);">
         <span class="hero-tag" style="background: var(--color-primary-light); color: var(--color-primary);">Transparency & Trust</span>
         <h1 style="font-family: var(--font-heading); font-size: 2.2rem; margin: 0.5rem 0 1.5rem;">
-            Baby Fashion BD Policies
+            {{ \App\Models\Setting::get('site_name', 'Growth Agro') }} Policies
         </h1>
 
         <div style="display: flex; flex-direction: column; gap: 2rem; font-size: 0.95rem; color: var(--color-text-muted); line-height: 1.8;">
