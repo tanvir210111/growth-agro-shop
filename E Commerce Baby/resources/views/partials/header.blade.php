@@ -47,30 +47,17 @@
                 <li class="nav-item {{ request()->routeIs('home') ? 'active' : '' }}">
                     <a href="{{ route('home') }}">Home</a>
                 </li>
-                <li class="nav-item {{ request()->is('collections/all-collection') ? 'active' : '' }}">
-                    <a href="{{ route('collection.show', 'all-collection') }}">All Collection</a>
+                <li class="nav-item {{ request()->is('shop') || request()->is('categories') || request()->is('collections/all-collection') ? 'active' : '' }}">
+                    <a href="{{ route('shop') }}">All Collection</a>
                 </li>
-                <li class="nav-item {{ request()->is('collections/baby-boys') ? 'active' : '' }}">
-                    <a href="{{ route('collection.show', 'baby-boys') }}">Baby Boy</a>
-                </li>
-                <li class="nav-item {{ request()->is('collections/baby-girl') ? 'active' : '' }}">
-                    <a href="{{ route('collection.show', 'baby-girl') }}">Baby Girl</a>
-                </li>
-                <li class="nav-item {{ request()->is('collections/new-arrival') ? 'active' : '' }}">
-                    <a href="{{ route('collection.show', 'new-arrival') }}">New Arrival</a>
-                </li>
-                <li class="nav-item {{ request()->is('collections/maggie-t-shirt-sets') ? 'active' : '' }}">
-                    <a href="{{ route('collection.show', 'maggie-t-shirt-sets') }}">Maggie T-Shirt Sets</a>
-                </li>
-                <li class="nav-item {{ request()->is('collections/winter-collection') ? 'active' : '' }}">
-                    <a href="{{ route('collection.show', 'winter-collection') }}">Winter Collection</a>
-                </li>
-                <li class="nav-item highlight {{ request()->is('collections/clearance-sale') ? 'active' : '' }}">
-                    <a href="{{ route('collection.show', 'clearance-sale') }}">🔥 Clearance Sale</a>
-                </li>
-                <li class="nav-item {{ request()->is('collections/backpack-toys') ? 'active' : '' }}">
-                    <a href="{{ route('collection.show', 'backpack-toys') }}">Backpack & Toys</a>
-                </li>
+                @php
+                    $navCategories = \App\Models\Category::where('status', true)->where('handle', '!=', 'all-collection')->orderBy('sort_order', 'asc')->take(7)->get();
+                @endphp
+                @foreach($navCategories as $navCat)
+                    <li class="nav-item {{ request()->is('collections/' . $navCat->handle) || request()->is('category/' . $navCat->handle) ? 'active' : '' }}">
+                        <a href="{{ route('collection.show', $navCat->handle) }}">{{ $navCat->title }}</a>
+                    </li>
+                @endforeach
             </ul>
         </div>
     </nav>

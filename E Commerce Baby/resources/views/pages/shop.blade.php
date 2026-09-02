@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($currentCollection['title'] ?? 'Shop All') . ' | Baby Fashion BD')
+@section('title', ($currentCollection['title'] ?? 'Shop All') . ' | ' . \App\Models\Setting::get('site_title', 'Growth Agro'))
 
 @section('content')
 <div class="container" style="padding: 2rem 1rem 4rem;">
@@ -13,7 +13,7 @@
             {{ $currentCollection['title'] ?? 'All Collection' }}
         </h1>
         <p style="color: var(--color-text-muted); font-size: 0.95rem; max-width: 650px;">
-            {{ $currentCollection['description'] ?? 'Browse through our premium baby and kids collection.' }}
+            {{ $currentCollection['description'] ?? 'Browse through our complete selection of quality curated products.' }}
         </p>
     </div>
 
@@ -57,7 +57,7 @@
         </div>
     @else
         <div style="text-align: center; padding: 4rem 1rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">🧸</div>
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
             <h3>No products found</h3>
             <p style="color: #777; margin: 0.5rem 0 1.5rem;">Try choosing another category or clearing your filters.</p>
             <a href="{{ route('shop') }}" class="btn-primary">View All Products</a>

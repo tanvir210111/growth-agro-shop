@@ -20,12 +20,13 @@
             <div class="footer-col">
                 <h4>Shop Categories</h4>
                 <ul class="footer-links-list">
-                    <li><a href="{{ route('collection.show', 'all-collection') }}">All Collections</a></li>
-                    <li><a href="{{ route('collection.show', 'baby-boys') }}">Baby Boy Sets</a></li>
-                    <li><a href="{{ route('collection.show', 'baby-girl') }}">Baby Girl Frocks & Outfits</a></li>
-                    <li><a href="{{ route('collection.show', 'new-arrival') }}">New Arrivals</a></li>
-                    <li><a href="{{ route('collection.show', 'maggie-t-shirt-sets') }}">Maggie T-Shirt Sets</a></li>
-                    <li><a href="{{ route('collection.show', 'clearance-sale') }}">Clearance Sale %</a></li>
+                    <li><a href="{{ route('shop') }}">All Collections</a></li>
+                    @php
+                        $footerCategories = \App\Models\Category::where('status', true)->where('handle', '!=', 'all-collection')->orderBy('sort_order', 'asc')->take(5)->get();
+                    @endphp
+                    @foreach($footerCategories as $fCat)
+                        <li><a href="{{ route('collection.show', $fCat->handle) }}">{{ $fCat->title }}</a></li>
+                    @endforeach
                 </ul>
             </div>
 
@@ -33,7 +34,7 @@
             <div class="footer-col">
                 <h4>Customer Care</h4>
                 <ul class="footer-links-list">
-                    <li><a href="{{ route('about') }}">About Baby Fashion BD</a></li>
+                    <li><a href="{{ route('about') }}">About Us</a></li>
                     <li><a href="{{ route('contact') }}">Contact Us</a></li>
                     <li><a href="{{ route('policy', 'return') }}">7-Day Return & Refund</a></li>
                     <li><a href="{{ route('policy', 'shipping') }}">Shipping & Delivery Terms</a></li>
