@@ -197,40 +197,58 @@ async function testStep(name, fn) {
     assert.ok(testOrderNumber, 'Must return order number');
   });
 
-  // TEST 5: Success Page URL resolves & Purchase Event is single-fire
-  await testStep('5. Success page renders, Purchase fires once, refresh does not duplicate Purchase', async () => {
+  // TEST 5: Success Page URL resolves & PageView + Purchase Events are single-fire
+  await testStep('5. Success page renders, PageView and Purchase fire once, refresh does not duplicate events', async () => {
     assert.ok(testOrderNumber, 'Order number required from Test 4');
     const successRes = await sendReq(8000, `/product/chicken-booster/success/${testOrderNumber}`);
     assert.strictEqual(successRes.status, 200);
     assert.ok(successRes.body.includes(testOrderNumber));
     assert.ok(successRes.body.includes("const metaDedupeKey = 'meta_tracked_purchase_' + orderNo;"), 'Must have order-specific purchase dedupe key');
+    assert.ok(successRes.body.includes(`meta_tracked_success_pageview_${testOrderNumber}`), 'Must have order-specific success PageView dedupe key');
     assert.ok(!successRes.body.includes('ViewContent'), 'Success page must NOT contain ViewContent');
 
     // Simulate Success Page Session
     const browser = createBrowserSession();
+    const successPvKey = 'meta_tracked_success_pageview_' + testOrderNumber;
     const purchaseKey = 'meta_tracked_purchase_' + testOrderNumber;
 
     // First load of success page
+    if (!browser.sessionStorage.getItem(successPvKey)) {
+      browser.sessionStorage.setItem(successPvKey, '1');
+      browser.fbq('track', 'PageView');
+    }
     if (!browser.sessionStorage.getItem(purchaseKey)) {
       browser.sessionStorage.setItem(purchaseKey, '1');
       browser.fbq('track', 'Purchase', { value: 990, currency: 'BDT' });
     }
+    assert.strictEqual(browser.getEventCount('PageView'), 1, 'First load of success page must fire PageView = 1');
     assert.strictEqual(browser.getEventCount('Purchase'), 1, 'First load of success page must fire Purchase = 1');
 
     // Refresh success page
+    if (!browser.sessionStorage.getItem(successPvKey)) {
+      browser.sessionStorage.setItem(successPvKey, '1');
+      browser.fbq('track', 'PageView');
+    }
     if (!browser.sessionStorage.getItem(purchaseKey)) {
       browser.sessionStorage.setItem(purchaseKey, '1');
       browser.fbq('track', 'Purchase', { value: 990, currency: 'BDT' });
     }
+    assert.strictEqual(browser.getEventCount('PageView'), 1, 'Refresh of success page must NOT fire additional PageView');
     assert.strictEqual(browser.getEventCount('Purchase'), 1, 'Refresh of success page must NOT fire additional Purchase');
 
-    // Distinct new order can fire its own purchase
+    // Distinct new order can fire its own PageView and Purchase
     const newOrderNo = 'CB-20260902-NEWORDER99';
+    const newSuccessPvKey = 'meta_tracked_success_pageview_' + newOrderNo;
     const newPurchaseKey = 'meta_tracked_purchase_' + newOrderNo;
+    if (!browser.sessionStorage.getItem(newSuccessPvKey)) {
+      browser.sessionStorage.setItem(newSuccessPvKey, '1');
+      browser.fbq('track', 'PageView');
+    }
     if (!browser.sessionStorage.getItem(newPurchaseKey)) {
       browser.sessionStorage.setItem(newPurchaseKey, '1');
       browser.fbq('track', 'Purchase', { value: 1850, currency: 'BDT' });
     }
+    assert.strictEqual(browser.getEventCount('PageView'), 2, 'Distinct order fires its own PageView');
     assert.strictEqual(browser.getEventCount('Purchase'), 2, 'Distinct order fires its own Purchase');
   });
 

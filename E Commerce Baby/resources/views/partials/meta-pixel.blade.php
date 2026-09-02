@@ -2,6 +2,7 @@
   $pixelId = trim(\App\Models\Setting::get('facebook_pixel', '') ?? '');
   $isLandingSuccess = request()->is('product/*/success/*') || request()->routeIs('landing.order.success');
   $lpSlug = isset($landingPage) && is_object($landingPage) && !empty($landingPage->slug) ? $landingPage->slug : ($landingPageSlug ?? null);
+  $orderNumber = isset($order) && is_array($order) && !empty($order['order_number']) ? $order['order_number'] : (request()->route('orderNumber') ?? null);
 @endphp
 @if(!empty($pixelId) && preg_match('/^\d{14,18}$/', $pixelId))
 <!-- Meta Pixel Code -->
@@ -16,7 +17,15 @@ s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq.disablePushState = true;
 fbq('init', '{{ $pixelId }}');
-@if(!empty($lpSlug) && !$isLandingSuccess)
+@if($isLandingSuccess && !empty($orderNumber))
+(function() {
+  var successPageViewKey = 'meta_tracked_success_pageview_{{ $orderNumber }}';
+  if (!sessionStorage.getItem(successPageViewKey)) {
+    sessionStorage.setItem(successPageViewKey, '1');
+    fbq('track', 'PageView');
+  }
+})();
+@elseif(!empty($lpSlug) && !$isLandingSuccess)
 (function() {
   var pageViewKey = 'meta_tracked_pageview_{{ $lpSlug }}';
   if (!sessionStorage.getItem(pageViewKey)) {

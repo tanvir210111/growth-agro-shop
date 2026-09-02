@@ -324,6 +324,7 @@ class MetaPixelIntegrationTest extends TestCase
         $response->assertSee("currency: 'BDT'", false);
         $response->assertSee("num_items: 1", false);
         $response->assertSee("meta_tracked_purchase_", false);
+        $response->assertSee("meta_tracked_success_pageview_CB-20260901-TEST", false);
         $response->assertSee("Broiler Booster (১ কেজি)", false);
         $response->assertDontSee("site-header", false);
         $response->assertDontSee("cart-drawer", false);

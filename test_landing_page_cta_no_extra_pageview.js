@@ -160,8 +160,12 @@ async function testStep(name, fn) {
     const browser = createBrowser();
     const orderNo = 'CB-TEST-12345';
 
-    // Success page load
-    browser.fbq('track', 'PageView');
+    // Success page load (PageView with order-specific guard)
+    const successPvKey = 'meta_tracked_success_pageview_' + orderNo;
+    if (!browser.sessionStorage.getItem(successPvKey)) {
+      browser.sessionStorage.setItem(successPvKey, '1');
+      browser.fbq('track', 'PageView');
+    }
     assert.strictEqual(browser.getEventCount('PageView'), 1);
 
     const purchaseKey = 'meta_tracked_purchase_' + orderNo;
@@ -171,11 +175,16 @@ async function testStep(name, fn) {
     }
     assert.strictEqual(browser.getEventCount('Purchase'), 1);
 
-    // Refresh success page
+    // Refresh success page (both PageView and Purchase guarded)
+    if (!browser.sessionStorage.getItem(successPvKey)) {
+      browser.sessionStorage.setItem(successPvKey, '1');
+      browser.fbq('track', 'PageView');
+    }
     if (!browser.sessionStorage.getItem(purchaseKey)) {
       browser.sessionStorage.setItem(purchaseKey, '1');
       browser.fbq('track', 'Purchase', { value: 990, currency: 'BDT' });
     }
+    assert.strictEqual(browser.getEventCount('PageView'), 1, 'PageView event is single-fire across refreshes on success page');
     assert.strictEqual(browser.getEventCount('Purchase'), 1, 'Purchase event is single-fire across refreshes');
     assert.strictEqual(browser.getEventCount('ViewContent'), 0, 'ViewContent is never fired');
   });
