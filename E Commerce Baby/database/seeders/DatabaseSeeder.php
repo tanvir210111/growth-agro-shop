@@ -171,6 +171,30 @@ class DatabaseSeeder extends Seeder
         // 5. Products Catalog
         $productsData = [
             [
+                'title' => 'Girls Red Butterfly Printed T-Shirt & Floral Shorts 2-Piece Set',
+                'slug' => 'girls-red-butterfly-printed-t-shirt-floral-shorts-set',
+                'sku' => 'BFB-0152D',
+                'category_handle' => 'baby-girl',
+                'regular_price' => 950,
+                'sale_price' => 790,
+                'cost_price' => 450,
+                'stock' => 18,
+                'featured_image' => 'https://kidoriabd.com/cdn/shop/files/Layer_5_0e764c19-6180-45bf-941e-3e34551a35ae.jpg?v=1787037654&width=800',
+                'hover_image' => 'https://kidoriabd.com/cdn/shop/files/zdxgfgd.png?v=1771917728&width=800',
+                'gallery_images' => [
+                    'https://kidoriabd.com/cdn/shop/files/Layer_5_0e764c19-6180-45bf-941e-3e34551a35ae.jpg?v=1787037654&width=800',
+                    'https://kidoriabd.com/cdn/shop/files/zdxgfgd.png?v=1771917728&width=800',
+                    'https://kidoriabd.com/cdn/shop/files/Layer_13.jpg?v=1787037596&width=800'
+                ],
+                'sizes' => ['3-6 Months', '6-12 Months', '1-2 Years', '2-3 Years', '3-4 Years', '4-5 Years'],
+                'short_description' => 'Super soft 100% breathable organic cotton 2-piece summer outfit with butterfly embroidery and blooming floral shorts.',
+                'description' => '<p>High-grade breathable organic combed cotton outfit ensuring all-day comfort, skin softness, and high freedom of movement.</p>',
+                'is_featured' => true,
+                'is_bestseller' => true,
+                'is_new_arrival' => true,
+                'is_clearance' => false,
+            ],
+            [
                 'title' => 'Pastel Dino Cotton Romper Set',
                 'slug' => 'pastel-dino-cotton-romper-set',
                 'sku' => 'BFB-DR-01',

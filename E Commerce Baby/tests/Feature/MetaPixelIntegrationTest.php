@@ -24,6 +24,17 @@ class MetaPixelIntegrationTest extends TestCase
                 'role'     => 'super_admin',
             ]
         );
+
+        \App\Models\Product::firstOrCreate(
+            ['slug' => 'girls-red-butterfly-printed-t-shirt-floral-shorts-set'],
+            [
+                'title'          => 'Girls Red Butterfly Printed T-Shirt & Floral Shorts 2-Piece Set',
+                'sku'            => 'BFB-0152D',
+                'regular_price'  => 950,
+                'sale_price'     => 790,
+                'status'         => true,
+            ]
+        );
     }
 
     public function test_guest_cannot_access_marketing_settings_api()
