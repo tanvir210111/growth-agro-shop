@@ -149,4 +149,127 @@ class AdminSettingsController extends Controller
             ],
         ]);
     }
+
+    /**
+     * GET /api/admin/settings/storefront
+     */
+    public function getStorefront(Request $request): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        return response()->json([
+            'success'  => true,
+            'settings' => [
+                'site_name'                => Setting::get('site_name', 'Growth Agro'),
+                'site_title'               => Setting::get('site_title', 'Growth Agro | Universal E-Commerce & Premium Products'),
+                'site_logo'                => Setting::get('site_logo', ''),
+                'site_favicon'             => Setting::get('site_favicon', ''),
+                'support_phone'            => Setting::get('support_phone', '01560-016740'),
+                'support_email'            => Setting::get('support_email', 'support@growthagro.shop'),
+                'store_address'            => Setting::get('store_address', 'Mirpur, Dhaka-1216, Bangladesh'),
+                'footer_description'       => Setting::get('footer_description', 'Your one-stop shop for quality products at the best prices. Shop more, worry less.'),
+                'whatsapp_number'          => Setting::get('whatsapp_number', '8801560016740'),
+                'promo_banner_1_title'     => Setting::get('promo_banner_1_title', 'SPECIAL COLLECTION'),
+                'promo_banner_1_subtitle'  => Setting::get('promo_banner_1_subtitle', 'UP TO 30% OFF'),
+                'promo_banner_1_desc'      => Setting::get('promo_banner_1_desc', 'Discover top rated products tailored for optimal value.'),
+                'promo_banner_1_image'     => Setting::get('promo_banner_1_image', ''),
+                'promo_banner_1_link'      => Setting::get('promo_banner_1_link', '/shop'),
+                'promo_banner_2_title'     => Setting::get('promo_banner_2_title', 'DAILY ESSENTIALS'),
+                'promo_banner_2_subtitle'  => Setting::get('promo_banner_2_subtitle', 'MIN 20% OFF'),
+                'promo_banner_2_desc'      => Setting::get('promo_banner_2_desc', 'Quality verified catalog items ready for doorstep dispatch.'),
+                'promo_banner_2_image'     => Setting::get('promo_banner_2_image', ''),
+                'promo_banner_2_link'      => Setting::get('promo_banner_2_link', '/shop'),
+            ],
+        ]);
+    }
+
+    /**
+     * POST/PUT /api/admin/settings/storefront
+     */
+    public function updateStorefront(Request $request): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $allowedKeys = [
+            'site_name',
+            'site_title',
+            'site_logo',
+            'site_favicon',
+            'support_phone',
+            'support_email',
+            'store_address',
+            'footer_description',
+            'whatsapp_number',
+            'promo_banner_1_title',
+            'promo_banner_1_subtitle',
+            'promo_banner_1_desc',
+            'promo_banner_1_image',
+            'promo_banner_1_link',
+            'promo_banner_2_title',
+            'promo_banner_2_subtitle',
+            'promo_banner_2_desc',
+            'promo_banner_2_image',
+            'promo_banner_2_link',
+        ];
+
+        foreach ($allowedKeys as $key) {
+            if ($request->has($key)) {
+                Setting::set($key, trim($request->input($key, '')));
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Storefront settings updated successfully.',
+            'settings' => array_reduce($allowedKeys, function ($acc, $key) {
+                $acc[$key] = Setting::get($key, '');
+                return $acc;
+            }, []),
+        ]);
+    }
+
+    /**
+     * POST /api/admin/settings/upload-branding
+     */
+    public function uploadBranding(Request $request): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'image' => 'required|file|mimes:jpeg,png,jpg,webp,svg,ico,gif|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid image file (Allowed: JPEG, PNG, WEBP, SVG, ICO, GIF up to 5MB).',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $file = $request->file('image');
+        $extension = strtolower($file->getClientOriginalExtension());
+        $filename = 'brand_' . time() . '_' . \Illuminate\Support\Str::random(10) . '.' . $extension;
+
+        $destinationDir = public_path('uploads/branding');
+        if (!\Illuminate\Support\Facades\File::exists($destinationDir)) {
+            \Illuminate\Support\Facades\File::makeDirectory($destinationDir, 0755, true);
+        }
+
+        $file->move($destinationDir, $filename);
+        $publicUrl = '/uploads/branding/' . $filename;
+
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Branding asset uploaded successfully.',
+            'url'      => $publicUrl,
+            'filename' => $filename,
+        ]);
+    }
 }

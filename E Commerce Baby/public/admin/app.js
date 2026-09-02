@@ -1490,60 +1490,878 @@ window.saveNewOrder = function() {
 };
 
 // ==============================================================================
-// 6. PRODUCTS CATALOG MANAGEMENT
+// 6. UNIVERSAL STOREFRONT CATALOG & CONTENT MANAGEMENT (PRODUCTS, CATEGORIES, SLIDERS, BRANDING)
 // ==============================================================================
-function renderProductsTable(filterQuery = '') {
-  const tbody = document.getElementById('productsTableBody');
+
+function getAdminFetchHeaders(contentType = 'application/json') {
+  const token = localStorage.getItem('admin_token') || 'adm_session';
+  const headers = { 'Accept': 'application/json' };
+  if (contentType) headers['Content-Type'] = contentType;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['x-admin-token'] = token;
+  }
+  return headers;
+}
+
+// ------------------------------------------------------------------------------
+// A. CATEGORIES MANAGEMENT
+// ------------------------------------------------------------------------------
+let STORE_CATEGORIES_CACHE = [];
+
+window.loadCategoriesCatalog = function() {
+  const tbody = document.getElementById('categoriesTableBody');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#718096;">⏳ Loading categories from database...</td></tr>`;
+  }
+
+  fetch('/api/admin/categories', {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && Array.isArray(res.categories)) {
+      STORE_CATEGORIES_CACHE = res.categories;
+      renderCategoriesTable(res.categories);
+      populateCategoryDropdowns(res.categories);
+    } else {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#E53E3E;">Failed to load categories.</td></tr>`;
+    }
+  })
+  .catch(err => {
+    console.error('Error fetching categories:', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#E53E3E;">Network error while loading categories.</td></tr>`;
+  });
+};
+
+function renderCategoriesTable(categories) {
+  const tbody = document.getElementById('categoriesTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  let list = APP_STATE.products;
-  if (filterQuery) {
-    const q = filterQuery.toLowerCase();
-    list = list.filter(p => p.title.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+  if (categories.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:26px;color:#718096;">No categories created yet. Click <strong>＋ Add Category</strong> to create your first storefront category.</td></tr>`;
+    const footer = document.getElementById('categoriesEntriesFooter');
+    if (footer) footer.textContent = `Showing 0 categories`;
+    return;
   }
 
-  list.forEach((p, idx) => {
+  categories.forEach((cat, idx) => {
     const tr = document.createElement('tr');
+    const isAct = Boolean(cat.status);
+    const imgHtml = cat.image
+      ? `<img src="${cat.image}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0;">`
+      : `<div style="width:36px;height:36px;background:#F1F5F9;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;">📁</div>`;
+
     tr.innerHTML = `
       <td>${idx + 1}</td>
+      <td>${imgHtml}</td>
       <td>
-        <div class="product-manage-row">
-          <img src="${p.thumb}" alt="Thumb" class="product-img">
-          <div>
-            <div style="font-weight:600;font-size:13.5px;color:#1A202C;">${p.title}</div>
-            <div style="font-size:11.5px;color:#718096;">SKU : ${p.sku}</div>
-          </div>
-        </div>
+        <div style="font-weight:700;font-size:13.5px;color:#0F172A;">${cat.title}</div>
+        <div style="font-size:11.5px;color:#64748B;">${cat.description || 'No description'}</div>
       </td>
+      <td><code style="background:#F1F5F9;padding:2px 6px;border-radius:4px;font-size:12px;color:#0284C7;">${cat.handle}</code></td>
+      <td><span class="product-stock-pill" style="background:#E0F2FE;color:#0369A1;">${cat.products_count ?? 0} Products</span></td>
+      <td><span style="font-weight:600;color:#475569;">${cat.sort_order ?? 0}</span></td>
       <td>
-        <span class="product-status-tag" style="background:#ECFDF5;color:#059669;">${p.status}</span>
-      </td>
-      <td>
-        <div class="product-price-meta">
-          <div>Price : ৳ ${p.price}</div>
-          <div>Discount : ৳ ${p.discount}</div>
-          <div style="font-weight:600;color:#1A202C;">Sale : ৳ ${p.salePrice}</div>
-        </div>
-      </td>
-      <td>
-        <span class="product-stock-pill">${p.stock}</span>
+        <button onclick="toggleCategoryStatus(${cat.id})" style="border:none;background:none;cursor:pointer;" title="Click to toggle status">
+          <span class="product-status-tag" style="background:${isAct ? '#ECFDF5' : '#FEF2F2'};color:${isAct ? '#059669' : '#DC2626'};">${isAct ? 'Active' : 'Disabled'}</span>
+        </button>
       </td>
       <td style="text-align:center;">
-        <button class="action-dots-btn" onclick="deleteProduct(${idx})" title="Delete" style="color:#E53E3E;">🗑️</button>
+        <div style="display:flex;gap:6px;justify-content:center;">
+          <button class="action-dots-btn" onclick="openEditCategoryModal(${cat.id})" title="Edit" style="color:#0284C7;">✏️</button>
+          <button class="action-dots-btn" onclick="deleteCategory(${cat.id})" title="Delete" style="color:#E53E3E;">🗑️</button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
   });
+
+  const footer = document.getElementById('categoriesEntriesFooter');
+  if (footer) footer.textContent = `Showing 1 to ${categories.length} of total ${categories.length} categories`;
 }
 
-window.deleteProduct = function(idx) {
-  if (confirm('আপনি কি এই প্রোডাক্টটি মুছে ফেলতে চান?')) {
-    APP_STATE.products.splice(idx, 1);
-    localStorage.setItem('admin_products', JSON.stringify(APP_STATE.products));
-    renderProductsTable();
-    showToast('প্রোডাক্ট মুছে ফেলা হয়েছে।');
+function populateCategoryDropdowns(categories) {
+  const prodFilter = document.getElementById('productCategoryFilter');
+  if (prodFilter) {
+    const curVal = prodFilter.value;
+    prodFilter.innerHTML = `<option value="">All Categories</option>` + categories.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+    prodFilter.value = curVal;
   }
+
+  const prodModalSelect = document.getElementById('prod_category_id');
+  if (prodModalSelect) {
+    const curVal = prodModalSelect.value;
+    prodModalSelect.innerHTML = `<option value="">Select Category</option>` + categories.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+    prodModalSelect.value = curVal;
+  }
+}
+
+window.openAddCategoryModal = function() {
+  document.getElementById('categoryModalTitle').textContent = 'Add New Category';
+  document.getElementById('cat_id').value = '';
+  document.getElementById('cat_title').value = '';
+  document.getElementById('cat_handle').value = '';
+  document.getElementById('cat_description').value = '';
+  document.getElementById('cat_image').value = '';
+  document.getElementById('cat_sort_order').value = '0';
+  document.getElementById('cat_status').checked = true;
+
+  const m = document.getElementById('categoryModal');
+  if (m) m.classList.add('active');
+};
+
+window.openEditCategoryModal = function(id) {
+  const cat = STORE_CATEGORIES_CACHE.find(c => c.id == id);
+  if (!cat) return;
+
+  document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+  document.getElementById('cat_id').value = cat.id;
+  document.getElementById('cat_title').value = cat.title || '';
+  document.getElementById('cat_handle').value = cat.handle || '';
+  document.getElementById('cat_description').value = cat.description || '';
+  document.getElementById('cat_image').value = cat.image || '';
+  document.getElementById('cat_sort_order').value = cat.sort_order ?? 0;
+  document.getElementById('cat_status').checked = Boolean(cat.status);
+
+  const m = document.getElementById('categoryModal');
+  if (m) m.classList.add('active');
+};
+
+window.closeCategoryModal = function() {
+  const m = document.getElementById('categoryModal');
+  if (m) m.classList.remove('active');
+};
+
+window.autoGenCategorySlug = function() {
+  const title = document.getElementById('cat_title').value;
+  const handleEl = document.getElementById('cat_handle');
+  if (handleEl && !document.getElementById('cat_id').value) {
+    handleEl.value = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+};
+
+window.saveCategoryData = function() {
+  const id = document.getElementById('cat_id').value;
+  const payload = {
+    title: document.getElementById('cat_title').value.trim(),
+    handle: document.getElementById('cat_handle').value.trim(),
+    description: document.getElementById('cat_description').value.trim(),
+    image: document.getElementById('cat_image').value.trim(),
+    sort_order: parseInt(document.getElementById('cat_sort_order').value, 10) || 0,
+    status: document.getElementById('cat_status').checked
+  };
+
+  const url = id ? `/api/admin/categories/${id}` : `/api/admin/categories`;
+  const method = id ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast(id ? 'Category updated successfully!' : 'Category created successfully!');
+      closeCategoryModal();
+      loadCategoriesCatalog();
+    } else {
+      alert(res.message || 'Failed to save category.');
+    }
+  })
+  .catch(err => {
+    console.error('Error saving category:', err);
+    alert('Network error while saving category.');
+  });
+};
+
+window.toggleCategoryStatus = function(id) {
+  fetch(`/api/admin/categories/${id}/status`, {
+    method: 'PATCH',
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast('Category status updated.');
+      loadCategoriesCatalog();
+    } else {
+      alert(res.message || 'Failed to update category status.');
+    }
+  });
+};
+
+window.deleteCategory = function(id) {
+  if (confirm('Are you sure you want to delete this category?')) {
+    fetch(`/api/admin/categories/${id}`, {
+      method: 'DELETE',
+      headers: getAdminFetchHeaders(),
+      credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        showToast('Category deleted.');
+        loadCategoriesCatalog();
+      } else {
+        alert(res.message || 'Cannot delete category.');
+      }
+    });
+  }
+};
+
+window.uploadCategoryAsset = function(target) {
+  const fileInput = document.getElementById('cat_image_file');
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+  const fd = new FormData();
+  fd.append('image', fileInput.files[0]);
+
+  fetch('/api/admin/products/upload-media', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(null),
+    credentials: 'same-origin',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.url) {
+      document.getElementById('cat_image').value = res.url;
+      showToast('Image uploaded successfully!');
+    } else {
+      alert(res.message || 'Upload failed.');
+    }
+  });
+};
+
+// ------------------------------------------------------------------------------
+// B. PRODUCTS MANAGEMENT
+// ------------------------------------------------------------------------------
+let STORE_PRODUCTS_CACHE = [];
+
+window.loadProductsCatalog = function() {
+  const tbody = document.getElementById('productsTableBody');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#718096;">⏳ Loading products from database...</td></tr>`;
+  }
+
+  const query = (document.getElementById('productSearchInput')?.value || '').trim();
+  const catId = document.getElementById('productCategoryFilter')?.value || '';
+
+  const params = new URLSearchParams();
+  if (query) params.append('search', query);
+  if (catId) params.append('category_id', catId);
+  params.append('per_page', '100');
+
+  fetch(`/api/admin/products?${params.toString()}`, {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && Array.isArray(res.products)) {
+      STORE_PRODUCTS_CACHE = res.products;
+      renderProductsTable(res.products);
+    } else {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#E53E3E;">Failed to load products.</td></tr>`;
+    }
+  })
+  .catch(err => {
+    console.error('Error fetching products:', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#E53E3E;">Network error while loading products.</td></tr>`;
+  });
+};
+
+function renderProductsTable(products) {
+  const tbody = document.getElementById('productsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!products || products.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:26px;color:#718096;">No products found. Click <strong>＋ Add Product</strong> to add a new item to your catalog.</td></tr>`;
+    const footer = document.getElementById('productsEntriesFooter');
+    if (footer) footer.textContent = `Showing 0 products`;
+    return;
+  }
+
+  products.forEach((p, idx) => {
+    const tr = document.createElement('tr');
+    const isAct = Boolean(p.status);
+    const imgUrl = p.featured_image || '/images/placeholder.webp';
+
+    const flags = [];
+    if (p.is_new_arrival) flags.push(`<span style="background:#FEF3C7;color:#D97706;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">NEW</span>`);
+    if (p.is_bestseller) flags.push(`<span style="background:#FEE2E2;color:#DC2626;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">BEST</span>`);
+    if (p.is_featured) flags.push(`<span style="background:#E0E7FF;color:#4338CA;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">FEAT</span>`);
+
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>
+        <div class="product-manage-row" style="display:flex;align-items:center;gap:10px;">
+          <img src="${imgUrl}" alt="Thumb" class="product-img" style="width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0;">
+          <div>
+            <div style="font-weight:700;font-size:13.5px;color:#1A202C;">${p.title}</div>
+            <div style="font-size:11.5px;color:#718096;">SKU : <strong>${p.sku}</strong> | <code style="color:#0284C7;">/${p.slug}</code></div>
+          </div>
+        </div>
+      </td>
+      <td><span style="font-size:12.5px;color:#4A5568;">${p.category ? p.category.title : '—'}</span></td>
+      <td>
+        <div class="product-price-meta">
+          <div>Reg: ৳ ${p.regular_price}</div>
+          <div style="font-weight:700;color:#0F172A;">Sale: ৳ ${p.sale_price}</div>
+        </div>
+      </td>
+      <td>
+        <span class="product-stock-pill" style="background:${p.stock > 0 ? '#E2E8F0' : '#FEE2E2'};color:${p.stock > 0 ? '#1E293B' : '#DC2626'};">${p.stock}</span>
+      </td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">${flags.join(' ') || '<span style="color:#94A3B8;font-size:11px;">—</span>'}</div>
+      </td>
+      <td>
+        <button onclick="toggleProductStatus(${p.id})" style="border:none;background:none;cursor:pointer;" title="Click to toggle status">
+          <span class="product-status-tag" style="background:${isAct ? '#ECFDF5' : '#FEF2F2'};color:${isAct ? '#059669' : '#DC2626'};">${isAct ? 'Active' : 'Disabled'}</span>
+        </button>
+      </td>
+      <td style="text-align:center;">
+        <div style="display:flex;gap:6px;justify-content:center;">
+          <button class="action-dots-btn" onclick="openEditProductModal(${p.id})" title="Edit" style="color:#0284C7;">✏️</button>
+          <button class="action-dots-btn" onclick="deleteProduct(${p.id})" title="Delete" style="color:#E53E3E;">🗑️</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const footer = document.getElementById('productsEntriesFooter');
+  if (footer) footer.textContent = `Showing 1 to ${products.length} of total ${products.length} products`;
+}
+
+window.openAddProductModal = function() {
+  document.getElementById('productModalTitle').textContent = 'Add New Product';
+  document.getElementById('prod_id').value = '';
+  document.getElementById('prod_title').value = '';
+  document.getElementById('prod_sku').value = '';
+  document.getElementById('prod_slug').value = '';
+  document.getElementById('prod_category_id').value = '';
+  document.getElementById('prod_regular_price').value = '';
+  document.getElementById('prod_sale_price').value = '';
+  document.getElementById('prod_stock').value = '50';
+  document.getElementById('prod_sizes').value = '';
+  document.getElementById('prod_featured_image').value = '';
+  document.getElementById('prod_hover_image').value = '';
+  document.getElementById('prod_short_description').value = '';
+  document.getElementById('prod_description').value = '';
+  document.getElementById('prod_is_new_arrival').checked = true;
+  document.getElementById('prod_is_bestseller').checked = false;
+  document.getElementById('prod_is_featured').checked = false;
+  document.getElementById('prod_status').checked = true;
+
+  const m = document.getElementById('productModal');
+  if (m) m.classList.add('active');
+};
+
+window.openEditProductModal = function(id) {
+  const p = STORE_PRODUCTS_CACHE.find(x => x.id == id);
+  if (!p) return;
+
+  document.getElementById('productModalTitle').textContent = 'Edit Product';
+  document.getElementById('prod_id').value = p.id;
+  document.getElementById('prod_title').value = p.title || '';
+  document.getElementById('prod_sku').value = p.sku || '';
+  document.getElementById('prod_slug').value = p.slug || '';
+  document.getElementById('prod_category_id').value = p.category_id || '';
+  document.getElementById('prod_regular_price').value = p.regular_price ?? '';
+  document.getElementById('prod_sale_price').value = p.sale_price ?? '';
+  document.getElementById('prod_stock').value = p.stock ?? 50;
+  document.getElementById('prod_sizes').value = Array.isArray(p.sizes) ? p.sizes.join(', ') : '';
+  document.getElementById('prod_featured_image').value = p.featured_image || '';
+  document.getElementById('prod_hover_image').value = p.hover_image || '';
+  document.getElementById('prod_short_description').value = p.short_description || '';
+  document.getElementById('prod_description').value = p.description || '';
+  document.getElementById('prod_is_new_arrival').checked = Boolean(p.is_new_arrival);
+  document.getElementById('prod_is_bestseller').checked = Boolean(p.is_bestseller);
+  document.getElementById('prod_is_featured').checked = Boolean(p.is_featured);
+  document.getElementById('prod_status').checked = Boolean(p.status);
+
+  const m = document.getElementById('productModal');
+  if (m) m.classList.add('active');
+};
+
+window.closeProductModal = function() {
+  const m = document.getElementById('productModal');
+  if (m) m.classList.remove('active');
+};
+
+window.autoGenProductSlug = function() {
+  const title = document.getElementById('prod_title').value;
+  const slugEl = document.getElementById('prod_slug');
+  if (slugEl && !document.getElementById('prod_id').value) {
+    slugEl.value = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+};
+
+window.saveProductData = function() {
+  const id = document.getElementById('prod_id').value;
+  const sizesRaw = document.getElementById('prod_sizes').value.trim();
+  const sizesArray = sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  const regPrice = parseFloat(document.getElementById('prod_regular_price').value);
+  const salePriceRaw = document.getElementById('prod_sale_price').value;
+  const salePrice = salePriceRaw !== '' ? parseFloat(salePriceRaw) : regPrice;
+
+  const payload = {
+    title: document.getElementById('prod_title').value.trim(),
+    sku: document.getElementById('prod_sku').value.trim(),
+    slug: document.getElementById('prod_slug').value.trim(),
+    category_id: document.getElementById('prod_category_id').value || null,
+    regular_price: regPrice,
+    sale_price: salePrice,
+    stock: parseInt(document.getElementById('prod_stock').value, 10) || 0,
+    sizes: sizesArray,
+    featured_image: document.getElementById('prod_featured_image').value.trim() || null,
+    hover_image: document.getElementById('prod_hover_image').value.trim() || null,
+    short_description: document.getElementById('prod_short_description').value.trim(),
+    description: document.getElementById('prod_description').value.trim(),
+    is_new_arrival: document.getElementById('prod_is_new_arrival').checked,
+    is_bestseller: document.getElementById('prod_is_bestseller').checked,
+    is_featured: document.getElementById('prod_is_featured').checked,
+    status: document.getElementById('prod_status').checked
+  };
+
+  const url = id ? `/api/admin/products/${id}` : `/api/admin/products`;
+  const method = id ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast(id ? 'Product updated successfully!' : 'Product created successfully!');
+      closeProductModal();
+      loadProductsCatalog();
+    } else {
+      alert(res.message || (res.errors ? JSON.stringify(res.errors) : 'Failed to save product.'));
+    }
+  })
+  .catch(err => {
+    console.error('Error saving product:', err);
+    alert('Network error while saving product.');
+  });
+};
+
+window.toggleProductStatus = function(id) {
+  fetch(`/api/admin/products/${id}/status`, {
+    method: 'PATCH',
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast('Product status updated.');
+      loadProductsCatalog();
+    } else {
+      alert(res.message || 'Failed to update product status.');
+    }
+  });
+};
+
+window.deleteProduct = function(id) {
+  if (confirm('Are you sure you want to delete this product?')) {
+    fetch(`/api/admin/products/${id}`, {
+      method: 'DELETE',
+      headers: getAdminFetchHeaders(),
+      credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        showToast('Product deleted.');
+        loadProductsCatalog();
+      } else {
+        alert(res.message || 'Cannot delete product.');
+      }
+    });
+  }
+};
+
+window.uploadProductImage = function(target) {
+  const fileInputId = target === 'hover' ? 'prod_hover_file' : 'prod_image_file';
+  const textInputId = target === 'hover' ? 'prod_hover_image' : 'prod_featured_image';
+
+  const fileInput = document.getElementById(fileInputId);
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+  const fd = new FormData();
+  fd.append('image', fileInput.files[0]);
+
+  fetch('/api/admin/products/upload-media', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(null),
+    credentials: 'same-origin',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.url) {
+      document.getElementById(textInputId).value = res.url;
+      showToast('Product image uploaded successfully!');
+    } else {
+      alert(res.message || 'Upload failed.');
+    }
+  });
+};
+
+// ------------------------------------------------------------------------------
+// C. HERO SLIDERS MANAGEMENT
+// ------------------------------------------------------------------------------
+let STORE_SLIDERS_CACHE = [];
+
+window.loadSlidersCatalog = function() {
+  const tbody = document.getElementById('slidersTableBody');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#718096;">⏳ Loading sliders from database...</td></tr>`;
+  }
+
+  fetch('/api/admin/sliders', {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && Array.isArray(res.sliders)) {
+      STORE_SLIDERS_CACHE = res.sliders;
+      renderSlidersTable(res.sliders);
+    } else {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Failed to load sliders.</td></tr>`;
+    }
+  })
+  .catch(err => {
+    console.error('Error fetching sliders:', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Network error while loading sliders.</td></tr>`;
+  });
+};
+
+function renderSlidersTable(sliders) {
+  const tbody = document.getElementById('slidersTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (sliders.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:26px;color:#718096;">No hero sliders created yet. Click <strong>＋ Add Hero Slider</strong> to add one.</td></tr>`;
+    const footer = document.getElementById('slidersEntriesFooter');
+    if (footer) footer.textContent = `Showing 0 sliders`;
+    return;
+  }
+
+  sliders.forEach((s, idx) => {
+    const tr = document.createElement('tr');
+    const isAct = Boolean(s.status);
+    const imgHtml = s.image
+      ? `<img src="${s.image}" style="width:70px;height:38px;object-fit:cover;border-radius:4px;border:1px solid #CBD5E0;">`
+      : `<div style="width:70px;height:38px;background:#F1F5F9;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94A3B8;">No Image</div>`;
+
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${imgHtml}</td>
+      <td>
+        <div style="font-weight:700;font-size:13.5px;color:#0F172A;">${s.title}</div>
+        <div style="font-size:11.5px;color:#64748B;">${s.subtitle || '—'}</div>
+      </td>
+      <td>
+        <span style="font-weight:600;color:#0F172A;">${s.button_text || 'Shop Now'}</span> &rarr; <code style="color:#0284C7;font-size:11.5px;">${s.link || '/shop'}</code>
+      </td>
+      <td><span style="font-weight:600;color:#475569;">${s.sort_order ?? 0}</span></td>
+      <td>
+        <button onclick="toggleSliderStatus(${s.id})" style="border:none;background:none;cursor:pointer;" title="Click to toggle status">
+          <span class="product-status-tag" style="background:${isAct ? '#ECFDF5' : '#FEF2F2'};color:${isAct ? '#059669' : '#DC2626'};">${isAct ? 'Active' : 'Disabled'}</span>
+        </button>
+      </td>
+      <td style="text-align:center;">
+        <div style="display:flex;gap:6px;justify-content:center;">
+          <button class="action-dots-btn" onclick="openEditSliderModal(${s.id})" title="Edit" style="color:#0284C7;">✏️</button>
+          <button class="action-dots-btn" onclick="deleteSlider(${s.id})" title="Delete" style="color:#E53E3E;">🗑️</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const footer = document.getElementById('slidersEntriesFooter');
+  if (footer) footer.textContent = `Showing 1 to ${sliders.length} of total ${sliders.length} hero sliders`;
+}
+
+window.openAddSliderModal = function() {
+  document.getElementById('sliderModalTitle').textContent = 'Add Hero Slider';
+  document.getElementById('slider_id').value = '';
+  document.getElementById('slider_title').value = '';
+  document.getElementById('slider_subtitle').value = '';
+  document.getElementById('slider_image').value = '';
+  document.getElementById('slider_button_text').value = 'Shop Now';
+  document.getElementById('slider_link').value = '/shop';
+  document.getElementById('slider_sort_order').value = '0';
+  document.getElementById('slider_status').checked = true;
+
+  const m = document.getElementById('sliderModal');
+  if (m) m.classList.add('active');
+};
+
+window.openEditSliderModal = function(id) {
+  const s = STORE_SLIDERS_CACHE.find(x => x.id == id);
+  if (!s) return;
+
+  document.getElementById('sliderModalTitle').textContent = 'Edit Hero Slider';
+  document.getElementById('slider_id').value = s.id;
+  document.getElementById('slider_title').value = s.title || '';
+  document.getElementById('slider_subtitle').value = s.subtitle || '';
+  document.getElementById('slider_image').value = s.image || '';
+  document.getElementById('slider_button_text').value = s.button_text || 'Shop Now';
+  document.getElementById('slider_link').value = s.link || '/shop';
+  document.getElementById('slider_sort_order').value = s.sort_order ?? 0;
+  document.getElementById('slider_status').checked = Boolean(s.status);
+
+  const m = document.getElementById('sliderModal');
+  if (m) m.classList.add('active');
+};
+
+window.closeSliderModal = function() {
+  const m = document.getElementById('sliderModal');
+  if (m) m.classList.remove('active');
+};
+
+window.saveSliderData = function() {
+  const id = document.getElementById('slider_id').value;
+  const payload = {
+    title: document.getElementById('slider_title').value.trim(),
+    subtitle: document.getElementById('slider_subtitle').value.trim(),
+    image: document.getElementById('slider_image').value.trim(),
+    button_text: document.getElementById('slider_button_text').value.trim(),
+    link: document.getElementById('slider_link').value.trim(),
+    sort_order: parseInt(document.getElementById('slider_sort_order').value, 10) || 0,
+    status: document.getElementById('slider_status').checked
+  };
+
+  const url = id ? `/api/admin/sliders/${id}` : `/api/admin/sliders`;
+  const method = id ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast(id ? 'Slider updated successfully!' : 'Slider created successfully!');
+      closeSliderModal();
+      loadSlidersCatalog();
+    } else {
+      alert(res.message || 'Failed to save slider.');
+    }
+  });
+};
+
+window.toggleSliderStatus = function(id) {
+  fetch(`/api/admin/sliders/${id}/status`, {
+    method: 'PATCH',
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast('Slider status updated.');
+      loadSlidersCatalog();
+    }
+  });
+};
+
+window.deleteSlider = function(id) {
+  if (confirm('Are you sure you want to delete this slider?')) {
+    fetch(`/api/admin/sliders/${id}`, {
+      method: 'DELETE',
+      headers: getAdminFetchHeaders(),
+      credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        showToast('Slider deleted.');
+        loadSlidersCatalog();
+      }
+    });
+  }
+};
+
+window.uploadSliderAsset = function() {
+  const fileInput = document.getElementById('slider_image_file');
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+  const fd = new FormData();
+  fd.append('image', fileInput.files[0]);
+
+  fetch('/api/admin/sliders/upload-media', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(null),
+    credentials: 'same-origin',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.url) {
+      document.getElementById('slider_image').value = res.url;
+      showToast('Slider image uploaded successfully!');
+    } else {
+      alert(res.message || 'Upload failed.');
+    }
+  });
+};
+
+// ------------------------------------------------------------------------------
+// D. STOREFRONT SETTINGS & PROMOTIONAL BANNERS
+// ------------------------------------------------------------------------------
+window.loadStorefrontSettings = function() {
+  fetch('/api/admin/settings/storefront', {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.settings) {
+      const s = res.settings;
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val || '';
+      };
+
+      setVal('setting_site_name', s.site_name);
+      setVal('setting_site_title', s.site_title);
+      setVal('setting_site_logo', s.site_logo);
+      setVal('setting_site_favicon', s.site_favicon);
+      setVal('setting_support_phone', s.support_phone);
+      setVal('setting_support_email', s.support_email);
+      setVal('setting_store_address', s.store_address);
+      setVal('setting_whatsapp_number', s.whatsapp_number);
+      setVal('setting_footer_description', s.footer_description);
+
+      setVal('setting_promo_banner_1_title', s.promo_banner_1_title);
+      setVal('setting_promo_banner_1_subtitle', s.promo_banner_1_subtitle);
+      setVal('setting_promo_banner_1_desc', s.promo_banner_1_desc);
+      setVal('setting_promo_banner_1_image', s.promo_banner_1_image);
+      setVal('setting_promo_banner_1_link', s.promo_banner_1_link);
+
+      setVal('setting_promo_banner_2_title', s.promo_banner_2_title);
+      setVal('setting_promo_banner_2_subtitle', s.promo_banner_2_subtitle);
+      setVal('setting_promo_banner_2_desc', s.promo_banner_2_desc);
+      setVal('setting_promo_banner_2_image', s.promo_banner_2_image);
+      setVal('setting_promo_banner_2_link', s.promo_banner_2_link);
+
+      const preview = document.getElementById('setting_logo_preview');
+      if (preview) {
+        if (s.site_logo) {
+          preview.innerHTML = `<img src="${s.site_logo}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+        } else {
+          preview.innerHTML = `<span style="font-size:11px;color:#94A3B8;">No Logo</span>`;
+        }
+      }
+    }
+  });
+};
+
+window.saveStorefrontSettings = function() {
+  const getVal = id => (document.getElementById(id)?.value || '').trim();
+
+  const payload = {
+    site_name: getVal('setting_site_name'),
+    site_title: getVal('setting_site_title'),
+    site_logo: getVal('setting_site_logo'),
+    site_favicon: getVal('setting_site_favicon'),
+    support_phone: getVal('setting_support_phone'),
+    support_email: getVal('setting_support_email'),
+    store_address: getVal('setting_store_address'),
+    whatsapp_number: getVal('setting_whatsapp_number'),
+    footer_description: getVal('setting_footer_description'),
+
+    promo_banner_1_title: getVal('setting_promo_banner_1_title'),
+    promo_banner_1_subtitle: getVal('setting_promo_banner_1_subtitle'),
+    promo_banner_1_desc: getVal('setting_promo_banner_1_desc'),
+    promo_banner_1_image: getVal('setting_promo_banner_1_image'),
+    promo_banner_1_link: getVal('setting_promo_banner_1_link'),
+
+    promo_banner_2_title: getVal('setting_promo_banner_2_title'),
+    promo_banner_2_subtitle: getVal('setting_promo_banner_2_subtitle'),
+    promo_banner_2_desc: getVal('setting_promo_banner_2_desc'),
+    promo_banner_2_image: getVal('setting_promo_banner_2_image'),
+    promo_banner_2_link: getVal('setting_promo_banner_2_link')
+  };
+
+  fetch('/api/admin/settings/storefront', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast('Storefront settings saved successfully!');
+      loadStorefrontSettings();
+    } else {
+      alert(res.message || 'Failed to save settings.');
+    }
+  });
+};
+
+window.uploadBrandingAsset = function(type) {
+  let fileInputId = 'setting_logo_file';
+  let textInputId = 'setting_site_logo';
+  if (type === 'favicon') {
+    fileInputId = 'setting_favicon_file';
+    textInputId = 'setting_site_favicon';
+  } else if (type === 'promo_1') {
+    fileInputId = 'setting_promo_1_file';
+    textInputId = 'setting_promo_banner_1_image';
+  } else if (type === 'promo_2') {
+    fileInputId = 'setting_promo_2_file';
+    textInputId = 'setting_promo_banner_2_image';
+  }
+
+  const fileInput = document.getElementById(fileInputId);
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+  const fd = new FormData();
+  fd.append('image', fileInput.files[0]);
+
+  fetch('/api/admin/settings/upload-branding', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(null),
+    credentials: 'same-origin',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.url) {
+      document.getElementById(textInputId).value = res.url;
+      showToast('Asset uploaded successfully!');
+      if (type === 'logo') {
+        const preview = document.getElementById('setting_logo_preview');
+        if (preview) preview.innerHTML = `<img src="${res.url}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+      }
+    } else {
+      alert(res.message || 'Upload failed.');
+    }
+  });
 };
 
 // ==============================================================================
@@ -3530,7 +4348,10 @@ function doSwitchView(viewName, updateHash = true) {
   if (targetView === 'expense') {
     if (typeof renderExpenseTable === 'function') renderExpenseTable();
   }
-  if (targetView === 'products') renderProductsTable();
+  if (targetView === 'products') loadProductsCatalog();
+  if (targetView === 'categories') loadCategoriesCatalog();
+  if (targetView === 'sliders') loadSlidersCatalog();
+  if (targetView === 'header-setting' || targetView === 'storefront-settings') loadStorefrontSettings();
   if (targetView === 'customers') renderCustomersTable();
   if (targetView === 'landingpages') renderLandingPagesHub();
   if (targetView === 'landing-pages-list') renderLandingPagesList();

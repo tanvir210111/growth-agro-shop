@@ -187,6 +187,40 @@ Route::get('/admin/landing-pages/{id}/preview', function ($id, \Illuminate\Http\
 use App\Http\Controllers\Api\AdminSettingsController;
 Route::get('/api/admin/settings/marketing', [AdminSettingsController::class, 'getMarketing'])->name('api.admin.settings.marketing.get');
 Route::match(['post', 'put'], '/api/admin/settings/marketing', [AdminSettingsController::class, 'updateMarketing'])->name('api.admin.settings.marketing.update');
+Route::get('/api/admin/settings/storefront', [AdminSettingsController::class, 'getStorefront'])->name('api.admin.settings.storefront.get');
+Route::match(['post', 'put'], '/api/admin/settings/storefront', [AdminSettingsController::class, 'updateStorefront'])->name('api.admin.settings.storefront.update');
+Route::post('/api/admin/settings/upload-branding', [AdminSettingsController::class, 'uploadBranding'])->name('api.admin.settings.upload-branding');
+
+// Universal Storefront Catalog & Admin Management Endpoints
+use App\Http\Controllers\Api\AdminCategoryController;
+use App\Http\Controllers\Api\AdminProductController;
+use App\Http\Controllers\Api\AdminSliderController;
+
+// Category Management
+Route::get('/api/admin/categories', [AdminCategoryController::class, 'index'])->name('api.admin.categories.index');
+Route::post('/api/admin/categories', [AdminCategoryController::class, 'store'])->name('api.admin.categories.store');
+Route::get('/api/admin/categories/{id}', [AdminCategoryController::class, 'show'])->name('api.admin.categories.show');
+Route::match(['put', 'patch', 'post'], '/api/admin/categories/{id}', [AdminCategoryController::class, 'update'])->name('api.admin.categories.update');
+Route::patch('/api/admin/categories/{id}/status', [AdminCategoryController::class, 'setStatus'])->name('api.admin.categories.status');
+Route::delete('/api/admin/categories/{id}', [AdminCategoryController::class, 'destroy'])->name('api.admin.categories.destroy');
+
+// Product Management & Isolated Media Upload
+Route::get('/api/admin/products', [AdminProductController::class, 'index'])->name('api.admin.products.index');
+Route::post('/api/admin/products', [AdminProductController::class, 'store'])->name('api.admin.products.store');
+Route::post('/api/admin/products/upload-media', [AdminProductController::class, 'uploadMedia'])->name('api.admin.products.upload-media');
+Route::get('/api/admin/products/{id}', [AdminProductController::class, 'show'])->name('api.admin.products.show');
+Route::match(['put', 'patch', 'post'], '/api/admin/products/{id}', [AdminProductController::class, 'update'])->name('api.admin.products.update');
+Route::patch('/api/admin/products/{id}/status', [AdminProductController::class, 'setStatus'])->name('api.admin.products.status');
+Route::delete('/api/admin/products/{id}', [AdminProductController::class, 'destroy'])->name('api.admin.products.destroy');
+
+// Slider Management
+Route::get('/api/admin/sliders', [AdminSliderController::class, 'index'])->name('api.admin.sliders.index');
+Route::post('/api/admin/sliders', [AdminSliderController::class, 'store'])->name('api.admin.sliders.store');
+Route::post('/api/admin/sliders/upload-media', [AdminSliderController::class, 'uploadMedia'])->name('api.admin.sliders.upload-media');
+Route::get('/api/admin/sliders/{id}', [AdminSliderController::class, 'show'])->name('api.admin.sliders.show');
+Route::match(['put', 'patch', 'post'], '/api/admin/sliders/{id}', [AdminSliderController::class, 'update'])->name('api.admin.sliders.update');
+Route::patch('/api/admin/sliders/{id}/status', [AdminSliderController::class, 'setStatus'])->name('api.admin.sliders.status');
+Route::delete('/api/admin/sliders/{id}', [AdminSliderController::class, 'destroy'])->name('api.admin.sliders.destroy');
 
 // Internal Node.js to Laravel Landing Order Sync Bridge & Config Lookup
 use App\Http\Controllers\Api\InternalSyncController;

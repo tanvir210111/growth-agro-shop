@@ -146,6 +146,7 @@
           <div class="submenu-tree">
             <ul class="tree-list">
               <li class="tree-item"><a class="tree-link" id="subnav-products" onclick="switchView('products')">Manage Products</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-categories" onclick="switchView('categories')">Manage Categories</a></li>
             </ul>
           </div>
         </li>
@@ -161,7 +162,8 @@
           </a>
           <div class="submenu-tree">
             <ul class="tree-list">
-              <li class="tree-item"><a class="tree-link" id="subnav-header-setting" onclick="switchView('header-setting')">Header</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-header-setting" onclick="switchView('header-setting')">Store Branding & Settings</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-sliders" onclick="switchView('sliders')">Hero Sliders</a></li>
               <li class="tree-item"><a class="tree-link" id="subnav-theme-setting" onclick="switchView('theme-setting')">Theme Color</a></li>
             </ul>
           </div>
@@ -1247,35 +1249,28 @@
           </div>
         </div>
 
-        <!-- VIEW 7: PRODUCTS -> MANAGE PRODUCTS (Exact Screenshot Match: babyfashionbd.com/admin/products/1) -->
+        <!-- VIEW 7: PRODUCTS -> MANAGE PRODUCTS -->
         <div id="view-products" class="view-panel" style="display:none;">
-          <div class="top-action-row">
-            <button class="btn-primary-teal" onclick="openAddOrderModal()">
-              + Add
-            </button>
-            <button class="btn-primary-teal">
-              ▼ Filter
-            </button>
+          <div class="top-action-row" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn-primary-teal" onclick="openAddProductModal()" style="font-weight:700;display:flex;align-items:center;gap:6px;">
+                <span>＋</span> Add Product
+              </button>
+              <button class="btn-primary-teal" onclick="loadProductsCatalog()" style="background:#4A5568;" title="Refresh Catalog">
+                🔄 Refresh
+              </button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="productCategoryFilter" onchange="loadProductsCatalog()" style="padding:7px 12px;border:1px solid #CBD5E0;border-radius:6px;font-size:13px;">
+                <option value="">All Categories</option>
+              </select>
+              <input type="text" id="productSearchInput" class="order-search-box" placeholder="Search product title, SKU, slug..." style="width:260px;" onkeyup="if(event.key==='Enter') loadProductsCatalog()">
+              <button class="btn-order-search" onclick="loadProductsCatalog()">Search</button>
+            </div>
           </div>
 
           <div class="white-box-card">
-            <h2 class="centered-card-title">Product Manage</h2>
-
-            <!-- Search Toolbar -->
-            <div class="table-bar-row" style="margin-bottom:14px;border-bottom:1px solid #E2E8F0;border-radius:4px;">
-              <div class="table-bar-left">
-                <span>🔄</span>
-                <span>Show</span>
-                <select>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                </select>
-              </div>
-              <div class="table-bar-right">
-                <input type="text" class="order-search-box" placeholder="search by product name || code">
-                <button class="btn-order-search">Search</button>
-              </div>
-            </div>
+            <h2 class="centered-card-title">Universal Storefront Catalog Management</h2>
 
             <!-- Products Table -->
             <div class="orders-table-container">
@@ -1283,62 +1278,250 @@
                 <thead>
                   <tr>
                     <th style="width:40px;">#</th>
-                    <th>Product Name</th>
-                    <th>Status</th>
+                    <th>Product</th>
+                    <th>Category</th>
                     <th>Price</th>
                     <th>Stock</th>
-                    <th style="text-align:center;">Action</th>
+                    <th>Flags</th>
+                    <th>Status</th>
+                    <th style="text-align:center;width:120px;">Action</th>
                   </tr>
                 </thead>
-                <tbody id="productsTableBody"></tbody>
+                <tbody id="productsTableBody">
+                  <tr><td colspan="8" style="text-align:center;padding:24px;color:#718096;">Loading products from database...</td></tr>
+                </tbody>
               </table>
             </div>
 
-            <div class="entries-footer">
-              Showing 1 to 2 of total 2 entries
+            <div class="entries-footer" id="productsEntriesFooter">
+              Showing catalog items
             </div>
           </div>
         </div>
 
-        <!-- VIEW 8: WEBSITE SETUP -> HEADER (Exact Screenshot Match: babyfashionbd.com/admin/header/setting) -->
+        <!-- VIEW 7B: CATEGORIES -> MANAGE CATEGORIES -->
+        <div id="view-categories" class="view-panel" style="display:none;">
+          <div class="top-action-row" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn-primary-teal" onclick="openAddCategoryModal()" style="font-weight:700;display:flex;align-items:center;gap:6px;">
+                <span>＋</span> Add Category
+              </button>
+              <button class="btn-primary-teal" onclick="loadCategoriesCatalog()" style="background:#4A5568;" title="Refresh Categories">
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Storefront Category Management</h2>
+
+            <!-- Categories Table -->
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Image</th>
+                    <th>Category Title</th>
+                    <th>Slug / Handle</th>
+                    <th>Products Count</th>
+                    <th>Sort Order</th>
+                    <th>Status</th>
+                    <th style="text-align:center;width:120px;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="categoriesTableBody">
+                  <tr><td colspan="8" style="text-align:center;padding:24px;color:#718096;">Loading categories from database...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="entries-footer" id="categoriesEntriesFooter">
+              Showing active storefront categories
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 7C: WEBSITE SETUP -> HERO SLIDERS -->
+        <div id="view-sliders" class="view-panel" style="display:none;">
+          <div class="top-action-row" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn-primary-teal" onclick="openAddSliderModal()" style="font-weight:700;display:flex;align-items:center;gap:6px;">
+                <span>＋</span> Add Hero Slider
+              </button>
+              <button class="btn-primary-teal" onclick="loadSlidersCatalog()" style="background:#4A5568;" title="Refresh Sliders">
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="white-box-card">
+            <h2 class="centered-card-title">Homepage Hero Sliders & Banners</h2>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Banner Preview</th>
+                    <th>Headline / Subtitle</th>
+                    <th>Button & Target Link</th>
+                    <th>Sort Order</th>
+                    <th>Status</th>
+                    <th style="text-align:center;width:120px;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="slidersTableBody">
+                  <tr><td colspan="7" style="text-align:center;padding:24px;color:#718096;">Loading sliders from database...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="entries-footer" id="slidersEntriesFooter">
+              Showing homepage hero sliders
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 8: WEBSITE SETUP -> STORE BRANDING & SETTINGS -->
         <div id="view-header-setting" class="view-panel" style="display:none;">
           <div class="white-box-card">
-            <h2 class="centered-card-title">Header Information</h2>
+            <h2 class="centered-card-title">Universal Store Branding & Homepage Settings</h2>
 
-            <form onsubmit="event.preventDefault(); showToast('হেডার তথ্য সফলভাবে আপডেট হয়েছে!');">
-              <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Logo(160 x 60)</label>
-                <input type="file" class="form-control no-icon" style="padding:6px 10px;">
+            <form id="storefrontSettingsForm" onsubmit="event.preventDefault(); saveStorefrontSettings();">
+              <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;margin-bottom:20px;">
+                <h3 style="font-size:14px;font-weight:700;color:#1E293B;margin-top:0;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                  <span>🏷️</span> Store Branding & Identity
+                </h3>
+
+                <div class="form-horizontal-row">
+                  <label class="form-horizontal-label">Store Name *</label>
+                  <input type="text" id="setting_site_name" class="form-horizontal-input" required placeholder="Growth Agro">
+                </div>
+
+                <div class="form-horizontal-row">
+                  <label class="form-horizontal-label">SEO Title *</label>
+                  <input type="text" id="setting_site_title" class="form-horizontal-input" required placeholder="Growth Agro | Universal E-Commerce & Premium Products">
+                </div>
+
+                <div class="form-horizontal-row">
+                  <label class="form-horizontal-label">Store Logo</label>
+                  <div style="display:flex;align-items:center;gap:12px;flex:1;">
+                    <input type="file" id="setting_logo_file" class="form-control no-icon" style="padding:6px 10px;width:auto;" onchange="uploadBrandingAsset('logo')">
+                    <input type="text" id="setting_site_logo" class="form-horizontal-input" placeholder="/uploads/branding/..." style="flex:1;">
+                    <div id="setting_logo_preview" style="width:60px;height:32px;border:1px solid #CBD5E0;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff;">
+                      <span style="font-size:11px;color:#94A3B8;">No Logo</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-horizontal-row">
+                  <label class="form-horizontal-label">Favicon</label>
+                  <div style="display:flex;align-items:center;gap:12px;flex:1;">
+                    <input type="file" id="setting_favicon_file" class="form-control no-icon" style="padding:6px 10px;width:auto;" onchange="uploadBrandingAsset('favicon')">
+                    <input type="text" id="setting_site_favicon" class="form-horizontal-input" placeholder="/uploads/branding/..." style="flex:1;">
+                  </div>
+                </div>
               </div>
 
-              <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Favicon(32 x 32)</label>
-                <input type="file" class="form-control no-icon" style="padding:6px 10px;">
+              <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;margin-bottom:20px;">
+                <h3 style="font-size:14px;font-weight:700;color:#1E293B;margin-top:0;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                  <span>📞</span> Contact & Customer Support
+                </h3>
+
+                <div class="form-horizontal-row">
+                  <label class="form-horizontal-label">Support Phone</label>
+                  <input type="text" id="setting_support_phone" class="form-horizontal-input" placeholder="01560-016740">
+                </div>
+
+                <div class="form-horizontal-row">
+                  <label class="form-horizontal-label">Support Email</label>
+                  <input type="email" id="setting_support_email" class="form-horizontal-input" placeholder="support@growthagro.shop">
+                </div>
+
+                <div class="form-horizontal-row">
+                  <label class="form-horizontal-label">Store Address</label>
+                  <input type="text" id="setting_store_address" class="form-horizontal-input" placeholder="Mirpur, Dhaka-1216, Bangladesh">
+                </div>
+
+                <div class="form-horizontal-row">
+                  <label class="form-horizontal-label">WhatsApp Number</label>
+                  <input type="text" id="setting_whatsapp_number" class="form-horizontal-input" placeholder="8801560016740">
+                </div>
+
+                <div class="form-horizontal-row">
+                  <label class="form-horizontal-label">Footer Description</label>
+                  <textarea id="setting_footer_description" class="form-horizontal-input" rows="2" placeholder="Your one-stop shop for quality products at the best prices."></textarea>
+                </div>
               </div>
 
-              <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Title *</label>
-                <input type="text" class="form-horizontal-input" value="babyfashionbd.com" required>
-              </div>
+              <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;margin-bottom:20px;">
+                <h3 style="font-size:14px;font-weight:700;color:#1E293B;margin-top:0;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                  <span>🎨</span> Homepage Promotional Split Banners
+                </h3>
 
-              <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Meta Title</label>
-                <input type="text" class="form-horizontal-input" value="Baby Fashion BD | Baby & Kids Clothing Online in Bangladesh">
-              </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                  <!-- Banner 1 -->
+                  <div style="background:#fff;border:1px solid #E2E8F0;border-radius:6px;padding:12px;">
+                    <div style="font-weight:700;font-size:13px;color:#0F172A;margin-bottom:8px;">Promo Banner #1 (Left)</div>
+                    <div style="margin-bottom:8px;">
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Headline / Title</label>
+                      <input type="text" id="setting_promo_banner_1_title" class="form-control" style="width:100%;padding:6px 10px;" placeholder="SPECIAL COLLECTION">
+                    </div>
+                    <div style="margin-bottom:8px;">
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Subtitle / Badge</label>
+                      <input type="text" id="setting_promo_banner_1_subtitle" class="form-control" style="width:100%;padding:6px 10px;" placeholder="UP TO 30% OFF">
+                    </div>
+                    <div style="margin-bottom:8px;">
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Description</label>
+                      <input type="text" id="setting_promo_banner_1_desc" class="form-control" style="width:100%;padding:6px 10px;" placeholder="Discover top rated products tailored for optimal value.">
+                    </div>
+                    <div style="margin-bottom:8px;">
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Image URL / File</label>
+                      <div style="display:flex;gap:6px;">
+                        <input type="file" id="setting_promo_1_file" class="form-control no-icon" style="padding:4px 6px;width:auto;" onchange="uploadBrandingAsset('promo_1')">
+                        <input type="text" id="setting_promo_banner_1_image" class="form-control" style="flex:1;padding:6px 10px;" placeholder="/uploads/branding/...">
+                      </div>
+                    </div>
+                    <div>
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Target Link</label>
+                      <input type="text" id="setting_promo_banner_1_link" class="form-control" style="width:100%;padding:6px 10px;" placeholder="/shop">
+                    </div>
+                  </div>
 
-              <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Meta Key</label>
-                <textarea class="form-horizontal-input" rows="3">Baby Fashion BD, BabyFashionBD.com, Baby Clothing Bangladesh, Kids Fashion, Baby Dress, Baby T-Shirt, Baby Romper, Girls Dress, Boys Clothing, Kids Wear, Baby Accessories, Online Shopping B</textarea>
-              </div>
-
-              <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Meta Description</label>
-                <textarea class="form-horizontal-input" rows="3">Buy baby dresses, kids clothing, rompers and stylish kidswear online from Baby Fashion BD. Quality products with fast delivery across Bangladesh.</textarea>
+                  <!-- Banner 2 -->
+                  <div style="background:#fff;border:1px solid #E2E8F0;border-radius:6px;padding:12px;">
+                    <div style="font-weight:700;font-size:13px;color:#0F172A;margin-bottom:8px;">Promo Banner #2 (Right)</div>
+                    <div style="margin-bottom:8px;">
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Headline / Title</label>
+                      <input type="text" id="setting_promo_banner_2_title" class="form-control" style="width:100%;padding:6px 10px;" placeholder="DAILY ESSENTIALS">
+                    </div>
+                    <div style="margin-bottom:8px;">
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Subtitle / Badge</label>
+                      <input type="text" id="setting_promo_banner_2_subtitle" class="form-control" style="width:100%;padding:6px 10px;" placeholder="MIN 20% OFF">
+                    </div>
+                    <div style="margin-bottom:8px;">
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Description</label>
+                      <input type="text" id="setting_promo_banner_2_desc" class="form-control" style="width:100%;padding:6px 10px;" placeholder="Quality verified catalog items ready for doorstep dispatch.">
+                    </div>
+                    <div style="margin-bottom:8px;">
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Image URL / File</label>
+                      <div style="display:flex;gap:6px;">
+                        <input type="file" id="setting_promo_2_file" class="form-control no-icon" style="padding:4px 6px;width:auto;" onchange="uploadBrandingAsset('promo_2')">
+                        <input type="text" id="setting_promo_banner_2_image" class="form-control" style="flex:1;padding:6px 10px;" placeholder="/uploads/branding/...">
+                      </div>
+                    </div>
+                    <div>
+                      <label style="font-size:11.5px;color:#64748B;display:block;">Target Link</label>
+                      <input type="text" id="setting_promo_banner_2_link" class="form-control" style="width:100%;padding:6px 10px;" placeholder="/shop">
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div style="margin-top:20px;padding-left:220px;">
-                <button type="submit" class="btn-primary-teal" style="padding:10px 24px;">
-                  Submit
+                <button type="submit" class="btn-primary-teal" style="padding:10px 28px;font-size:14px;font-weight:700;">
+                  💾 Save Storefront Settings
                 </button>
               </div>
             </form>
@@ -3560,9 +3743,232 @@
     </div>
   </div>
 
+  <!-- MODAL: ADD / EDIT PRODUCT -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-content" style="max-width:760px;max-height:90vh;overflow-y:auto;">
+      <div class="modal-header">
+        <h3 id="productModalTitle" style="font-size:16px;font-weight:700;">Add New Product</h3>
+        <button class="btn-close-modal" onclick="closeProductModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <form id="productForm" onsubmit="event.preventDefault(); saveProductData();">
+          <input type="hidden" id="prod_id" value="">
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Product Title *</label>
+              <input type="text" id="prod_title" class="form-control" required placeholder="e.g. Liquid Vitamin AD3E 500ml" oninput="autoGenProductSlug()">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">SKU *</label>
+              <input type="text" id="prod_sku" class="form-control" required placeholder="e.g. VIT-AD3E-500">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Slug / URL Handle</label>
+              <input type="text" id="prod_slug" class="form-control" placeholder="liquid-vitamin-ad3e-500ml">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Category</label>
+              <select id="prod_category_id" class="form-control">
+                <option value="">Select Category</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Regular Price (৳) *</label>
+              <input type="number" step="0.01" min="0" id="prod_regular_price" class="form-control" required placeholder="600">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Sale Price (৳)</label>
+              <input type="number" step="0.01" min="0" id="prod_sale_price" class="form-control" placeholder="520">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Stock Quantity</label>
+              <input type="number" min="0" id="prod_stock" class="form-control" value="50" placeholder="50">
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Options / Sizes (Comma-separated)</label>
+            <input type="text" id="prod_sizes" class="form-control" placeholder="e.g. 500ml Bottle, 1 Liter Bottle, 5 Liter Can">
+            <span style="font-size:11px;color:#64748B;">Leave blank if this product has no selectable variants.</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Featured Image</label>
+              <div style="display:flex;gap:6px;">
+                <input type="file" id="prod_image_file" class="form-control no-icon" style="padding:4px 6px;width:auto;" onchange="uploadProductImage('featured')">
+                <input type="text" id="prod_featured_image" class="form-control" placeholder="/uploads/products/...">
+              </div>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Secondary / Hover Image</label>
+              <div style="display:flex;gap:6px;">
+                <input type="file" id="prod_hover_file" class="form-control no-icon" style="padding:4px 6px;width:auto;" onchange="uploadProductImage('hover')">
+                <input type="text" id="prod_hover_image" class="form-control" placeholder="/uploads/products/...">
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Short Description</label>
+            <textarea id="prod_short_description" class="form-control" rows="2" placeholder="Brief highlights shown above price or on product cards"></textarea>
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Full Description</label>
+            <textarea id="prod_description" class="form-control" rows="4" placeholder="Detailed product specifications, usage instructions, etc."></textarea>
+          </div>
+
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:10px 14px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:18px;">
+            <label style="font-size:12.5px;font-weight:600;color:#1E293B;display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="prod_is_new_arrival" checked> 🌟 New Arrival
+            </label>
+            <label style="font-size:12.5px;font-weight:600;color:#1E293B;display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="prod_is_bestseller"> 🔥 Best Seller
+            </label>
+            <label style="font-size:12.5px;font-weight:600;color:#1E293B;display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="prod_is_featured"> ✦ Featured
+            </label>
+            <label style="font-size:12.5px;font-weight:600;color:#1E293B;display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="prod_status" checked> Active / Published
+            </label>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;">
+            <button type="button" class="btn-lp-draft" onclick="closeProductModal()">Cancel</button>
+            <button type="submit" class="btn-primary-teal" style="padding:8px 24px;font-weight:700;">Save Product</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT CATEGORY -->
+  <div class="modal-overlay" id="categoryModal">
+    <div class="modal-content" style="max-width:560px;">
+      <div class="modal-header">
+        <h3 id="categoryModalTitle" style="font-size:16px;font-weight:700;">Add New Category</h3>
+        <button class="btn-close-modal" onclick="closeCategoryModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <form id="categoryForm" onsubmit="event.preventDefault(); saveCategoryData();">
+          <input type="hidden" id="cat_id" value="">
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Category Name *</label>
+            <input type="text" id="cat_title" class="form-control" required placeholder="e.g. Poultry Medicine" oninput="autoGenCategorySlug()">
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Handle / Slug</label>
+            <input type="text" id="cat_handle" class="form-control" placeholder="poultry-medicine">
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Description</label>
+            <textarea id="cat_description" class="form-control" rows="2" placeholder="Brief category summary"></textarea>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Category Icon / Image</label>
+              <div style="display:flex;gap:6px;">
+                <input type="file" id="cat_image_file" class="form-control no-icon" style="padding:4px 6px;width:auto;" onchange="uploadCategoryAsset('image')">
+                <input type="text" id="cat_image" class="form-control" placeholder="/uploads/products/...">
+              </div>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Sort Order</label>
+              <input type="number" id="cat_sort_order" class="form-control" value="0" min="0">
+            </div>
+          </div>
+
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:10px 14px;margin-bottom:16px;">
+            <label style="font-size:12.5px;font-weight:600;color:#1E293B;display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="cat_status" checked> Active / Visible on Storefront
+            </label>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;">
+            <button type="button" class="btn-lp-draft" onclick="closeCategoryModal()">Cancel</button>
+            <button type="submit" class="btn-primary-teal" style="padding:8px 24px;font-weight:700;">Save Category</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT SLIDER -->
+  <div class="modal-overlay" id="sliderModal">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 id="sliderModalTitle" style="font-size:16px;font-weight:700;">Add Hero Slider</h3>
+        <button class="btn-close-modal" onclick="closeSliderModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <form id="sliderForm" onsubmit="event.preventDefault(); saveSliderData();">
+          <input type="hidden" id="slider_id" value="">
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Headline / Title *</label>
+            <input type="text" id="slider_title" class="form-control" required placeholder="e.g. Modern Agricultural Solutions">
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Subtitle / Tagline</label>
+            <input type="text" id="slider_subtitle" class="form-control" placeholder="e.g. Special Discount on Bulk Orders">
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Banner Image URL / Upload</label>
+            <div style="display:flex;gap:6px;">
+              <input type="file" id="slider_image_file" class="form-control no-icon" style="padding:4px 6px;width:auto;" onchange="uploadSliderAsset()">
+              <input type="text" id="slider_image" class="form-control" placeholder="/uploads/sliders/...">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Button Text</label>
+              <input type="text" id="slider_button_text" class="form-control" value="Shop Now" placeholder="Shop Now">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Target Link</label>
+              <input type="text" id="slider_link" class="form-control" value="/shop" placeholder="/shop">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div>
+              <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Sort Order</label>
+              <input type="number" id="slider_sort_order" class="form-control" value="0" min="0">
+            </div>
+            <div style="display:flex;align-items:flex-end;padding-bottom:8px;">
+              <label style="font-size:12.5px;font-weight:600;color:#1E293B;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" id="slider_status" checked> Active on Homepage
+              </label>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;">
+            <button type="button" class="btn-lp-draft" onclick="closeSliderModal()">Cancel</button>
+            <button type="submit" class="btn-primary-teal" style="padding:8px 24px;font-weight:700;">Save Slider</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div class="toast-box" id="toastBox">Action Completed</div>
 
-  <script src="/admin/app.js?v=9.4"></script>
+  <script src="/admin/app.js?v=9.5"></script>
 </body>
 </html>
