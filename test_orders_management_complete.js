@@ -218,8 +218,51 @@ async function startSuite() {
   });
 
   // TEST 7: Order Status Update via PATCH /api/orders/{order_number}/status persists to DB
-  await runTest('7. Order status update (Approved) persists to database', async () => {
-    const res = await makeRequest({
+  await runTest('7. Order status transitions (all 8 statuses) persist to database and invalid status rejected', async () => {
+    const statusesToTest = [
+      'Approved',
+      'Work In Progress',
+      'Packaging',
+      'Shipment',
+      'Delivered',
+      'Cancel',
+      'Return',
+      'Pending'
+    ];
+
+    for (const targetStatus of statusesToTest) {
+      const res = await makeRequest({
+        hostname: '127.0.0.1',
+        port: LARAVEL_PORT,
+        path: `/api/orders/${testInvoice1}/status`,
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'x-admin-token': ADMIN_TOKEN
+        }
+      }, { status: targetStatus });
+
+      assert.strictEqual(res.status, 200, `Setting status to ${targetStatus} should return 200`);
+      assert.strictEqual(res.body.success, true);
+      assert.strictEqual(res.body.status.toLowerCase(), targetStatus.toLowerCase());
+
+      const listRes = await makeRequest({
+        hostname: '127.0.0.1',
+        port: LARAVEL_PORT,
+        path: '/api/orders',
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'x-admin-token': ADMIN_TOKEN
+        }
+      });
+      const found = listRes.body.orders.find(o => o.order_number === testInvoice1);
+      assert.strictEqual(found.status.toLowerCase(), targetStatus.toLowerCase(), `Order status in DB must match ${targetStatus}`);
+    }
+
+    // Test rejection of invalid status
+    const badRes = await makeRequest({
       hostname: '127.0.0.1',
       port: LARAVEL_PORT,
       path: `/api/orders/${testInvoice1}/status`,
@@ -229,23 +272,9 @@ async function startSuite() {
         'Accept': 'application/json',
         'x-admin-token': ADMIN_TOKEN
       }
-    }, { status: 'approved' });
+    }, { status: 'bogus_status_xxx' });
 
-    assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.body.success, true);
-
-    const listRes = await makeRequest({
-      hostname: '127.0.0.1',
-      port: LARAVEL_PORT,
-      path: '/api/orders',
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'x-admin-token': ADMIN_TOKEN
-      }
-    });
-    const found = listRes.body.orders.find(o => o.order_number === testInvoice1);
-    assert.strictEqual(found.status.toLowerCase(), 'approved');
+    assert.strictEqual(badRes.status, 422, 'Invalid status must be rejected with HTTP 422');
   });
 
   // TEST 8: Admin Explicit "Check" Button Trigger saves fraud metrics to DB

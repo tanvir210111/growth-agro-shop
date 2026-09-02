@@ -106,7 +106,23 @@ for (const col of requiredColumns) {
   }
 }
 
-const ALLOWED_ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+const ALLOWED_ORDER_STATUSES = [
+  'pending',
+  'approved',
+  'work in progress',
+  'packaging',
+  'shipment',
+  'delivered',
+  'cancel',
+  'return',
+  'confirmed',
+  'wip',
+  'processing',
+  'shipped',
+  'cancelled',
+  'returned',
+  'new'
+];
 
 
 /**
@@ -410,11 +426,31 @@ function getOrderByNumber(orderNumber) {
  * Update order status and automatically append to timeline
  */
 function updateOrderStatus(orderNumber, newStatus, note = '') {
-  const normalizedStatus = (newStatus || '').toLowerCase().trim();
-  if (!ALLOWED_ORDER_STATUSES.includes(normalizedStatus)) {
-    throw new Error(`Invalid status: ${newStatus}. Allowed: ${ALLOWED_ORDER_STATUSES.join(', ')}`);
+  const normalizedInput = (newStatus || '').toLowerCase().trim();
+  const canonicalMap = {
+    'pending': 'Pending',
+    'approved': 'Approved',
+    'confirmed': 'Approved',
+    'work in progress': 'Work In Progress',
+    'work_in_progress': 'Work In Progress',
+    'wip': 'Work In Progress',
+    'processing': 'Work In Progress',
+    'packaging': 'Packaging',
+    'shipment': 'Shipment',
+    'shipped': 'Shipment',
+    'delivered': 'Delivered',
+    'cancel': 'Cancel',
+    'cancelled': 'Cancel',
+    'return': 'Return',
+    'returned': 'Return',
+    'new': 'Pending'
+  };
+
+  if (!canonicalMap[normalizedInput]) {
+    throw new Error(`Invalid status: ${newStatus}. Allowed: Pending, Approved, Work In Progress, Packaging, Shipment, Delivered, Cancel, Return`);
   }
 
+  const canonicalStatus = canonicalMap[normalizedInput];
   const now = new Date().toISOString();
   const order = db.prepare('SELECT timeline FROM orders WHERE order_number = ?').get(orderNumber);
   if (!order) return false;
@@ -427,23 +463,25 @@ function updateOrderStatus(orderNumber, newStatus, note = '') {
   }
 
   const statusLabels = {
-    pending: 'অর্ডার পেন্ডিং',
-    confirmed: 'অর্ডার কনফার্ম করা হয়েছে',
-    processing: 'প্রসেসিং শুরু হয়েছে',
-    shipped: 'কুরিয়ারে হস্তান্তর করা হয়েছে',
-    delivered: 'সফলভাবে ডেলিভারি সম্পন্ন',
-    cancelled: 'অর্ডার বাতিল করা হয়েছে'
+    'Pending': 'অর্ডার পেন্ডিং',
+    'Approved': 'অর্ডার কনফার্ম/অনুমোদন করা হয়েছে',
+    'Work In Progress': 'কাজ চলমান (Work In Progress)',
+    'Packaging': 'প্যাকেজিং সম্পন্ন',
+    'Shipment': 'কুরিয়ারে হস্তান্তর করা হয়েছে',
+    'Delivered': 'সফলভাবে ডেলিভারি সম্পন্ন',
+    'Cancel': 'অর্ডার বাতিল করা হয়েছে',
+    'Return': 'অর্ডার রিটার্ন করা হয়েছে'
   };
 
   timelineArray.push({
-    event: `Status: ${normalizedStatus.toUpperCase()}`,
-    status: normalizedStatus,
+    event: `Status: ${canonicalStatus}`,
+    status: canonicalStatus,
     time: now,
-    note: note || (statusLabels[normalizedStatus] || `স্ট্যাটাস পরিবর্তন: ${normalizedStatus}`)
+    note: note || (statusLabels[canonicalStatus] || `স্ট্যাটাস পরিবর্তন: ${canonicalStatus}`)
   });
 
   const update = db.prepare('UPDATE orders SET status = ?, timeline = ?, updated_at = ? WHERE order_number = ?');
-  const result = update.run(normalizedStatus, JSON.stringify(timelineArray), now, orderNumber);
+  const result = update.run(canonicalStatus.toLowerCase(), JSON.stringify(timelineArray), now, orderNumber);
   
   return result.changes > 0;
 }

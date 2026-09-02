@@ -87,27 +87,8 @@ Route::match(['get', 'post'], '/api/admin/fraud/courier-check', [AdminAnalyticsC
 // Admin Orders list (used by admin panel JS — includes fraud fields)
 Route::get('/api/orders', [AdminAnalyticsController::class, 'ordersIndex'])->name('api.orders.index');
 Route::get('/api/orders/{order_number}/status', [AdminAnalyticsController::class, 'ordersIndex'])->name('api.orders.status');
-Route::patch('/api/orders/{order_number}/status', function (\Illuminate\Http\Request $request, $order_number) {
-    // Simple inline status updater used by admin panel
-    $admin = app(\App\Http\Controllers\Api\AdminAnalyticsController::class);
-    if (!method_exists($admin, 'authenticateAdmin')) {
-        return response()->json(['success' => false], 403);
-    }
-    $newStatus = $request->input('status', '');
-    $updated = \App\Models\Order::where('invoice_no', $order_number)->update(['status' => $newStatus]);
-
-    // Also sync status with Node server if running
-    try {
-        $nodeHost = env('NODE_HOST', '127.0.0.1');
-        $nodePort = env('NODE_PORT', 3000);
-        \Illuminate\Support\Facades\Http::timeout(2)
-            ->withHeaders(['x-admin-token' => $request->header('x-admin-token', 'admin-token')])
-            ->patch("http://{$nodeHost}:{$nodePort}/api/orders/{$order_number}/status", ['status' => $newStatus]);
-    } catch (\Throwable $e) {}
-
-    return response()->json(['success' => $updated > 0]);
-})->name('api.orders.updateStatus');
-
+Route::patch('/api/orders/{order_number}/status', [AdminAnalyticsController::class, 'updateStatus'])->name('api.orders.updateStatus');
+Route::patch('/api/admin/orders/{order_number}/status', [AdminAnalyticsController::class, 'updateStatus'])->name('api.admin.orders.updateStatus');
 Route::patch('/api/orders/{order_number}/courier', [AdminAnalyticsController::class, 'updateCourier'])->name('api.orders.updateCourier');
 Route::delete('/api/orders/{order_number}', [AdminAnalyticsController::class, 'destroyOrder'])->name('api.orders.destroy');
 Route::delete('/api/admin/orders/{order_number}', [AdminAnalyticsController::class, 'destroyOrder'])->name('api.admin.orders.destroy');

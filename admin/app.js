@@ -324,15 +324,33 @@ function loadServerOrders() {
 }
 
 function normalizeStatus(st) {
-  const s = (st || 'pending').toLowerCase();
-  if (s === 'pending' || s === 'new') return 'New';
-  if (s === 'confirmed' || s === 'approved') return 'Approved';
-  if (s === 'processing' || s === 'packaging') return 'Packaging';
-  if (s === 'shipped' || s === 'shipment') return 'Shipment';
+  const s = String(st || 'Pending').toLowerCase().trim();
+  if (s === 'pending' || s === 'new') return 'Pending';
+  if (s === 'approved' || s === 'confirmed') return 'Approved';
+  if (s === 'work in progress' || s === 'work_in_progress' || s === 'wip' || s === 'processing') return 'Work In Progress';
+  if (s === 'packaging') return 'Packaging';
+  if (s === 'shipment' || s === 'shipped') return 'Shipment';
   if (s === 'delivered') return 'Delivered';
-  if (s === 'cancelled' || s === 'cancel') return 'Cancel';
-  if (s === 'returned' || s === 'return') return 'Return';
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  if (s === 'cancel' || s === 'cancelled') return 'Cancel';
+  if (s === 'return' || s === 'returned') return 'Return';
+  return s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+function buildOrderStatusBadge(status, invoice) {
+  const norm = normalizeStatus(status);
+  const colorMap = {
+    'Pending': { bg: '#FEF3C7', text: '#B45309', border: '#FDE68A' },
+    'Approved': { bg: '#D1FAE5', text: '#065F46', border: '#A7F3D0' },
+    'Work In Progress': { bg: '#E0F2FE', text: '#0369A1', border: '#BAE6FD' },
+    'Packaging': { bg: '#EDE9FE', text: '#5B21B6', border: '#DDD6FE' },
+    'Shipment': { bg: '#E0F2FE', text: '#075985', border: '#BAE6FD' },
+    'Delivered': { bg: '#DCFCE7', text: '#166534', border: '#BBF7D0' },
+    'Cancel': { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA' },
+    'Return': { bg: '#F1F5F9', text: '#475569', border: '#E2E8F0' }
+  };
+  const style = colorMap[norm] || { bg: '#F1F5F9', text: '#475569', border: '#E2E8F0' };
+
+  return `<span onclick="openOrderStatusModal('${invoice}')" style="cursor:pointer;background:${style.bg};color:${style.text};border:1px solid ${style.border};padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:3px;" title="Click to change status">${norm} ▾</span>`;
 }
 
 function aggregateCustomers() {
@@ -662,7 +680,7 @@ function renderOrdersTable() {
 
   // Tab filter
   if (APP_STATE.activeFilter !== 'All') {
-    filtered = filtered.filter(o => o.status.toLowerCase() === APP_STATE.activeFilter.toLowerCase());
+    filtered = filtered.filter(o => normalizeStatus(o.status).toLowerCase() === APP_STATE.activeFilter.toLowerCase());
   }
 
   // Date filter
@@ -746,7 +764,10 @@ function renderOrdersTable() {
       </td>
       <td>
         <div class="activities-block">
-          <div>Status : <span class="status-green-badge">${ord.status}</span></div>
+          <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;">
+            <span style="font-size:11px;color:#64748B;">Status:</span>
+            ${buildOrderStatusBadge(ord.status, ord.invoice)}
+          </div>
           <div>Date : ${ord.date}</div>
           <div>By : ${ord.createdBy}</div>
         </div>
@@ -770,7 +791,7 @@ function renderOrdersTable() {
       <td style="text-align:center;">
         <div style="display:flex;gap:4px;justify-content:center;align-items:center;">
           <button type="button" class="btn-action-icon" onclick="viewOrderInvoice('${ord.invoice}')" title="Invoice & Details" style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;">👁️</button>
-          <button type="button" class="btn-action-icon" onclick="openOrderActionsModal('${ord.invoice}')" title="Change Order Status" style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;">🔄</button>
+          <button type="button" class="btn-action-icon" onclick="openOrderStatusModal('${ord.invoice}')" title="Change Order Status" style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;">🔄</button>
           <button type="button" class="btn-action-icon" onclick="openOrderTimelineModal('${ord.invoice}')" title="Order Status Timeline" style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;">⏱️</button>
           <button type="button" class="btn-action-icon" onclick="deleteOrder('${ord.invoice}', this)" title="Delete Order Permanently" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;color:#DC2626;">🗑️</button>
         </div>
@@ -782,22 +803,22 @@ function renderOrdersTable() {
 
 
 function updateTabCountBadges() {
-  const getC = (st) => APP_STATE.orders.filter(o => o.status.toLowerCase() === st.toLowerCase()).length;
+  const norm = (st) => normalizeStatus(st).toLowerCase();
+  const getC = (target) => APP_STATE.orders.filter(o => norm(o.status) === target.toLowerCase()).length;
   const setTab = (id, count) => {
     const el = document.getElementById(id);
     if (el) el.textContent = `${count}`;
   };
 
   setTab('tabCountAll', APP_STATE.orders.length);
-  setTab('tabCountNew', getC('New'));
   setTab('tabCountPending', getC('Pending'));
   setTab('tabCountApproved', getC('Approved'));
+  setTab('tabCountWIP', getC('Work In Progress'));
   setTab('tabCountPackaging', getC('Packaging'));
   setTab('tabCountShipment', getC('Shipment'));
   setTab('tabCountDelivered', getC('Delivered'));
-  setTab('tabCountReturn', getC('Return'));
   setTab('tabCountCancel', getC('Cancel'));
-  setTab('tabCountWFP', getC('WFP'));
+  setTab('tabCountReturn', getC('Return'));
 }
 
 window.setOrderFilterTab = function(tabName) {
@@ -861,12 +882,12 @@ window.exportOrdersCSV = function() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  showToast('Orders CSV exported successfully!');
 };
 
 window.handleBulkAction = function(action) {
+  if (!action) return;
   if (APP_STATE.selectedOrders.size === 0) {
-    alert('দয়া করে অন্তত একটি অর্ডার সিলেক্ট করুন।');
+    alert('অনুগ্রহ করে অন্তত একটি অর্ডার নির্বাচন করুন।');
     return;
   }
 
@@ -881,33 +902,158 @@ window.handleBulkAction = function(action) {
     return;
   }
 
-  if (['Approved', 'Shipment', 'Delivered', 'Cancel'].includes(action)) {
+  const validStatuses = ['Pending', 'Approved', 'Work In Progress', 'Packaging', 'Shipment', 'Delivered', 'Cancel', 'Return'];
+  const matchedStatus = validStatuses.find(s => s.toLowerCase() === action.toLowerCase());
+  if (matchedStatus) {
     APP_STATE.orders.forEach(o => {
       if (APP_STATE.selectedOrders.has(o.invoice)) {
-        o.status = action;
-        updateServerOrderStatus(o.invoice, action);
+        o.status = matchedStatus;
+        updateServerOrderStatus(o.invoice, matchedStatus);
       }
     });
     APP_STATE.selectedOrders.clear();
     renderDashboardData();
     renderOrdersTable();
-    showToast(`নির্বাচিত অর্ডারগুলোর স্ট্যাটাস '${action}' এ পরিবর্তন করা হয়েছে!`);
+    updateTabCountBadges();
+    showToast(`নির্বাচিত অর্ডারগুলোর স্ট্যাটাস '${matchedStatus}' এ পরিবর্তন করা হয়েছে!`);
   }
 };
 
-window.openOrderActionsModal = function(invoice) {
-  const ord = APP_STATE.orders.find(o => o.invoice === invoice);
+window.openOrderStatusModal = function(invoiceOrOrder) {
+  const ord = typeof invoiceOrOrder === 'object' ? invoiceOrOrder : APP_STATE.orders.find(o => o.invoice === invoiceOrOrder);
   if (!ord) return;
 
-  const nextStatus = prompt(`Change status for Order #${ord.invoice}:\n(New, Pending, Approved, Packaging, Shipment, Delivered, Cancel, Return)`, ord.status);
-  if (nextStatus && nextStatus !== ord.status) {
-    const oldStatus = ord.status;
-    ord.status = normalizeStatus(nextStatus);
-    updateServerOrderStatus(ord.invoice, ord.status);
-    renderDashboardData();
-    renderOrdersTable();
-    showToast(`Order #${ord.invoice} status updated to '${ord.status}'!`);
-  }
+  const currentStatus = normalizeStatus(ord.status);
+  const allowedStatuses = [
+    { value: 'Pending', label: '⏳ Pending' },
+    { value: 'Approved', label: '✅ Approved' },
+    { value: 'Work In Progress', label: '⚙️ Work In Progress' },
+    { value: 'Packaging', label: '📦 Packaging' },
+    { value: 'Shipment', label: '🚚 Shipment' },
+    { value: 'Delivered', label: '🎉 Delivered' },
+    { value: 'Cancel', label: '❌ Cancel' },
+    { value: 'Return', label: '↩️ Return' }
+  ];
+
+  const existing = document.getElementById('orderStatusModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'orderStatusModal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100000;';
+
+  let optionsHtml = '';
+  allowedStatuses.forEach(st => {
+    const isSelected = (st.value.toLowerCase() === currentStatus.toLowerCase());
+    optionsHtml += `<option value="${st.value}" ${isSelected ? 'selected' : ''}>${st.label}</option>`;
+  });
+
+  modal.innerHTML = `
+    <div style="background:#FFFFFF;border-radius:12px;width:92%;max-width:440px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2), 0 10px 10px -5px rgba(0,0,0,0.1);border:1px solid #E2E8F0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+      <div style="background:#F8FAFC;padding:16px 20px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <h3 style="margin:0;font-size:16px;font-weight:700;color:#0F172A;display:flex;align-items:center;gap:6px;">
+            <span>🔄</span> Update Order Status
+          </h3>
+          <div style="font-size:12px;color:#64748B;margin-top:2px;">Order: <b>#${ord.invoice}</b></div>
+        </div>
+        <button type="button" onclick="document.getElementById('orderStatusModal').remove()" style="background:none;border:none;font-size:20px;color:#94A3B8;cursor:pointer;line-height:1;padding:4px;">✕</button>
+      </div>
+
+      <div style="padding:20px;">
+        <div style="background:#F1F5F9;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#334155;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="color:#64748B;">Customer:</span>
+            <b>${ord.customer || 'Customer'}</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="color:#64748B;">Total Amount:</span>
+            <b>৳ ${ord.total}</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#64748B;">Current Status:</span>
+            <span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:#E2E8F0;color:#334155;">${currentStatus}</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="display:block;font-size:12.5px;font-weight:600;color:#1E293B;margin-bottom:6px;">Select New Status:</label>
+          <select id="modalOrderStatusSelect" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E1;border-radius:8px;font-size:13.5px;font-weight:600;color:#0F172A;background:#FFFFFF;outline:none;cursor:pointer;">
+            ${optionsHtml}
+          </select>
+        </div>
+
+        <div id="modalStatusAlert" style="display:none;margin-bottom:12px;padding:8px 12px;border-radius:6px;font-size:12px;"></div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button type="button" onclick="document.getElementById('orderStatusModal').remove()" style="padding:8px 16px;border:1px solid #CBD5E1;border-radius:6px;background:#FFFFFF;color:#475569;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+          <button type="button" id="modalSaveStatusBtn" onclick="saveOrderStatusFromModal('${ord.invoice}')" style="padding:8px 18px;border:none;border-radius:6px;background:#0F172A;color:#FFFFFF;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">Save Status</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+};
+
+window.openOrderActionsModal = window.openOrderStatusModal;
+
+window.saveOrderStatusFromModal = function(invoice) {
+  const selectEl = document.getElementById('modalOrderStatusSelect');
+  const saveBtn = document.getElementById('modalSaveStatusBtn');
+  const alertEl = document.getElementById('modalStatusAlert');
+  if (!selectEl || !saveBtn) return;
+
+  const newStatus = selectEl.value;
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving... ⏳';
+
+  const token = localStorage.getItem('admin_token') || '';
+  fetch(`/api/orders/${encodeURIComponent(invoice)}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'x-admin-token': token
+    },
+    body: JSON.stringify({ status: newStatus })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      const canonical = normalizeStatus(res.status || newStatus);
+      const matched = APP_STATE.orders.find(o => o.invoice === invoice);
+      if (matched) {
+        matched.status = canonical;
+      }
+      renderDashboardData();
+      renderOrdersTable();
+      updateTabCountBadges();
+      const modal = document.getElementById('orderStatusModal');
+      if (modal) modal.remove();
+      showToast(`Order #${invoice} status updated to '${canonical}'!`);
+    } else {
+      if (alertEl) {
+        alertEl.style.display = 'block';
+        alertEl.style.background = '#FEF2F2';
+        alertEl.style.color = '#991B1B';
+        alertEl.textContent = res.message || 'Failed to update status.';
+      }
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Status';
+    }
+  })
+  .catch(err => {
+    if (alertEl) {
+      alertEl.style.display = 'block';
+      alertEl.style.background = '#FEF2F2';
+      alertEl.style.color = '#991B1B';
+      alertEl.textContent = 'Network error while updating status.';
+    }
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Status';
+  });
 };
 
 function updateServerOrderStatus(orderNumber, status) {

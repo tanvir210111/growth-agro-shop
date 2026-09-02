@@ -1256,6 +1256,76 @@ class AdminAnalyticsController extends Controller
     }
 
     /**
+     * 13B. PATCH /api/orders/{order_number}/status or /api/admin/orders/{order_number}/status
+     * Update order status with strict server-side validation against allowed statuses.
+     */
+    public function updateStatus(Request $request, string $order_number): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $incoming = trim((string)$request->input('status', ''));
+        if (empty($incoming)) {
+            return response()->json(['success' => false, 'message' => 'Status is required.'], 422);
+        }
+
+        $canonicalMap = [
+            'pending'          => 'Pending',
+            'approved'         => 'Approved',
+            'confirmed'        => 'Approved',
+            'work in progress' => 'Work In Progress',
+            'work_in_progress' => 'Work In Progress',
+            'wip'              => 'Work In Progress',
+            'processing'       => 'Work In Progress',
+            'packaging'        => 'Packaging',
+            'shipment'         => 'Shipment',
+            'shipped'          => 'Shipment',
+            'delivered'        => 'Delivered',
+            'cancel'           => 'Cancel',
+            'cancelled'        => 'Cancel',
+            'return'           => 'Return',
+            'returned'         => 'Return',
+        ];
+
+        $lower = strtolower($incoming);
+        if (!isset($canonicalMap[$lower])) {
+            return response()->json([
+                'success' => false,
+                'message' => "Invalid status: '{$incoming}'. Allowed: Pending, Approved, Work In Progress, Packaging, Shipment, Delivered, Cancel, Return."
+            ], 422);
+        }
+
+        $canonicalStatus = $canonicalMap[$lower];
+
+        $order = Order::where('invoice_no', $order_number)->orWhere('id', $order_number)->first();
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
+        }
+
+        $order->status = $canonicalStatus;
+        $order->save();
+
+        // Sync with Node server if running
+        try {
+            $nodeHost = env('NODE_HOST', '127.0.0.1');
+            $nodePort = env('NODE_PORT', 3000);
+            \Illuminate\Support\Facades\Http::timeout(2)
+                ->withHeaders(['x-admin-token' => $request->header('x-admin-token', 'admin-token')])
+                ->patch("http://{$nodeHost}:{$nodePort}/api/orders/{$order->invoice_no}/status", [
+                    'status' => $canonicalStatus
+                ]);
+        } catch (\Throwable $e) {}
+
+        return response()->json([
+            'success'      => true,
+            'order_number' => $order->invoice_no,
+            'status'       => $order->status,
+            'message'      => "Order #{$order->invoice_no} status updated to '{$order->status}'."
+        ]);
+    }
+
+    /**
      * 14. DELETE /api/orders/{order_number} or /api/admin/orders/{order_number}
      * Permanently delete an order and its items from database.
      */

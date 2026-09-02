@@ -931,11 +931,14 @@
               </button>
               <select class="form-control no-icon" style="width:140px;padding:6px 10px;font-size:12px;" onchange="handleBulkAction(this.value); this.value='';">
                 <option value="">Bulk Actions</option>
+                <option value="Pending">Mark Pending</option>
                 <option value="Approved">Mark Approved</option>
+                <option value="Work In Progress">Mark Work In Progress</option>
                 <option value="Packaging">Mark Packaging</option>
                 <option value="Shipment">Mark Shipment</option>
                 <option value="Delivered">Mark Delivered</option>
-                <option value="Cancel">Mark Cancelled</option>
+                <option value="Cancel">Mark Cancel</option>
+                <option value="Return">Mark Return</option>
                 <option value="delete">Bulk Delete</option>
               </select>
               <button class="btn-create-order" onclick="openAddOrderModal()">+ Create Order</button>
@@ -947,17 +950,14 @@
             <button class="tab-pill active" data-tab="All" onclick="setOrderFilterTab('All')">
               All <span id="tabCountAll">0</span>
             </button>
-            <button class="tab-pill" data-tab="New" onclick="setOrderFilterTab('New')">
-              New <span id="tabCountNew">0</span>
-            </button>
             <button class="tab-pill" data-tab="Pending" onclick="setOrderFilterTab('Pending')">
               Pending <span id="tabCountPending">0</span>
             </button>
             <button class="tab-pill" data-tab="Approved" onclick="setOrderFilterTab('Approved')">
               Approved <span id="tabCountApproved">0</span>
             </button>
-            <button class="tab-pill" data-tab="WFP" onclick="setOrderFilterTab('WFP')">
-              WFP <span id="tabCountWFP">0</span>
+            <button class="tab-pill" data-tab="Work In Progress" onclick="setOrderFilterTab('Work In Progress')">
+              Work In Progress <span id="tabCountWIP">0</span>
             </button>
             <button class="tab-pill" data-tab="Packaging" onclick="setOrderFilterTab('Packaging')">
               Packaging <span id="tabCountPackaging">0</span>
@@ -968,11 +968,11 @@
             <button class="tab-pill" data-tab="Delivered" onclick="setOrderFilterTab('Delivered')">
               Delivered <span id="tabCountDelivered">0</span>
             </button>
-            <button class="tab-pill" data-tab="Return" onclick="setOrderFilterTab('Return')">
-              Return <span id="tabCountReturn">0</span>
-            </button>
             <button class="tab-pill" data-tab="Cancel" onclick="setOrderFilterTab('Cancel')">
               Cancel <span id="tabCountCancel">0</span>
+            </button>
+            <button class="tab-pill" data-tab="Return" onclick="setOrderFilterTab('Return')">
+              Return <span id="tabCountReturn">0</span>
             </button>
           </div>
 

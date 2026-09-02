@@ -638,7 +638,7 @@ const server = http.createServer(async (req, res) => {
           return sendJson(res, 404, { success: false, error: 'Order not found' });
         }
 
-        return sendJson(res, 200, { success: true, order_number: orderNumber, status: newStatus.toLowerCase() });
+        return sendJson(res, 200, { success: true, order_number: orderNumber, status: newStatus });
       } catch (err) {
         return sendJson(res, 400, { success: false, error: err.message });
       }
