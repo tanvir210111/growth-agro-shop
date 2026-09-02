@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMonthlyChart();
   renderLandingPagesHub();
   renderLandingPagesList();
-  renderAdminUsersTable();
+  // Admin users load lazily when 'manage-admin' view is activated (Phase 12)
   loadServerOrders();
 
   // Restore active view from URL hash on initial load / refresh
@@ -4316,30 +4316,418 @@ function renderLandingPagesHub() {
 
 
 // ==============================================================================
-// 10. ADMIN USERS MANAGEMENT
+// 10. ADMIN USERS MANAGEMENT (Phase 12 — Database-Backed)
 // ==============================================================================
-function renderAdminUsersTable() {
+
+// Store loaded admins for client-side filtering
+let _adminUsersCache = [];
+
+/**
+ * Load admins from backend DB and render the table.
+ * Called when 'manage-admin' view is activated.
+ */
+async function loadAdminUsers() {
   const tbody = document.getElementById('adminUsersTableBody');
+  const countEl = document.getElementById('adminTableCountText');
   if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#718096;">Loading admins...</td></tr>';
+  if (countEl) countEl.textContent = 'Loading...';
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const resp = await fetch('/api/admin/admins', {
+      headers: {
+        'Accept': 'application/json',
+        'x-admin-token': token,
+      }
+    });
+
+    if (resp.status === 401) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Not authenticated. Please log in.</td></tr>';
+      return;
+    }
+
+    if (resp.status === 403) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Access denied. Admin role required.</td></tr>';
+      return;
+    }
+
+    const data = await resp.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to load admins');
+    }
+
+    _adminUsersCache = data.admins || [];
+    renderAdminUsersTable(_adminUsersCache);
+
+  } catch (err) {
+    console.error('[Admin Users Load Error]', err);
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Error loading admins: ${err.message}</td></tr>`;
+  }
+}
+
+/**
+ * Render the admin users table from an array.
+ */
+function renderAdminUsersTable(admins) {
+  const tbody = document.getElementById('adminUsersTableBody');
+  const countEl = document.getElementById('adminTableCountText');
+  if (!tbody) return;
+
+  // Use cache if called without args (legacy call from init)
+  if (!admins) {
+    admins = _adminUsersCache;
+  }
+
   tbody.innerHTML = '';
 
-  APP_STATE.adminUsers.forEach((u, idx) => {
+  if (!admins || admins.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#718096;">No admins found.</td></tr>';
+    if (countEl) countEl.textContent = '0 admin(s)';
+    return;
+  }
+
+  const roleBadgeColors = {
+    super_admin: { bg: '#FEF3C7', color: '#92400E' },
+    admin:       { bg: '#DBEAFE', color: '#1D4ED8' },
+    moderator:   { bg: '#F3F4F6', color: '#374151' },
+  };
+
+  admins.forEach((u, idx) => {
+    const rbc = roleBadgeColors[u.role] || { bg: '#F3F4F6', color: '#374151' };
+    const statusColor = u.status === 'Active' ? { bg: '#ECFDF5', color: '#059669' } : { bg: '#FEF2F2', color: '#DC2626' };
+    const initials = (u.name || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${idx + 1}</td>
-      <td><b>${u.name}</b></td>
-      <td>${u.email}</td>
-      <td>${u.phone || '017XXXXXXXX'}</td>
-      <td><div style="width:36px;height:36px;border-radius:50%;background:#004D40;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">AD</div></td>
-      <td><span class="product-status-tag" style="background:#ECFDF5;color:#059669;">${u.status}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#004D40;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;">${initials}</div>
+          <strong>${u.name}</strong>
+        </div>
+      </td>
+      <td style="font-size:13px;">${u.email}</td>
+      <td style="font-size:13px;">${u.phone || '<span style="color:#A0AEC0;">—</span>'}</td>
+      <td><span style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:12px;background:${rbc.bg};color:${rbc.color};">${u.role_label || u.role}</span></td>
+      <td><span class="product-status-tag" style="background:${statusColor.bg};color:${statusColor.color};">${u.status || 'Active'}</span></td>
       <td style="text-align:right;">
-        <button class="action-btn-square-teal" onclick="showToast('Edit admin active')">📝</button>
-        <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;" onclick="showToast('Password reset link sent')">Reset Password</button>
+        <button class="action-btn-square-teal" onclick="openEditAdminModal(${u.id})" title="Edit" style="margin-right:4px;">✏️</button>
+        <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;margin-right:4px;" onclick="openResetPasswordModal(${u.id}, '${(u.name || '').replace(/'/g, "\\'")}')">Reset Password</button>
+        <button style="padding:4px 10px;font-size:11.5px;background:#DC2626;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="deleteAdminUser(${u.id}, '${(u.name || '').replace(/'/g, "\\'")}')">Delete</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
+
+  if (countEl) countEl.textContent = `Showing ${admins.length} of ${_adminUsersCache.length} admin(s)`;
 }
+
+/**
+ * Filter the admin table by search query and status.
+ */
+function filterAdminTable(query) {
+  const statusFilter = (document.getElementById('adminStatusFilter')?.value || '').toLowerCase();
+  const q = (query || '').toLowerCase().trim();
+
+  const filtered = _adminUsersCache.filter(u => {
+    const matchSearch = !q
+      || (u.name || '').toLowerCase().includes(q)
+      || (u.email || '').toLowerCase().includes(q)
+      || (u.phone || '').toLowerCase().includes(q);
+    const matchStatus = !statusFilter || (u.status || '').toLowerCase() === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  renderAdminUsersTable(filtered);
+}
+
+// ==============================================================================
+// ADD ADMIN
+// ==============================================================================
+
+async function submitAddAdmin() {
+  const btn = document.getElementById('addAdminSubmitBtn');
+  const errBanner = document.getElementById('addAdminErrorBanner');
+  const sucBanner = document.getElementById('addAdminSuccessBanner');
+
+  const name = document.getElementById('addAdminName')?.value?.trim();
+  const email = document.getElementById('addAdminEmail')?.value?.trim();
+  const phone = document.getElementById('addAdminPhone')?.value?.trim();
+  const password = document.getElementById('addAdminPassword')?.value;
+  const passwordConfirm = document.getElementById('addAdminPasswordConfirm')?.value;
+  const role = document.getElementById('addAdminRole')?.value;
+  const status = document.getElementById('addAdminStatus')?.value || 'Active';
+
+  // Hide banners
+  if (errBanner) errBanner.style.display = 'none';
+  if (sucBanner) sucBanner.style.display = 'none';
+
+  // Client-side validation
+  if (!name || !email || !phone || !password || !role) {
+    if (errBanner) { errBanner.textContent = 'All required fields must be filled.'; errBanner.style.display = 'block'; }
+    return;
+  }
+  if (password !== passwordConfirm) {
+    if (errBanner) { errBanner.textContent = 'Passwords do not match.'; errBanner.style.display = 'block'; }
+    return;
+  }
+  if (password.length < 8) {
+    if (errBanner) { errBanner.textContent = 'Password must be at least 8 characters.'; errBanner.style.display = 'block'; }
+    return;
+  }
+
+  if (btn) { btn.textContent = 'Creating...'; btn.disabled = true; }
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const resp = await fetch('/api/admin/admins', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-admin-token': token,
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+      },
+      body: JSON.stringify({ name, email, phone, password, new_password_confirmation: passwordConfirm, role, status }),
+    });
+
+    const data = await resp.json();
+
+    if (resp.status === 403) {
+      if (errBanner) { errBanner.textContent = data.message || 'Forbidden: Insufficient permissions.'; errBanner.style.display = 'block'; }
+      return;
+    }
+
+    if (!data.success) {
+      const msgs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Failed to create admin.');
+      if (errBanner) { errBanner.textContent = msgs; errBanner.style.display = 'block'; }
+      return;
+    }
+
+    // Success
+    if (sucBanner) { sucBanner.textContent = `Admin "${data.admin.name}" created successfully!`; sucBanner.style.display = 'block'; }
+    document.getElementById('addAdminForm')?.reset();
+
+    // Navigate to manage view after short delay
+    setTimeout(() => {
+      switchView('manage-admin');
+    }, 1500);
+
+  } catch (err) {
+    console.error('[Add Admin Error]', err);
+    if (errBanner) { errBanner.textContent = 'Network error. Please try again.'; errBanner.style.display = 'block'; }
+  } finally {
+    if (btn) { btn.textContent = 'Create Admin'; btn.disabled = false; }
+  }
+}
+
+// ==============================================================================
+// EDIT ADMIN MODAL
+// ==============================================================================
+
+function openEditAdminModal(adminId) {
+  const admin = _adminUsersCache.find(a => a.id === adminId);
+  if (!admin) { showToast('Admin not found in cache. Refreshing...'); loadAdminUsers(); return; }
+
+  document.getElementById('editAdminId').value = admin.id;
+  document.getElementById('editAdminName').value = admin.name || '';
+  document.getElementById('editAdminEmail').value = admin.email || '';
+  document.getElementById('editAdminPhone').value = admin.phone || '';
+  document.getElementById('editAdminRole').value = admin.role || 'admin';
+  document.getElementById('editAdminStatusSel').value = admin.status || 'Active';
+
+  const errEl = document.getElementById('editAdminError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  const modal = document.getElementById('editAdminModal');
+  if (modal) { modal.style.display = 'flex'; }
+}
+
+function closeEditAdminModal() {
+  const modal = document.getElementById('editAdminModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitEditAdmin() {
+  const btn = document.getElementById('editAdminSaveBtn');
+  const errEl = document.getElementById('editAdminError');
+  const adminId = document.getElementById('editAdminId')?.value;
+
+  if (!adminId) return;
+
+  const payload = {
+    name:   document.getElementById('editAdminName')?.value?.trim(),
+    email:  document.getElementById('editAdminEmail')?.value?.trim(),
+    phone:  document.getElementById('editAdminPhone')?.value?.trim(),
+    role:   document.getElementById('editAdminRole')?.value,
+    status: document.getElementById('editAdminStatusSel')?.value,
+  };
+
+  if (errEl) { errEl.style.display = 'none'; }
+  if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const resp = await fetch(`/api/admin/admins/${adminId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-admin-token': token,
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await resp.json();
+
+    if (resp.status === 403) {
+      if (errEl) { errEl.textContent = data.message || 'Forbidden: Insufficient permissions.'; errEl.style.display = 'block'; }
+      return;
+    }
+
+    if (!data.success) {
+      const msgs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Failed to update admin.');
+      if (errEl) { errEl.textContent = msgs; errEl.style.display = 'block'; }
+      return;
+    }
+
+    closeEditAdminModal();
+    showToast(`Admin "${data.admin.name}" updated successfully!`);
+    loadAdminUsers(); // Refresh table from DB
+
+  } catch (err) {
+    console.error('[Edit Admin Error]', err);
+    if (errEl) { errEl.textContent = 'Network error. Please try again.'; errEl.style.display = 'block'; }
+  } finally {
+    if (btn) { btn.textContent = 'Save Changes'; btn.disabled = false; }
+  }
+}
+
+// ==============================================================================
+// RESET PASSWORD MODAL
+// ==============================================================================
+
+function openResetPasswordModal(adminId, adminName) {
+  document.getElementById('resetPasswordAdminId').value = adminId;
+  document.getElementById('resetPasswordAdminName').textContent = `Resetting password for: ${adminName}`;
+  document.getElementById('newAdminPassword').value = '';
+  document.getElementById('newAdminPasswordConfirm').value = '';
+
+  const errEl = document.getElementById('resetPasswordError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  const modal = document.getElementById('resetPasswordModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeResetPasswordModal() {
+  const modal = document.getElementById('resetPasswordModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitResetPassword() {
+  const btn = document.getElementById('resetPasswordSaveBtn');
+  const errEl = document.getElementById('resetPasswordError');
+  const adminId = document.getElementById('resetPasswordAdminId')?.value;
+  const newPassword = document.getElementById('newAdminPassword')?.value;
+  const newPasswordConfirm = document.getElementById('newAdminPasswordConfirm')?.value;
+
+  if (errEl) errEl.style.display = 'none';
+
+  if (!newPassword || newPassword.length < 8) {
+    if (errEl) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; }
+    return;
+  }
+
+  if (newPassword !== newPasswordConfirm) {
+    if (errEl) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; }
+    return;
+  }
+
+  if (btn) { btn.textContent = 'Resetting...'; btn.disabled = true; }
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const resp = await fetch(`/api/admin/admins/${adminId}/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-admin-token': token,
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+      },
+      body: JSON.stringify({
+        new_password: newPassword,
+        new_password_confirmation: newPasswordConfirm,
+      }),
+    });
+
+    const data = await resp.json();
+
+    if (resp.status === 403) {
+      if (errEl) { errEl.textContent = data.message || 'Forbidden: Insufficient permissions.'; errEl.style.display = 'block'; }
+      return;
+    }
+
+    if (!data.success) {
+      const msgs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Failed to reset password.');
+      if (errEl) { errEl.textContent = msgs; errEl.style.display = 'block'; }
+      return;
+    }
+
+    closeResetPasswordModal();
+    showToast('Password reset successfully!');
+
+  } catch (err) {
+    console.error('[Reset Password Error]', err);
+    if (errEl) { errEl.textContent = 'Network error. Please try again.'; errEl.style.display = 'block'; }
+  } finally {
+    if (btn) { btn.textContent = 'Reset Password'; btn.disabled = false; }
+  }
+}
+
+// ==============================================================================
+// DELETE ADMIN
+// ==============================================================================
+
+async function deleteAdminUser(adminId, adminName) {
+  if (!confirm(`Are you sure you want to delete admin "${adminName}"? This cannot be undone.`)) return;
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const resp = await fetch(`/api/admin/admins/${adminId}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'x-admin-token': token,
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+      },
+    });
+
+    const data = await resp.json();
+
+    if (resp.status === 403) {
+      showToast(data.message || 'Forbidden: Cannot delete this admin.', 'error');
+      return;
+    }
+
+    if (!data.success) {
+      showToast(data.message || 'Failed to delete admin.', 'error');
+      return;
+    }
+
+    showToast(`Admin "${adminName}" deleted.`);
+    loadAdminUsers(); // Refresh from DB
+
+  } catch (err) {
+    console.error('[Delete Admin Error]', err);
+    showToast('Network error. Could not delete admin.', 'error');
+  }
+}
+
 
 // ==============================================================================
 // 11. VIEW SWITCHER & GLOBAL NAVIGATION (URL HASH SPA PERSISTENCE)
@@ -4617,7 +5005,7 @@ function doSwitchView(viewName, updateHash = true) {
   if (targetView === 'profit-report') renderProfitReport();
   if (targetView === 'cities') renderCitiesTable();
   if (targetView === 'marketing') loadMarketingSettings();
-  if (targetView === 'manage-admin') renderAdminUsersTable();
+  if (targetView === 'manage-admin') loadAdminUsers();
 }
 window.doSwitchView = doSwitchView;
 

@@ -226,6 +226,17 @@ Route::match(['put', 'patch', 'post'], '/api/admin/sliders/{id}', [AdminSliderCo
 Route::patch('/api/admin/sliders/{id}/status', [AdminSliderController::class, 'setStatus'])->name('api.admin.sliders.status');
 Route::delete('/api/admin/sliders/{id}', [AdminSliderController::class, 'destroy'])->name('api.admin.sliders.destroy');
 
+// Phase 12: Admin User Management (CRUD + Role-Based Authorization)
+use App\Http\Controllers\Api\AdminManagementController;
+
+Route::get('/api/admin/admins', [AdminManagementController::class, 'index'])->name('api.admin.admins.index');
+Route::post('/api/admin/admins', [AdminManagementController::class, 'store'])->name('api.admin.admins.store');
+Route::post('/api/admin/admins/upload-avatar', [AdminManagementController::class, 'uploadAvatar'])->name('api.admin.admins.upload-avatar');
+Route::get('/api/admin/admins/{id}', [AdminManagementController::class, 'show'])->name('api.admin.admins.show');
+Route::match(['put', 'patch'], '/api/admin/admins/{id}', [AdminManagementController::class, 'update'])->name('api.admin.admins.update');
+Route::post('/api/admin/admins/{id}/reset-password', [AdminManagementController::class, 'resetPassword'])->name('api.admin.admins.reset-password');
+Route::delete('/api/admin/admins/{id}', [AdminManagementController::class, 'destroy'])->name('api.admin.admins.destroy');
+
 // Internal Node.js to Laravel Landing Order Sync Bridge & Config Lookup
 use App\Http\Controllers\Api\InternalSyncController;
 Route::post('/api/internal/sync-landing-order', [InternalSyncController::class, 'syncLandingOrder'])->name('api.internal.sync-landing-order');

@@ -2660,41 +2660,66 @@
           </div>
         </div>
 
-        <!-- VIEW: ADD ADMIN (Exact Match) -->
+        <!-- VIEW: ADD ADMIN -->
         <div id="view-add-admin" class="view-panel" style="display:none;">
           <div style="margin-bottom:16px;">
-            <button class="btn-back-teal" onclick="switchView('dashboard')">
-              ← Back
+            <button class="btn-back-teal" onclick="switchView('manage-admin')">
+              &#8592; Back to Manage Admins
             </button>
           </div>
 
           <div class="white-box-card">
-            <h2 class="centered-card-title">Add Admin</h2>
+            <h2 class="centered-card-title">Add New Admin</h2>
 
-            <form onsubmit="event.preventDefault(); showToast('নতুন অ্যাডমিন সফলভাবে যুক্ত হয়েছে!');" style="max-width:700px;margin:0 auto;">
+            <div id="addAdminErrorBanner" style="display:none;padding:10px 14px;margin-bottom:16px;border-radius:8px;background:#FEE2E2;border:1px solid #F87171;color:#B91C1C;font-size:13px;font-weight:600;max-width:700px;margin-left:auto;margin-right:auto;"></div>
+            <div id="addAdminSuccessBanner" style="display:none;padding:10px 14px;margin-bottom:16px;border-radius:8px;background:#ECFDF5;border:1px solid #6EE7B7;color:#065F46;font-size:13px;font-weight:600;max-width:700px;margin-left:auto;margin-right:auto;"></div>
+
+            <form id="addAdminForm" onsubmit="event.preventDefault(); submitAddAdmin();" style="max-width:700px;margin:0 auto;">
               <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Name</label>
-                <input type="text" class="form-horizontal-input" placeholder="name" required>
+                <label class="form-horizontal-label" for="addAdminName">Name <span style="color:#E53E3E;">*</span></label>
+                <input type="text" id="addAdminName" class="form-horizontal-input" placeholder="Full name" required>
               </div>
 
               <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Email</label>
-                <input type="email" class="form-horizontal-input" placeholder="email" required>
+                <label class="form-horizontal-label" for="addAdminEmail">Email <span style="color:#E53E3E;">*</span></label>
+                <input type="email" id="addAdminEmail" class="form-horizontal-input" placeholder="email@example.com" required>
               </div>
 
               <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Password</label>
-                <input type="password" class="form-horizontal-input" placeholder="password" required>
+                <label class="form-horizontal-label" for="addAdminPhone">Phone <span style="color:#E53E3E;">*</span></label>
+                <input type="text" id="addAdminPhone" class="form-horizontal-input" placeholder="01XXXXXXXXX" required>
               </div>
 
               <div class="form-horizontal-row">
-                <label class="form-horizontal-label">Image</label>
-                <input type="file" class="form-control no-icon" style="padding:6px 10px;">
+                <label class="form-horizontal-label" for="addAdminPassword">Password <span style="color:#E53E3E;">*</span></label>
+                <input type="password" id="addAdminPassword" class="form-horizontal-input" placeholder="Minimum 8 characters" required minlength="8">
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label" for="addAdminPasswordConfirm">Confirm Password <span style="color:#E53E3E;">*</span></label>
+                <input type="password" id="addAdminPasswordConfirm" class="form-horizontal-input" placeholder="Re-enter password" required minlength="8">
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label" for="addAdminRole">Role <span style="color:#E53E3E;">*</span></label>
+                <select id="addAdminRole" class="form-horizontal-input" style="padding:8px 10px;" required>
+                  <option value="moderator">Moderator (Basic: view orders, update status, reports)</option>
+                  <option value="admin">Admin (Operational: all except system/security changes)</option>
+                  <option value="super_admin">Super Admin (Full access)</option>
+                </select>
+              </div>
+
+              <div class="form-horizontal-row">
+                <label class="form-horizontal-label" for="addAdminStatus">Status <span style="color:#E53E3E;">*</span></label>
+                <select id="addAdminStatus" class="form-horizontal-input" style="padding:8px 10px;" required>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
               </div>
 
               <div style="margin-top:20px;padding-left:198px;">
-                <button type="submit" class="btn-primary-teal" style="padding:9px 24px;">
-                  Submit
+                <button type="submit" class="btn-primary-teal" id="addAdminSubmitBtn" style="padding:9px 28px;">
+                  Create Admin
                 </button>
               </div>
             </form>
@@ -2702,20 +2727,26 @@
         </div>
 
 
-        <!-- VIEW: ADMIN MANAGE (Exact Match: babyfashionbd.com/admin/listAdmin) -->
+
+        <!-- VIEW: ADMIN MANAGE -->
         <div id="view-manage-admin" class="view-panel" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <button class="btn-primary-teal" onclick="switchView('add-admin')">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h2 style="font-size:18px;font-weight:700;color:#1A202C;margin:0 0 4px 0;">Admin Management</h2>
+              <p style="font-size:13px;color:#718096;margin:0;">Manage admin users, roles, and permissions.</p>
+            </div>
+            <button class="btn-primary-teal" onclick="switchView('add-admin')" style="padding:9px 18px;font-size:13.5px;font-weight:700;">
               + Add Admin
             </button>
           </div>
 
           <div class="white-box-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
-              <h2 style="font-size:16.5px;font-weight:700;color:#2D3748;margin:0;">Admin</h2>
+              <h2 style="font-size:16.5px;font-weight:700;color:#2D3748;margin:0;" id="manageAdminTitle">All Admins</h2>
               <div style="display:flex;gap:8px;">
-                <input type="text" class="order-search-box" placeholder="type name or email">
-                <select class="form-control no-icon" style="width:100px;padding:6px 8px;">
+                <input type="text" id="adminSearchInput" class="order-search-box" placeholder="Search name or email..." oninput="filterAdminTable(this.value)">
+                <select id="adminStatusFilter" class="form-control no-icon" style="width:120px;padding:6px 8px;" onchange="filterAdminTable(document.getElementById('adminSearchInput').value)">
+                  <option value="">All Status</option>
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                 </select>
@@ -2730,7 +2761,7 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
-                    <th>Image</th>
+                    <th>Role</th>
                     <th>Status</th>
                     <th style="text-align:right;">Action</th>
                   </tr>
@@ -2739,11 +2770,77 @@
               </table>
             </div>
 
-            <div style="text-align:right;margin-top:14px;font-size:12px;color:#718096;">
-              Showing 1 to 1 of total 1 entries
+            <div style="text-align:right;margin-top:14px;font-size:12px;color:#718096;" id="adminTableCountText">
+              Loading...
             </div>
           </div>
         </div>
+
+        <!-- EDIT ADMIN MODAL -->
+        <div id="editAdminModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+          <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:560px;width:94%;max-height:90vh;overflow-y:auto;position:relative;">
+            <button onclick="closeEditAdminModal()" style="position:absolute;top:14px;right:16px;border:none;background:none;font-size:22px;cursor:pointer;color:#718096;">&times;</button>
+            <h3 style="font-size:17px;font-weight:700;color:#1A202C;margin-bottom:20px;">Edit Admin</h3>
+            <input type="hidden" id="editAdminId">
+            <div id="editAdminError" style="display:none;padding:8px 12px;margin-bottom:14px;border-radius:6px;background:#FEE2E2;border:1px solid #F87171;color:#B91C1C;font-size:13px;font-weight:600;"></div>
+            <div class="form-horizontal-row">
+              <label class="form-horizontal-label" for="editAdminName">Name</label>
+              <input type="text" id="editAdminName" class="form-horizontal-input" required>
+            </div>
+            <div class="form-horizontal-row">
+              <label class="form-horizontal-label" for="editAdminEmail">Email</label>
+              <input type="email" id="editAdminEmail" class="form-horizontal-input" required>
+            </div>
+            <div class="form-horizontal-row">
+              <label class="form-horizontal-label" for="editAdminPhone">Phone</label>
+              <input type="text" id="editAdminPhone" class="form-horizontal-input">
+            </div>
+            <div class="form-horizontal-row">
+              <label class="form-horizontal-label" for="editAdminRole">Role</label>
+              <select id="editAdminRole" class="form-horizontal-input" style="padding:8px 10px;">
+                <option value="moderator">Moderator</option>
+                <option value="admin">Admin</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
+            </div>
+            <div class="form-horizontal-row">
+              <label class="form-horizontal-label" for="editAdminStatusSel">Status</label>
+              <select id="editAdminStatusSel" class="form-horizontal-input" style="padding:8px 10px;">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+              <button onclick="closeEditAdminModal()" style="padding:8px 20px;border:1px solid #CBD5E0;border-radius:6px;background:#fff;color:#4A5568;cursor:pointer;font-weight:600;">Cancel</button>
+              <button onclick="submitEditAdmin()" class="btn-primary-teal" id="editAdminSaveBtn" style="padding:8px 24px;">Save Changes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESET PASSWORD MODAL -->
+        <div id="resetPasswordModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+          <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:480px;width:94%;position:relative;">
+            <button onclick="closeResetPasswordModal()" style="position:absolute;top:14px;right:16px;border:none;background:none;font-size:22px;cursor:pointer;color:#718096;">&times;</button>
+            <h3 style="font-size:17px;font-weight:700;color:#1A202C;margin-bottom:6px;">Reset Password</h3>
+            <p id="resetPasswordAdminName" style="font-size:13px;color:#718096;margin-bottom:20px;"></p>
+            <input type="hidden" id="resetPasswordAdminId">
+            <div id="resetPasswordError" style="display:none;padding:8px 12px;margin-bottom:14px;border-radius:6px;background:#FEE2E2;border:1px solid #F87171;color:#B91C1C;font-size:13px;font-weight:600;"></div>
+            <div class="form-horizontal-row">
+              <label class="form-horizontal-label" for="newAdminPassword">New Password</label>
+              <input type="password" id="newAdminPassword" class="form-horizontal-input" placeholder="Minimum 8 characters" minlength="8">
+            </div>
+            <div class="form-horizontal-row">
+              <label class="form-horizontal-label" for="newAdminPasswordConfirm">Confirm Password</label>
+              <input type="password" id="newAdminPasswordConfirm" class="form-horizontal-input" placeholder="Re-enter new password" minlength="8">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+              <button onclick="closeResetPasswordModal()" style="padding:8px 20px;border:1px solid #CBD5E0;border-radius:6px;background:#fff;color:#4A5568;cursor:pointer;font-weight:600;">Cancel</button>
+              <button onclick="submitResetPassword()" style="padding:8px 24px;background:#DC2626;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer;" id="resetPasswordSaveBtn">Reset Password</button>
+            </div>
+          </div>
+        </div>
+
+
 
 
         <!-- VIEW: CUSTOMERS (Exact Match: babyfashionbd.com/admin/customer/list) -->
