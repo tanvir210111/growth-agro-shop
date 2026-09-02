@@ -9,21 +9,28 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     * Cleans legacy admin accounts and ensures ONLY primary Super Admin (admin@gmail.com) remains.
      */
     public function up(): void
     {
         if (Schema::hasTable('admins')) {
-            // 1. Primary admin@gmail.com
+            // Ensure primary Super Admin exists with proper role & active status
             DB::table('admins')->updateOrInsert(
                 ['email' => 'admin@gmail.com'],
                 [
-                    'name' => 'Super Admin',
-                    'password' => Hash::make('admin123'),
-                    'role' => 'super_admin',
+                    'name'       => 'Super Admin',
+                    'password'   => Hash::make('admin123'),
+                    'role'       => 'super_admin',
+                    'status'     => 'Active',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]
             );
+
+            // Delete all other legacy/secondary admin accounts (Growth Agro Admin, captaincrown, etc.)
+            DB::table('admins')
+                ->where('email', '!=', 'admin@gmail.com')
+                ->delete();
         }
     }
 
@@ -32,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // No destructive rollback needed
+        // Non-destructive down
     }
 };

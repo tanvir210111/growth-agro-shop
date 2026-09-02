@@ -356,18 +356,29 @@ class AdminManagementController extends Controller
         }
 
         // Prevent self-deletion
-        if ($targetAdmin->id === $currentAdmin->id) {
+        if ($currentAdmin && $targetAdmin->id === $currentAdmin->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Forbidden: Cannot delete your own account.',
             ], 403);
         }
 
+        // Prevent deleting the final remaining Super Admin
+        if ($targetAdmin->isSuperAdmin()) {
+            $superAdminCount = Admin::where('role', Admin::ROLE_SUPER_ADMIN)->count();
+            if ($superAdminCount <= 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden: Cannot delete the final remaining Super Admin account.',
+                ], 403);
+            }
+        }
+
         $targetAdmin->delete();
 
         return response()->json([
             'success' => true,
-            'message' => "Admin #{$id} deleted.",
+            'message' => "Admin #{$id} deleted successfully.",
         ]);
     }
 

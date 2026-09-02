@@ -337,26 +337,29 @@ class AdminManagementPhase12Test extends TestCase
     }
 
     // =========================================================================
-    // TEST 7: DELETE ADMIN
+    // TEST 7: DELETE ADMIN & PHASE 13 PROTECTIONS
     // =========================================================================
 
-    public function test_super_admin_can_delete_admin(): void
+    public function test_super_admin_can_delete_another_admin(): void
     {
-        $toDelete = Admin::create([
-            'name'     => 'To Delete',
-            'email'    => 'todelete@test.com',
-            'password' => Hash::make('pass123456'),
-            'role'     => Admin::ROLE_MODERATOR,
-            'status'   => 'Active',
-        ]);
-
         $response = $this->withAdminToken($this->superAdmin)
-            ->deleteJson("/api/admin/admins/{$toDelete->id}");
+            ->deleteJson("/api/admin/admins/{$this->adminUser->id}");
 
         $response->assertStatus(200)
             ->assertJson(['success' => true]);
 
-        $this->assertDatabaseMissing('admins', ['id' => $toDelete->id]);
+        $this->assertDatabaseMissing('admins', ['id' => $this->adminUser->id]);
+    }
+
+    public function test_super_admin_can_delete_another_moderator(): void
+    {
+        $response = $this->withAdminToken($this->superAdmin)
+            ->deleteJson("/api/admin/admins/{$this->moderatorUser->id}");
+
+        $response->assertStatus(200)
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseMissing('admins', ['id' => $this->moderatorUser->id]);
     }
 
     public function test_super_admin_cannot_delete_self(): void
@@ -364,16 +367,85 @@ class AdminManagementPhase12Test extends TestCase
         $response = $this->withAdminToken($this->superAdmin)
             ->deleteJson("/api/admin/admins/{$this->superAdmin->id}");
 
-        $response->assertStatus(403);
+        $response->assertStatus(403)
+            ->assertJson(['success' => false]);
         $this->assertDatabaseHas('admins', ['id' => $this->superAdmin->id]);
     }
 
-    public function test_non_super_admin_cannot_delete(): void
+    public function test_super_admin_cannot_delete_final_super_admin(): void
+    {
+        // Delete any other super admins if present, leaving only one
+        Admin::where('role', Admin::ROLE_SUPER_ADMIN)
+            ->where('id', '!=', $this->superAdmin->id)
+            ->delete();
+
+        // Create a temporary second super admin to test deleting when count is 1 vs 2
+        $secondSuper = Admin::create([
+            'name'     => 'Second Super Admin',
+            'email'    => 'secondsuper@test.com',
+            'password' => Hash::make('pass123456'),
+            'role'     => Admin::ROLE_SUPER_ADMIN,
+            'status'   => 'Active',
+        ]);
+
+        // When 2 super admins exist, superAdmin can delete secondSuper
+        $response = $this->withAdminToken($this->superAdmin)
+            ->deleteJson("/api/admin/admins/{$secondSuper->id}");
+        $response->assertStatus(200);
+
+        // Now only 1 super admin remains ($this->superAdmin). Attempting to delete it returns 403
+        $response2 = $this->withAdminToken($this->superAdmin)
+            ->deleteJson("/api/admin/admins/{$this->superAdmin->id}");
+        $response2->assertStatus(403);
+    }
+
+    public function test_admin_cannot_delete_any_admin(): void
     {
         $response = $this->withAdminToken($this->adminUser)
             ->deleteJson("/api/admin/admins/{$this->moderatorUser->id}");
 
         $response->assertStatus(403);
+        $this->assertDatabaseHas('admins', ['id' => $this->moderatorUser->id]);
+    }
+
+    public function test_moderator_cannot_delete_any_admin(): void
+    {
+        $response = $this->withAdminToken($this->moderatorUser)
+            ->deleteJson("/api/admin/admins/{$this->adminUser->id}");
+
+        $response->assertStatus(403);
+        $this->assertDatabaseHas('admins', ['id' => $this->adminUser->id]);
+    }
+
+    public function test_unauthenticated_delete_is_rejected(): void
+    {
+        $response = $this->deleteJson("/api/admin/admins/{$this->moderatorUser->id}");
+        $response->assertStatus(401);
+        $this->assertDatabaseHas('admins', ['id' => $this->moderatorUser->id]);
+    }
+
+    public function test_delete_unknown_admin_returns_404(): void
+    {
+        $response = $this->withAdminToken($this->superAdmin)
+            ->deleteJson("/api/admin/admins/999999");
+
+        $response->assertStatus(404)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_admin_list_after_deletion_reflects_database_state(): void
+    {
+        // Delete moderator
+        $this->withAdminToken($this->superAdmin)
+            ->deleteJson("/api/admin/admins/{$this->moderatorUser->id}");
+
+        // Fetch list
+        $response = $this->withAdminToken($this->superAdmin)
+            ->getJson('/api/admin/admins');
+
+        $response->assertStatus(200);
+        $emails = collect($response->json('admins'))->pluck('email')->all();
+        $this->assertNotContains('moderator@test.com', $emails);
     }
 
     // =========================================================================

@@ -70,9 +70,7 @@ const APP_STATE = {
     { id: "watches", title: "TimeWear — Luxury Watch Collection", category: "Accessories", file: "watches__step_1_checkout__widget_4259dac.html", publicUrl: "/extracted_html/watches__step_1_checkout__widget_4259dac.html", jsonFile: "watches.json", status: "Active" },
     { id: "wlp", title: "Svelte — Natural Weight Loss Supplement", category: "Health & Fitness", file: "wlp__step_1_checkout__widget_4259dac.html", publicUrl: "/extracted_html/wlp__step_1_checkout__widget_4259dac.html", jsonFile: "wlp.json", status: "Active" }
   ],
-  adminUsers: JSON.parse(localStorage.getItem('admin_users_list')) || [
-    { id: 1, name: "Admin", email: "admin@gmail.com", phone: "01700000000", role: "Super Admin", status: "Active" }
-  ]
+  adminUsers: []
 };
 
 // ==============================================================================
@@ -4316,7 +4314,7 @@ function renderLandingPagesHub() {
 
 
 // ==============================================================================
-// 10. ADMIN USERS MANAGEMENT (Phase 12 — Database-Backed)
+// 10. ADMIN USERS MANAGEMENT (Phase 12/13 — Database-Backed & RBAC Enforced)
 // ==============================================================================
 
 // Store loaded admins for client-side filtering
@@ -4336,11 +4334,16 @@ async function loadAdminUsers() {
 
   try {
     const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Accept': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
     const resp = await fetch('/api/admin/admins', {
-      headers: {
-        'Accept': 'application/json',
-        'x-admin-token': token,
-      }
+      credentials: 'same-origin',
+      headers: headers
     });
 
     if (resp.status === 401) {
@@ -4482,14 +4485,18 @@ async function submitAddAdmin() {
 
   try {
     const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
     const resp = await fetch('/api/admin/admins', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'x-admin-token': token,
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-      },
+      credentials: 'same-origin',
+      headers: headers,
       body: JSON.stringify({ name, email, phone, password, new_password_confirmation: passwordConfirm, role, status }),
     });
 
@@ -4513,7 +4520,7 @@ async function submitAddAdmin() {
     // Navigate to manage view after short delay
     setTimeout(() => {
       switchView('manage-admin');
-    }, 1500);
+    }, 1200);
 
   } catch (err) {
     console.error('[Add Admin Error]', err);
@@ -4570,14 +4577,18 @@ async function submitEditAdmin() {
 
   try {
     const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
     const resp = await fetch(`/api/admin/admins/${adminId}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'x-admin-token': token,
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-      },
+      credentials: 'same-origin',
+      headers: headers,
       body: JSON.stringify(payload),
     });
 
@@ -4596,7 +4607,7 @@ async function submitEditAdmin() {
 
     closeEditAdminModal();
     showToast(`Admin "${data.admin.name}" updated successfully!`);
-    loadAdminUsers(); // Refresh table from DB
+    await loadAdminUsers(); // Refresh table from DB
 
   } catch (err) {
     console.error('[Edit Admin Error]', err);
@@ -4651,14 +4662,18 @@ async function submitResetPassword() {
 
   try {
     const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
     const resp = await fetch(`/api/admin/admins/${adminId}/reset-password`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'x-admin-token': token,
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-      },
+      credentials: 'same-origin',
+      headers: headers,
       body: JSON.stringify({
         new_password: newPassword,
         new_password_confirmation: newPasswordConfirm,
@@ -4694,39 +4709,60 @@ async function submitResetPassword() {
 // ==============================================================================
 
 async function deleteAdminUser(adminId, adminName) {
-  if (!confirm(`Are you sure you want to delete admin "${adminName}"? This cannot be undone.`)) return;
+  if (!confirm(`Are you sure you want to delete admin "${adminName}"? This cannot be undone.`)) {
+    return;
+  }
 
   try {
     const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
     const resp = await fetch(`/api/admin/admins/${adminId}`, {
       method: 'DELETE',
-      headers: {
-        'Accept': 'application/json',
-        'x-admin-token': token,
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-      },
+      credentials: 'same-origin',
+      headers: headers,
     });
 
-    const data = await resp.json();
+    const data = await resp.json().catch(() => ({}));
 
-    if (resp.status === 403) {
-      showToast(data.message || 'Forbidden: Cannot delete this admin.', 'error');
+    if (resp.status === 403 || resp.status === 401) {
+      showToast(data.message || 'Forbidden: Cannot delete this admin.');
       return;
     }
 
-    if (!data.success) {
-      showToast(data.message || 'Failed to delete admin.', 'error');
+    if (!resp.ok || !data.success) {
+      showToast(data.message || data.error || 'Failed to delete admin.');
       return;
     }
 
-    showToast(`Admin "${adminName}" deleted.`);
-    loadAdminUsers(); // Refresh from DB
+    showToast(`Admin "${adminName}" deleted successfully.`);
+    await loadAdminUsers(); // Authoritatively reload from DB
 
   } catch (err) {
     console.error('[Delete Admin Error]', err);
-    showToast('Network error. Could not delete admin.', 'error');
+    showToast('Network error. Could not delete admin.');
   }
 }
+
+// Explicit window assignments for HTML event handlers
+window.loadAdminUsers = loadAdminUsers;
+window.renderAdminUsersTable = renderAdminUsersTable;
+window.filterAdminTable = filterAdminTable;
+window.submitAddAdmin = submitAddAdmin;
+window.openEditAdminModal = openEditAdminModal;
+window.closeEditAdminModal = closeEditAdminModal;
+window.submitEditAdmin = submitEditAdmin;
+window.openResetPasswordModal = openResetPasswordModal;
+window.closeResetPasswordModal = closeResetPasswordModal;
+window.submitResetPassword = submitResetPassword;
+window.deleteAdminUser = deleteAdminUser;
+
 
 
 // ==============================================================================

@@ -40,16 +40,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Admin::updateOrCreate(
-            ['email' => 'captaincrown@admin.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => Hash::make('Aziz625713'),
-                'role' => 'super_admin',
-                'avatar' => null,
-            ]
-        );
-
         // 2. Settings
         $settings = [
             'store_name' => 'Baby Fashion BD',
