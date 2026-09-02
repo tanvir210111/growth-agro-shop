@@ -746,6 +746,25 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // 7b. Internal: Order Lookup by Order Number (GET /api/internal/order-lookup/:orderNumber)
+    // Used by Laravel landing-success JIT fallback when the async sync bridge failed at order-creation time.
+    // Returns only the specific requested order — no fraud/courier/external API calls.
+    const internalOrderLookupMatch = reqPath.match(/^\/api\/internal\/order-lookup\/([A-Za-z0-9_\-]+)$/);
+    if (internalOrderLookupMatch && method === 'GET') {
+      const incomingSecret = req.headers['x-internal-secret'];
+      if (incomingSecret !== INTERNAL_API_SECRET) {
+        return sendJson(res, 403, { success: false, error: 'Forbidden: Invalid internal secret.' });
+      }
+
+      const lookupOrderNumber = internalOrderLookupMatch[1];
+      const foundOrder = getOrderByNumber(lookupOrderNumber);
+      if (!foundOrder) {
+        return sendJson(res, 404, { success: false, error: 'Order not found.' });
+      }
+
+      return sendJson(res, 200, { success: true, order: foundOrder });
+    }
+
     // 8. Internal: Sync Order from Laravel to Node.js SQLite (POST /api/internal/sync-order)
     if (reqPath === '/api/internal/sync-order' && method === 'POST') {
       const incomingSecret = req.headers['x-internal-secret'];

@@ -1,6 +1,6 @@
 @php
   $pixelId = trim(\App\Models\Setting::get('facebook_pixel', '') ?? '');
-  $isLandingSuccess = request()->is('product/*/success/*') || request()->routeIs('landing.success');
+  $isLandingSuccess = request()->is('product/*/success/*') || request()->routeIs('landing.order.success');
   $lpSlug = isset($landingPage) && is_object($landingPage) && !empty($landingPage->slug) ? $landingPage->slug : ($landingPageSlug ?? null);
 @endphp
 @if(!empty($pixelId) && preg_match('/^\d{14,18}$/', $pixelId))

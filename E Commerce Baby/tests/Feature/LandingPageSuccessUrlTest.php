@@ -247,4 +247,111 @@ class LandingPageSuccessUrlTest extends TestCase
             $response->assertSee('Dynamic Buyer ' . ($idx + 1));
         }
     }
+
+    /**
+     * G. JIT sync fallback regression test:
+     *    When the order exists in Laravel DB (simulating post-JIT-sync state),
+     *    the success page renders correctly (200 + purchase + no ViewContent).
+     *    This directly covers the production 404 scenario where the async sync bridge
+     *    failed at order-creation time and the order was later recovered via JIT fallback.
+     */
+    public function test_success_page_renders_after_jit_sync_fallback()
+    {
+        LandingPage::create([
+            'slug'         => 'chicken-booster',
+            'name'         => 'Chicken Booster (চিকেন বুস্টার)',
+            'theme'        => 'chicken-booster',
+            'status'       => 'published',
+            'product_id'   => 'chicken-booster',
+            'product_name' => 'Chicken Booster (চিকেন বুস্টার)',
+            'content'      => LandingPage::getDefaultMasterContent(),
+        ]);
+
+        // Simulate an order that was recovered after JIT sync
+        // (same structure as InternalSyncController would create)
+        $order = Order::create([
+            'invoice_no'       => 'CB-JITSYNC-TEST-001',
+            'customer_name'    => 'JIT Test Customer',
+            'customer_phone'   => '01712345678',
+            'customer_address' => 'Uttara, Dhaka',
+            'city_type'        => 'inside_dhaka',
+            'delivery_charge'  => 60,
+            'subtotal'         => 990,
+            'discount'         => 0,
+            'total_amount'     => 1050,
+            'status'           => 'pending',
+            'payment_method'   => 'Cash on Delivery',
+            'source_type'      => 'landing_page',
+            'landing_page'     => '/product/chicken-booster',
+            'note'             => 'Landing Page Order: Chicken Booster',
+        ]);
+
+        OrderItem::create([
+            'order_id'      => $order->id,
+            'product_name'  => 'Chicken Booster (৫০০ গ্রাম)',
+            'product_image' => '',
+            'size'          => '500g',
+            'price'         => 990,
+            'quantity'      => 1,
+            'total'         => 990,
+        ]);
+
+        $response = $this->get('/product/chicken-booster/success/CB-JITSYNC-TEST-001');
+
+        // Must return 200 (not 404) after sync
+        $response->assertStatus(200);
+        $response->assertViewIs('pages.landing-success');
+        $response->assertSee('CB-JITSYNC-TEST-001');
+        $response->assertSee('JIT Test Customer');
+
+        // Purchase event must be present; ViewContent must NOT be present
+        $response->assertSee("fbq('track', 'Purchase'", false);
+        $response->assertDontSee('ViewContent');
+    }
+
+    /**
+     * H. Security: another landing page's order cannot access success page of a different slug.
+     *    Ensures JIT fallback does not weaken cross-order security.
+     */
+    public function test_jit_sync_does_not_expose_order_across_slugs()
+    {
+        LandingPage::create([
+            'slug'         => 'chicken-booster',
+            'name'         => 'Chicken Booster',
+            'theme'        => 'chicken-booster',
+            'status'       => 'published',
+            'product_id'   => 'chicken-booster',
+            'product_name' => 'Chicken Booster',
+        ]);
+
+        LandingPage::create([
+            'slug'         => 'face-serum-bd',
+            'name'         => 'Face Serum BD',
+            'theme'        => 'universal',
+            'status'       => 'published',
+            'product_id'   => 'face-serum-bd',
+            'product_name' => 'Face Serum BD',
+        ]);
+
+        // Order belongs to face-serum-bd
+        Order::create([
+            'invoice_no'       => 'CB-CROSS-SLUG-001',
+            'customer_name'    => 'Cross Slug Buyer',
+            'customer_phone'   => '01899887766',
+            'customer_address' => 'Farmgate, Dhaka',
+            'city_type'        => 'inside_dhaka',
+            'delivery_charge'  => 60,
+            'subtotal'         => 750,
+            'discount'         => 0,
+            'total_amount'     => 810,
+            'status'           => 'pending',
+            'payment_method'   => 'Cash on Delivery',
+            'source_type'      => 'landing_page',
+            'landing_page'     => '/product/face-serum-bd',
+        ]);
+
+        // Accessing face-serum-bd order from chicken-booster slug must return 404
+        $response = $this->get('/product/chicken-booster/success/CB-CROSS-SLUG-001');
+        $response->assertStatus(404);
+    }
 }

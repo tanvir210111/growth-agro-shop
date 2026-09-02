@@ -345,6 +345,86 @@ class FrontendController extends Controller
     }
 
     /**
+     * Just-in-time fallback: retrieve an order from Node.js SQLite via internal API,
+     * sync it to the Laravel DB, and return the resulting Order model.
+     * Returns null if the order cannot be found or synced.
+     * Used when the async Node→Laravel sync bridge failed at order-creation time.
+     */
+    private function syncOrderFromNode(string $orderNumber, \App\Models\LandingPage $landingPage): ?\App\Models\Order
+    {
+        try {
+            $nodeHost = env('NODE_HOST', '127.0.0.1');
+            $nodePort = env('NODE_PORT', 3000);
+            $secret   = env('INTERNAL_API_SECRET', 'baby-fashion-internal-2024-secret');
+
+            $response = \Illuminate\Support\Facades\Http::timeout(4)
+                ->withHeaders([
+                    'Accept'            => 'application/json',
+                    'X-Internal-Secret' => $secret,
+                ])
+                ->get("http://{$nodeHost}:{$nodePort}/api/internal/order-lookup/{$orderNumber}");
+
+            if (!$response->ok()) {
+                return null;
+            }
+
+            $data = $response->json();
+            if (empty($data['success']) || empty($data['order'])) {
+                return null;
+            }
+
+            $nodeOrder = $data['order'];
+            $invoiceNo = $nodeOrder['order_number'] ?? $orderNumber;
+
+            // Verify it is a landing-page order from this slug
+            $nodeLanding = $nodeOrder['landing_page'] ?? '';
+            $nodeSource  = strtolower($nodeOrder['source'] ?? '');
+            if (!in_array($nodeSource, ['landing_page', 'landing', 'landing-page', 'landing page']) && empty($nodeLanding)) {
+                return null;
+            }
+
+            // Sync to Laravel DB (idempotent)
+            $syncPayload = [
+                'order_number'    => $invoiceNo,
+                'customer_name'   => $nodeOrder['customer_name'] ?? 'Customer',
+                'customer_phone'  => $nodeOrder['phone'] ?? $nodeOrder['customer_phone'] ?? '',
+                'customer_address'=> $nodeOrder['address'] ?? '-',
+                'delivery_zone'   => $nodeOrder['delivery_zone'] ?? 'inside',
+                'delivery_charge' => $nodeOrder['delivery_charge'] ?? 0,
+                'subtotal'        => $nodeOrder['subtotal'] ?? 0,
+                'total'           => $nodeOrder['total'] ?? 0,
+                'payment_method'  => $nodeOrder['payment_method'] ?? 'Cash on Delivery',
+                'product_name'    => $nodeOrder['product'] ?? $landingPage->product_name ?? 'Product',
+                'variant_name'    => $nodeOrder['variant'] ?? 'Standard',
+                'quantity'        => $nodeOrder['quantity'] ?? 1,
+                'unit_price'      => $nodeOrder['subtotal'] ?? 0,
+                'landing_page'    => $nodeLanding ?: ('/product/' . $landingPage->slug),
+                'items'           => [],
+            ];
+
+            $syncResponse = \Illuminate\Support\Facades\Http::timeout(4)
+                ->withHeaders([
+                    'Content-Type'     => 'application/json',
+                    'Accept'           => 'application/json',
+                    'X-Internal-Secret' => $secret,
+                ])
+                ->post(url('/api/internal/sync-landing-order'), $syncPayload);
+
+            if (!$syncResponse->ok()) {
+                \Illuminate\Support\Facades\Log::warning("[LandingSuccess] JIT sync failed for {$orderNumber}: " . $syncResponse->status());
+            }
+
+            // Re-query Laravel DB (should now exist after sync)
+            return \App\Models\Order::where('invoice_no', $invoiceNo)
+                ->with('items')
+                ->first();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("[LandingSuccess] JIT order fallback failed for {$orderNumber}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Safely normalize a landing page slug or URL path to a clean slug string.
      */
     private function normalizeLandingSlug(?string $val): ?string
@@ -420,6 +500,12 @@ class FrontendController extends Controller
             ->orWhereRaw('LOWER(invoice_no) = ?', [strtolower($cleanOrderNumber)])
             ->with('items')
             ->first();
+
+        // 2b. Fallback: If not in Laravel DB, attempt just-in-time retrieval from Node.js SQLite
+        //     (handles the case where the Node→Laravel sync bridge failed or timed out)
+        if (!$dbOrder) {
+            $dbOrder = $this->syncOrderFromNode($cleanOrderNumber, $landingPage);
+        }
 
         if (!$dbOrder) {
             abort(404, 'Order not found.');
