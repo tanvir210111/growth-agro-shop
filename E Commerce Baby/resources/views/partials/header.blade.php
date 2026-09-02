@@ -8,7 +8,7 @@
 
             @php
                 $siteLogo = \App\Models\Setting::get('site_logo');
-                $siteName = \App\Models\Setting::get('site_name', 'Growth Agro');
+                $siteName = \App\Models\Setting::get('site_name', 'Growth Shop');
                 $sitePhone = \App\Models\Setting::get('support_phone', '01560-016740');
             @endphp
 
@@ -46,7 +46,7 @@
                 <!-- Cart Drawer Toggle -->
                 <button type="button" class="header-action-btn cart-toggle-btn cart-toggle-trigger">
                     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 01-8 0"></path></svg>
-                    <span style="font-weight: 700;">Bag</span>
+                    <span style="font-weight: 700;">Cart</span>
                     <span class="header-badge cart-badge-count">0</span>
                 </button>
             </div>

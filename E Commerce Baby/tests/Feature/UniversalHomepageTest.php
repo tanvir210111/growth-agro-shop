@@ -28,6 +28,17 @@ class UniversalHomepageTest extends TestCase
     }
 
     /**
+     * Storefront header displays 'Growth Shop' brand and 'Cart' shopping action label
+     */
+    public function test_storefront_header_displays_growth_shop_brand_and_cart_label()
+    {
+        $response = $this->get('/');
+        $response->assertStatus(200);
+        $response->assertSee('Growth Shop');
+        $response->assertSee('Cart');
+    }
+
+    /**
      * 2. Homepage categories and product counts are completely database-driven
      */
     public function test_homepage_categories_and_product_counts_are_database_driven()
