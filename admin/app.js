@@ -91,6 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderLandingPagesList();
   renderAdminUsersTable();
   loadServerOrders();
+
+  // Restore active view from URL hash on initial load / refresh
+  const initialView = (typeof getViewFromHash === 'function' ? getViewFromHash() : null) || 'dashboard';
+  doSwitchView(initialView, false);
 });
 
 function updateSidebarUser(user) {
@@ -3062,8 +3066,20 @@ function renderAdminUsersTable() {
 }
 
 // ==============================================================================
-// 11. VIEW SWITCHER & GLOBAL NAVIGATION
+// 11. VIEW SWITCHER & GLOBAL NAVIGATION (URL HASH SPA PERSISTENCE)
 // ==============================================================================
+function getViewFromHash() {
+  if (typeof window === 'undefined' || !window.location || !window.location.hash) return null;
+  const hash = String(window.location.hash).replace(/^#/, '').trim();
+  if (!hash) return null;
+  const panel = document.getElementById(`view-${hash}`);
+  if (panel) {
+    return hash;
+  }
+  return null;
+}
+window.getViewFromHash = getViewFromHash;
+
 window.switchView = function(viewName) {
   if (APP_STATE.activeView === 'landing-page-builder' && viewName !== 'landing-page-builder' && APP_STATE.isBuilderDirty) {
     showLpConfirmModal({
@@ -3075,25 +3091,25 @@ window.switchView = function(viewName) {
       confirmClass: 'lp-btn-remove',
       onConfirm: function() {
         APP_STATE.isBuilderDirty = false;
-        doSwitchView(viewName);
+        doSwitchView(viewName, true);
       }
     });
     return;
   }
-  doSwitchView(viewName);
+  doSwitchView(viewName, true);
 };
 
-function doSwitchView(viewName) {
-  APP_STATE.activeView = viewName;
+function doSwitchView(viewName, updateHash = true) {
+  let targetView = viewName;
+  if (!targetView || !document.getElementById(`view-${targetView}`)) {
+    targetView = 'dashboard';
+  }
+
+  APP_STATE.activeView = targetView;
+
+  // Toggle view panels
   document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  document.querySelectorAll('.tree-link').forEach(l => l.classList.remove('active'));
-  document.querySelectorAll('.nav-has-sub').forEach(g => g.classList.remove('open'));
-
-  const activeLink = document.getElementById(`nav-${viewName}`);
-  if (activeLink) activeLink.classList.add('active');
-
-  const panel = document.getElementById(`view-${viewName}`);
+  const panel = document.getElementById(`view-${targetView}`);
   if (panel) {
     panel.style.display = 'block';
   } else {
@@ -3101,18 +3117,107 @@ function doSwitchView(viewName) {
     if (dash) dash.style.display = 'block';
   }
 
-  // View-specific renders
-  if (viewName === 'dashboard') renderMonthlyChart();
-  if (viewName === 'analytics') loadAnalyticsDashboard();
-  if (viewName === 'orders') renderOrdersTable();
-  if (viewName === 'income') renderCreditTable();
-  if (viewName === 'products') renderProductsTable();
-  if (viewName === 'customers') renderCustomersTable();
-  if (viewName === 'landingpages') renderLandingPagesHub();
-  if (viewName === 'landing-pages-list') renderLandingPagesList();
-  if (viewName === 'profit-report') renderProfitReport();
-  if (viewName === 'cities') renderCitiesTable();
-  if (viewName === 'marketing') loadMarketingSettings();
+  // Reset sidebar active states
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.tree-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.nav-has-sub').forEach(g => g.classList.remove('open'));
+
+  // 1. Direct top-level navigation link (e.g. nav-dashboard, nav-analytics)
+  const activeLink = document.getElementById(`nav-${targetView}`);
+  if (activeLink && !activeLink.closest('.nav-has-sub')) {
+    activeLink.classList.add('active');
+  }
+
+  // 2. Submenu tree-link & expandable parent group
+  let subLink = document.getElementById(`subnav-${targetView}`);
+  if (!subLink) {
+    subLink = document.querySelector(`.tree-link[onclick*="'${targetView}'"]`);
+  }
+  if (targetView === 'orders' && !subLink) {
+    subLink = document.getElementById('subnav-manage-order');
+  }
+
+  if (subLink) {
+    subLink.classList.add('active');
+    const parentGroup = subLink.closest('.nav-has-sub');
+    if (parentGroup) {
+      parentGroup.classList.add('open');
+    }
+  } else if (targetView === 'landing-page-builder') {
+    const lpGroup = document.getElementById('nav-group-landingpages');
+    if (lpGroup) lpGroup.classList.add('open');
+  }
+
+  // 3. Update URL hash if requested
+  if (updateHash) {
+    const expectedHash = '#' + targetView;
+    if (window.location && window.location.hash !== expectedHash) {
+      if (window.history && window.history.pushState) {
+        window.history.pushState(null, '', expectedHash);
+      } else {
+        window.location.hash = expectedHash;
+      }
+    }
+  }
+
+  // 4. View-specific renders and data loaders
+  if (targetView === 'dashboard') {
+    renderDashboardData();
+    renderMonthlyChart();
+  }
+  if (targetView === 'analytics') loadAnalyticsDashboard();
+  if (targetView === 'orders') renderOrdersTable();
+  if (targetView === 'income') {
+    if (typeof renderIncomeTable === 'function') renderIncomeTable();
+    if (typeof renderCreditTable === 'function') renderCreditTable();
+  }
+  if (targetView === 'expense') {
+    if (typeof renderExpenseTable === 'function') renderExpenseTable();
+  }
+  if (targetView === 'products') renderProductsTable();
+  if (targetView === 'customers') renderCustomersTable();
+  if (targetView === 'landingpages') renderLandingPagesHub();
+  if (targetView === 'landing-pages-list') renderLandingPagesList();
+  if (targetView === 'profit-report') renderProfitReport();
+  if (targetView === 'cities') renderCitiesTable();
+  if (targetView === 'marketing') loadMarketingSettings();
+  if (targetView === 'manage-admin') renderAdminUsersTable();
+}
+window.doSwitchView = doSwitchView;
+
+// Browser Back / Forward and Hash Navigation Listener
+function handleHashOrPopState() {
+  const targetView = getViewFromHash() || 'dashboard';
+  if (targetView !== APP_STATE.activeView) {
+    if (APP_STATE.activeView === 'landing-page-builder' && APP_STATE.isBuilderDirty) {
+      showLpConfirmModal({
+        title: 'Unsaved Changes',
+        icon: '⚠️',
+        heading: 'Discard Unsaved Changes?',
+        message: 'You have unsaved edits in the builder. If you leave now, your changes will be lost.',
+        confirmText: 'Discard & Leave',
+        confirmClass: 'lp-btn-remove',
+        onConfirm: function() {
+          APP_STATE.isBuilderDirty = false;
+          doSwitchView(targetView, false);
+        },
+        onCancel: function() {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, '', '#landing-page-builder');
+          } else {
+            window.location.hash = '#landing-page-builder';
+          }
+        }
+      });
+      return;
+    }
+    doSwitchView(targetView, false);
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('hashchange', handleHashOrPopState);
+  window.addEventListener('popstate', handleHashOrPopState);
 }
 
 // ==============================================================================
