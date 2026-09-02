@@ -409,10 +409,9 @@ class MetaPixelIntegrationTest extends TestCase
             ]
         );
 
-        // Access Chicken Booster order via mediascope-it URL
+        // Access Chicken Booster order via mediascope-it URL -> must return 404 (prevent cross-landing-page order exposure)
         $response = $this->get('/product/mediascope-it/success/CB-20260901-MISMATCH');
-        $response->assertStatus(302);
-        $response->assertRedirect('/product/chicken-booster/success/CB-20260901-MISMATCH');
+        $response->assertStatus(404);
     }
 
     public function test_admin_can_toggle_landing_page_meta_add_to_cart_and_initiate_checkout_independently()

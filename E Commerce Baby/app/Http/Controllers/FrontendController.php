@@ -326,36 +326,70 @@ class FrontendController extends Controller
 
         // Backward compatibility: If a Landing Page order is accessed via /order/success/{orderNumber},
         // redirect to its canonical source-matched URL: /product/{slug}/success/{orderNumber}
-        $isLandingPage = ($dbOrder && $dbOrder->source_type === 'landing_page')
-            || (($order['source_type'] ?? '') === 'landing_page');
+        $rawSource = strtolower(trim($dbOrder->source_type ?? ($order['source_type'] ?? '')));
+        $rawLanding = $dbOrder->landing_page ?? ($order['landing_page'] ?? '');
+        $landingSlug = $this->normalizeLandingSlug($rawLanding);
 
-        if ($isLandingPage) {
-            $rawLanding = $dbOrder->landing_page ?? ($order['landing_page'] ?? '');
-            $parsedPath = parse_url($rawLanding, PHP_URL_PATH) ?: $rawLanding;
-            $slug = trim(preg_replace('#^/?(product|products)/#', '', trim($parsedPath, '/')));
+        $isLandingPage = in_array($rawSource, ['landing_page', 'landing', 'landing-page', 'landing page'])
+            || (!empty($landingSlug) && $rawSource !== 'storefront');
 
-            if ($slug) {
-                return redirect()->route('landing.order.success', [
-                    'slug' => $slug,
-                    'orderNumber' => $order['order_number']
-                ]);
-            }
-
-            $landingPage = null;
-            $landingPageUrl = '/';
-            $landingPageTitle = $order['items'][0]['title'] ?? 'Chicken Booster';
-
-            return view('pages.landing-success', compact('order', 'landingPage', 'landingPageUrl', 'landingPageTitle'));
+        if ($isLandingPage && $landingSlug) {
+            return redirect()->route('landing.order.success', [
+                'slug' => $landingSlug,
+                'orderNumber' => $order['order_number']
+            ]);
         }
 
         // Main website order: render pages.order-success (extends layouts.app)
         return view('pages.order-success', compact('order'));
     }
 
+    /**
+     * Safely normalize a landing page slug or URL path to a clean slug string.
+     */
+    private function normalizeLandingSlug(?string $val): ?string
+    {
+        if ($val === null || $val === '') {
+            return null;
+        }
+
+        $raw = trim($val);
+        $path = parse_url($raw, PHP_URL_PATH) ?: $raw;
+        $trimmed = trim($path, '/');
+
+        // Ignore non-landing storefront routes
+        if (in_array(strtolower($trimmed), ['', 'checkout', 'cart', 'shop', 'order', 'orders', 'admin'])) {
+            return null;
+        }
+
+        // Remove leading 'product/' or 'products/'
+        $cleaned = preg_replace('#^(product|products)/#i', '', $trimmed);
+
+        // Strip any trailing segments like /checkout, /success, etc.
+        $segments = explode('/', $cleaned);
+        $slug = strtolower(trim($segments[0] ?? ''));
+
+        if (in_array($slug, ['', 'checkout', 'cart', 'shop', 'order', 'orders', 'admin'])) {
+            return null;
+        }
+
+        return !empty($slug) ? $slug : null;
+    }
+
     public function landingOrderSuccess(string $slug, string $orderNumber)
     {
-        $cleanSlug = trim($slug);
-        $landingPage = \App\Models\LandingPage::where('slug', $cleanSlug)->first();
+        $cleanSlug = $this->normalizeLandingSlug($slug);
+        if (!$cleanSlug) {
+            abort(404, 'Invalid landing page slug.');
+        }
+
+        // 1. Resolve Landing Page Model
+        $landingPage = \App\Models\LandingPage::where('slug', $cleanSlug)
+            ->orWhere('slug', '/product/' . $cleanSlug)
+            ->orWhere('slug', '/products/' . $cleanSlug)
+            ->orWhereRaw('LOWER(slug) = ?', [$cleanSlug])
+            ->first();
+
         if (!$landingPage && $cleanSlug === 'chicken-booster') {
             $landingPage = \App\Models\LandingPage::firstOrCreate(
                 ['slug' => 'chicken-booster'],
@@ -365,6 +399,7 @@ class FrontendController extends Controller
                     'status'          => 'published',
                     'product_id'      => 'chicken-booster',
                     'product_name'    => 'Chicken Booster (চিকেন বুস্টার)',
+                    'title'           => 'চিকেন বুস্টার (Broiler & Layer Booster) — Growth Agro',
                     'content'         => \App\Models\LandingPage::getDefaultMasterContent(),
                     'delivery_config' => \App\Models\LandingPage::getDefaultDeliveryConfig(),
                     'theme_config'    => \App\Models\LandingPage::getDefaultThemeConfig(),
@@ -378,31 +413,63 @@ class FrontendController extends Controller
             abort(404, 'Landing page not found.');
         }
 
-        $dbOrder = \App\Models\Order::where('invoice_no', $orderNumber)->orWhere('id', $orderNumber)->with('items')->first();
+        // 2. Resolve Order (Case-Insensitive & ID / Invoice lookup)
+        $cleanOrderNumber = trim($orderNumber);
+        $dbOrder = \App\Models\Order::where('invoice_no', $cleanOrderNumber)
+            ->orWhere('id', $cleanOrderNumber)
+            ->orWhereRaw('LOWER(invoice_no) = ?', [strtolower($cleanOrderNumber)])
+            ->with('items')
+            ->first();
+
         if (!$dbOrder) {
             abort(404, 'Order not found.');
         }
 
-        // Verify this order belongs to a landing page
-        $isLandingPageOrder = ($dbOrder->source_type === 'landing_page');
+        // 3. Verify this order is a landing-page order
+        $rawSource = strtolower(trim($dbOrder->source_type ?? ''));
+        $rawLanding = $dbOrder->landing_page ?? '';
+        $rawNote = strtolower(trim($dbOrder->note ?? ''));
+
+        $isLandingPageOrder = in_array($rawSource, ['landing_page', 'landing', 'landing-page', 'landing page'])
+            || !empty($rawLanding)
+            || str_starts_with($rawNote, 'landing page order');
+
         if (!$isLandingPageOrder) {
             // If main website order is mistakenly opened here, redirect to canonical main success page
             return redirect()->route('order.success', ['orderNumber' => $dbOrder->invoice_no ?: $dbOrder->id]);
         }
 
-        // Slug mismatch protection: verify originating landing page slug matches the requested slug
-        $rawOriginLanding = $dbOrder->landing_page ?? '';
-        $parsedOriginPath = parse_url($rawOriginLanding, PHP_URL_PATH) ?: $rawOriginLanding;
-        $originatingSlug = trim(preg_replace('#^/?(product|products)/#', '', trim($parsedOriginPath, '/')));
+        // 4. Verify order belongs to the requested landing page
+        $orderLandingSlug = $this->normalizeLandingSlug($rawLanding);
 
-        if ($originatingSlug && $originatingSlug !== $cleanSlug) {
-            // Redirect to the canonical source-matched URL for the originating landing page
-            return redirect()->route('landing.order.success', [
-                'slug' => $originatingSlug,
-                'orderNumber' => $dbOrder->invoice_no ?: $dbOrder->id
-            ]);
+        if (!$orderLandingSlug) {
+            $firstItemName = strtolower($dbOrder->items->first()->product_name ?? '');
+            $lpProductName = strtolower($landingPage->product_name ?? '');
+            $lpName = strtolower($landingPage->name ?? '');
+
+            if (
+                str_contains($rawNote, $cleanSlug) ||
+                ($firstItemName && (
+                    str_contains($firstItemName, $cleanSlug) ||
+                    ($lpProductName && str_contains($firstItemName, $lpProductName)) ||
+                    ($lpName && str_contains($firstItemName, $lpName))
+                )) ||
+                ($cleanSlug === 'chicken-booster' && (str_contains($firstItemName, 'chicken') || str_contains($firstItemName, 'booster')))
+            ) {
+                $orderLandingSlug = $cleanSlug;
+            }
         }
 
+        // Security check: If order belongs to a different landing page, do not expose it
+        if ($orderLandingSlug && $orderLandingSlug !== $cleanSlug) {
+            abort(404, 'Order does not belong to this landing page.');
+        }
+
+        if (!$orderLandingSlug && $cleanSlug !== 'chicken-booster') {
+            abort(404, 'Order does not belong to this landing page.');
+        }
+
+        // 5. Build order payload for landing-success view
         $order = [
             'order_number'        => $dbOrder->invoice_no ?: ('ORD-' . $dbOrder->id),
             'customer_name'       => $dbOrder->customer_name,
