@@ -85,24 +85,44 @@
                 <h2 class="section-title">Shop Our Top Categories</h2>
             </div>
 
-            <div class="categories-grid">
-                @forelse($collections as $col)
-                    @php
-                        $colImg = !empty($col['image']) ? $col['image'] : '/images/placeholder.webp';
-                    @endphp
-                    <a href="{{ route('collection.show', $col['handle']) }}" class="category-card">
-                        <div class="category-img-wrap">
-                            <img src="{{ \Illuminate\Support\Str::startsWith($colImg, ['http://', 'https://', '/']) ? $colImg : asset($colImg) }}" alt="{{ $col['title'] }}" loading="lazy">
+            @php
+                $topCategories = !empty($collections) ? array_slice($collections, 0, 7) : [];
+            @endphp
+
+            @if(!empty($topCategories))
+                <div class="homepage-categories-grid">
+                    @foreach($topCategories as $col)
+                        @php
+                            $colImg = !empty($col['image']) ? $col['image'] : '/images/placeholder.webp';
+                        @endphp
+                        <a href="{{ route('collection.show', $col['handle']) }}" class="category-card">
+                            <div class="category-img-wrap">
+                                <img src="{{ \Illuminate\Support\Str::startsWith($colImg, ['http://', 'https://', '/']) ? $colImg : asset($colImg) }}" alt="{{ $col['title'] }}" loading="lazy">
+                            </div>
+                            <h4 class="category-title">{{ $col['title'] }}</h4>
+                            <span class="category-count">{{ $col['item_count'] ?? 0 }} Items</span>
+                        </a>
+                    @endforeach
+
+                    <!-- 8th More Categories Card -->
+                    <a href="{{ route('categories') }}" class="category-card more-categories-card">
+                        <div class="category-img-wrap more-categories-icon-wrap">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                                <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                                <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                                <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                            </svg>
                         </div>
-                        <h4 class="category-title">{{ $col['title'] }}</h4>
-                        <span class="category-count">{{ $col['item_count'] ?? 0 }} Items</span>
+                        <h4 class="category-title">More Categories</h4>
+                        <span class="category-count">View All &rarr;</span>
                     </a>
-                @empty
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #64748b;">
-                        <p>No categories available currently.</p>
-                    </div>
-                @endforelse
-            </div>
+                </div>
+            @else
+                <div style="text-align: center; padding: 2rem; color: #64748b; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                    <p>No categories available currently.</p>
+                </div>
+            @endif
         </div>
     </section>
 

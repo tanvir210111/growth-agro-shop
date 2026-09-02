@@ -75,7 +75,49 @@ class UniversalHomepageTest extends TestCase
     }
 
     /**
-     * 3. New Arrivals & Best Sellers are populated from database
+     * 3. Homepage Top Categories renders 7 priority categories + More Categories while preserving all 11 in DB
+     */
+    public function test_homepage_top_categories_renders_7_priority_categories_and_more_categories_link()
+    {
+        $this->seed(\Database\Seeders\UniversalCatalogSeeder::class);
+
+        // a) All 11 categories exist in DB and active
+        $this->assertEquals(11, Category::count());
+        $this->assertEquals(11, Category::where('status', true)->count());
+
+        $response = $this->get('/');
+        $response->assertStatus(200);
+
+        // b) Homepage Top Categories exposes the 7 priority categories (sort_order 1 to 7)
+        $priorityCategories = [
+            'Electronics',
+            'Fashion',
+            'Beauty',
+            'Home & Living',
+            'Grocery',
+            'Accessories',
+            'Health',
+        ];
+
+        foreach ($priorityCategories as $catTitle) {
+            $response->assertSee($catTitle);
+        }
+
+        // c) More Categories card is rendered and links to /categories
+        $response->assertSee('More Categories');
+        $response->assertSee(route('categories'));
+
+        // d) Categories beyond 7 (sort_order 8 to 11) are preserved in database and accessible on /categories
+        $allCatsRes = $this->get('/categories');
+        $allCatsRes->assertStatus(200);
+        $allCatsRes->assertSee('Sports');
+        $allCatsRes->assertSee('Books');
+        $allCatsRes->assertSee('Automotive');
+        $allCatsRes->assertSee('Toys & Games');
+    }
+
+    /**
+     * 4. New Arrivals & Best Sellers are populated from database
      */
     public function test_homepage_new_arrivals_and_bestsellers_render_from_database()
     {
