@@ -4327,7 +4327,17 @@ let _adminUsersCache = [];
 async function loadAdminUsers() {
   const tbody = document.getElementById('adminUsersTableBody');
   const countEl = document.getElementById('adminTableCountText');
+  const searchInput = document.getElementById('adminSearchInput');
+  const statusFilter = document.getElementById('adminStatusFilter');
   if (!tbody) return;
+
+  // Clean initial search states — never autofill email
+  if (searchInput && !searchInput.dataset.userActive) {
+    searchInput.value = '';
+  }
+  if (statusFilter && !statusFilter.dataset.userActive) {
+    statusFilter.value = '';
+  }
 
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#718096;">Loading admins...</td></tr>';
   if (countEl) countEl.textContent = 'Loading...';
@@ -4431,8 +4441,21 @@ function renderAdminUsersTable(admins) {
  * Filter the admin table by search query and status.
  */
 function filterAdminTable(query) {
-  const statusFilter = (document.getElementById('adminStatusFilter')?.value || '').toLowerCase();
-  const q = (query || '').toLowerCase().trim();
+  const sInput = document.getElementById('adminSearchInput');
+  const sFilter = document.getElementById('adminStatusFilter');
+  if (sInput && query !== undefined && query !== null && query !== '') {
+    sInput.dataset.userActive = 'true';
+  } else if (sInput && (query === '' || !sInput.value)) {
+    delete sInput.dataset.userActive;
+  }
+  if (sFilter && sFilter.value !== '') {
+    sFilter.dataset.userActive = 'true';
+  } else if (sFilter && sFilter.value === '') {
+    delete sFilter.dataset.userActive;
+  }
+
+  const statusFilter = (sFilter?.value || '').toLowerCase();
+  const q = (query !== undefined && query !== null ? String(query) : (sInput?.value || '')).toLowerCase().trim();
 
   const filtered = _adminUsersCache.filter(u => {
     const matchSearch = !q
@@ -5041,7 +5064,19 @@ function doSwitchView(viewName, updateHash = true) {
   if (targetView === 'profit-report') renderProfitReport();
   if (targetView === 'cities') renderCitiesTable();
   if (targetView === 'marketing') loadMarketingSettings();
-  if (targetView === 'manage-admin') loadAdminUsers();
+  if (targetView === 'manage-admin') {
+    const sInput = document.getElementById('adminSearchInput');
+    if (sInput) {
+      sInput.value = '';
+      delete sInput.dataset.userActive;
+    }
+    const sFilter = document.getElementById('adminStatusFilter');
+    if (sFilter) {
+      sFilter.value = '';
+      delete sFilter.dataset.userActive;
+    }
+    loadAdminUsers();
+  }
 }
 window.doSwitchView = doSwitchView;
 

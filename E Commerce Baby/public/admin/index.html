@@ -2744,8 +2744,8 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
               <h2 style="font-size:16.5px;font-weight:700;color:#2D3748;margin:0;" id="manageAdminTitle">All Admins</h2>
               <div style="display:flex;gap:8px;">
-                <input type="text" id="adminSearchInput" class="order-search-box" placeholder="Search name or email..." oninput="filterAdminTable(this.value)">
-                <select id="adminStatusFilter" class="form-control no-icon" style="width:120px;padding:6px 8px;" onchange="filterAdminTable(document.getElementById('adminSearchInput').value)">
+                <input type="search" id="adminSearchInput" name="admin_search_filter" class="order-search-box" placeholder="Search name or email..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="" oninput="filterAdminTable(this.value)">
+                <select id="adminStatusFilter" name="admin_status_filter" class="form-control no-icon" style="width:120px;padding:6px 8px;" onchange="filterAdminTable(document.getElementById('adminSearchInput').value)">
                   <option value="">All Status</option>
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
