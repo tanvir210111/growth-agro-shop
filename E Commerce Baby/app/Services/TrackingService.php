@@ -255,14 +255,14 @@ class TrackingService
             $session = $this->currentSession ?? ($req && $visitor ? $this->resolveSession($req, $visitor) : null);
 
             if ($session) {
-                $isLandingPage = ($order->source_type === 'landing_page'
-                    || $session->page_type === 'landing_page'
-                    || str_starts_with($session->landing_page_path ?? '', '/products/')
-                    || str_starts_with($order->landing_page ?? '', '/products/'));
-
                 $order->visitor_id = $visitor?->id;
                 $order->session_id = $session->id;
-                $order->source_type = $isLandingPage ? 'landing_page' : 'storefront';
+                if (empty($order->source_type)) {
+                    $isLandingPage = ($session->page_type === 'landing_page'
+                        || str_starts_with($session->landing_page_path ?? '', '/products/')
+                        || str_starts_with($order->landing_page ?? '', '/products/'));
+                    $order->source_type = $isLandingPage ? 'LANDING' : 'MAIN_WEBSITE';
+                }
                 $order->landing_page = $order->landing_page ?: $session->landing_page_path;
                 $order->utm_source = $session->utm_source;
                 $order->utm_medium = $session->utm_medium;

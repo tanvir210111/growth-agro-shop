@@ -18,6 +18,7 @@ class Order extends Model
         'total_amount',
         'payment_method',
         'status',
+        'is_new',
         'courier_name',
         'note',
         'visitor_id',
@@ -44,6 +45,7 @@ class Order extends Model
     ];
 
     protected $casts = [
+        'is_new'               => 'boolean',
         'delivery_charge'      => 'float',
         'subtotal'             => 'float',
         'discount'             => 'float',

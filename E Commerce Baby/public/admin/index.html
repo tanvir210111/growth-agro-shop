@@ -107,11 +107,10 @@
           </a>
           <div class="submenu-tree">
             <ul class="tree-list">
-              <li class="tree-item"><a class="tree-link" id="subnav-manage-order" onclick="filterOrdersBySource(null); switchView('orders')">All Orders</a></li>
-              <li class="tree-item"><a class="tree-link" id="subnav-website-orders" onclick="filterOrdersBySource('MAIN_WEBSITE'); switchView('orders')">🛍️ Main Website Orders</a></li>
-              <li class="tree-item"><a class="tree-link" id="subnav-landing-orders" onclick="filterOrdersBySource('LANDING_PAGE'); switchView('orders')">🚀 Landing Page Orders</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-manage-order" onclick="switchView('orders')">All Orders</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-website-orders" onclick="switchView('main-website-orders')">🛍️ Main Website Orders</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-landing-orders" onclick="switchView('landing-page-orders')">🚀 Landing Page Orders</a></li>
               <li class="tree-item"><a class="tree-link" id="subnav-processing-report" onclick="switchView('report')">Order Processing Report</a></li>
-
             </ul>
           </div>
         </li>
@@ -1038,12 +1037,21 @@
               ← Back
             </button>
 
-            <div class="report-filter-tabs-row">
-              <button class="report-tab-pill active" onclick="setReportTab(this)">Today</button>
-              <button class="report-tab-pill" onclick="setReportTab(this)">Yesterday</button>
-              <button class="report-tab-pill" onclick="setReportTab(this)">This Week</button>
-              <button class="report-tab-pill" onclick="setReportTab(this)">This Month</button>
-              <button class="report-tab-pill" onclick="setReportTab(this)">Custom Date</button>
+            <div class="report-filter-tabs-row" style="margin-bottom:12px;">
+              <button type="button" class="report-tab-pill active" onclick="setReportTab(this, 'today')">Today</button>
+              <button type="button" class="report-tab-pill" onclick="setReportTab(this, 'yesterday')">Yesterday</button>
+              <button type="button" class="report-tab-pill" onclick="setReportTab(this, 'this_week')">This Week</button>
+              <button type="button" class="report-tab-pill" onclick="setReportTab(this, 'this_month')">This Month</button>
+              <button type="button" class="report-tab-pill" onclick="setReportTab(this, 'custom_date')">Custom Date 📅</button>
+            </div>
+
+            <!-- Custom Date Selector Bar -->
+            <div id="reportCustomDateRow" style="display:none;background:#F8FAFC;border:1px dashed #CBD5E0;border-radius:8px;padding:10px 14px;margin-bottom:14px;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span style="font-size:12.5px;font-weight:600;color:#4A5568;">Select Date Range:</span>
+              <input type="date" id="reportStartDate" class="form-control" style="width:145px;padding:5px 8px;font-size:12px;border:1px solid #CBD5E0;border-radius:6px;">
+              <span style="color:#718096;font-size:12px;">to</span>
+              <input type="date" id="reportEndDate" class="form-control" style="width:145px;padding:5px 8px;font-size:12px;border:1px solid #CBD5E0;border-radius:6px;">
+              <button type="button" onclick="applyReportCustomDate()" class="btn-primary-teal" style="padding:5px 12px;font-size:12px;">Apply Filter</button>
             </div>
 
             <!-- Report Card Table -->

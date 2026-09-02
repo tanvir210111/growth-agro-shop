@@ -279,7 +279,8 @@ function loadServerOrders() {
     if (data && data.success && Array.isArray(data.orders)) {
       APP_STATE.orders = data.orders.map(ord => ({
         invoice: ord.order_number,
-        source: ord.source || "LANDING_PAGE",
+        source: ord.source || "MAIN_WEBSITE",
+        is_new: Boolean(ord.is_new !== false),
         customer: ord.customer_name || "Customer",
         customerType: "Regular",
         customerLevel: 1,
@@ -308,7 +309,6 @@ function loadServerOrders() {
         courier: ord.courier_name || ord.courier || null
       }));
 
-
       // Update customers aggregation
       aggregateCustomers();
       renderDashboardData();
@@ -321,6 +321,18 @@ function loadServerOrders() {
   .catch(err => {
     console.warn('Could not sync orders from server:', err);
   });
+}
+
+function isStorefrontOrder(o) {
+  if (!o) return false;
+  const s = String(o.source || '').toUpperCase();
+  return s === 'MAIN_WEBSITE' || s.includes('BABY-FASHION') || s.includes('STOREFRONT');
+}
+
+function isLandingOrder(o) {
+  if (!o) return false;
+  const s = String(o.source || '').toUpperCase();
+  return s === 'LANDING' || s === 'LANDING_PAGE' || s.includes('LANDING');
 }
 
 function normalizeStatus(st) {
@@ -410,15 +422,17 @@ function renderDashboardData() {
   // Determine active dataset for the 12 status cards based on dashboardMode
   let activeOrders = allOrders;
   if (mode === 'website') {
-    activeOrders = allOrders.filter(o => (o.source || '').toLowerCase().includes('baby-fashion'));
+    activeOrders = allOrders.filter(isStorefrontOrder);
   } else if (mode === 'landing') {
-    activeOrders = allOrders.filter(o => !(o.source || '').toLowerCase().includes('baby-fashion'));
+    activeOrders = allOrders.filter(isLandingOrder);
   }
 
-  const countBy = (st) => activeOrders.filter(o => o.status.toLowerCase() === st.toLowerCase());
+  const countBy = (st) => activeOrders.filter(o => normalizeStatus(o.status).toLowerCase() === st.toLowerCase());
   const sumBy = (list) => list.reduce((acc, c) => acc + (c.total || 0), 0);
 
-  const newOrds = countBy('New');
+  // New Orders count = is_new === true (unread state)
+  const newOrds = activeOrders.filter(o => o.is_new === true);
+  // Workflow status counts
   const pendingOrds = countBy('Pending');
   const approvedOrds = countBy('Approved');
   const packagingOrds = countBy('Packaging');
@@ -426,7 +440,7 @@ function renderDashboardData() {
   const deliveredOrds = countBy('Delivered');
   const returnOrds = countBy('Return');
   const cancelOrds = countBy('Cancel');
-  const wfpOrds = countBy('WFP');
+  const wfpOrds = countBy('Work In Progress');
 
   const setCard = (countId, amountId, list) => {
     const cEl = document.getElementById(countId);
@@ -464,11 +478,11 @@ function renderDashboardData() {
   // =====================================================
   // SOURCE SPLIT CARDS: Always show actual totals for each
   // =====================================================
-  const websiteOrders = allOrders.filter(o => (o.source || '').toLowerCase().includes('baby-fashion'));
-  const landingOrders = allOrders.filter(o => !(o.source || '').toLowerCase().includes('baby-fashion'));
+  const websiteOrders = allOrders.filter(isStorefrontOrder);
+  const landingOrders = allOrders.filter(isLandingOrder);
 
-  const wsNew = websiteOrders.filter(o => ['new','pending'].includes(o.status.toLowerCase())).length;
-  const lpNew = landingOrders.filter(o => ['new','pending'].includes(o.status.toLowerCase())).length;
+  const wsNew = websiteOrders.filter(o => o.is_new === true).length;
+  const lpNew = landingOrders.filter(o => o.is_new === true).length;
 
   setEl('srcWebsiteTotal', websiteOrders.length);
   setEl('srcWebsiteNew',   wsNew);
@@ -487,9 +501,9 @@ function renderDashboardData() {
  * @param {string} type - 'MAIN_WEBSITE', 'LANDING_PAGE', or null (all)
  */
 window.filterOrdersBySource = function(type) {
-  if (type === 'MAIN_WEBSITE' || type === 'baby-fashion-storefront') {
+  if (type === 'MAIN_WEBSITE' || type === 'baby-fashion-storefront' || type === 'storefront') {
     APP_STATE.sourceFilter = 'MAIN_WEBSITE';
-  } else if (type === 'LANDING_PAGE' || type === 'landing') {
+  } else if (type === 'LANDING_PAGE' || type === 'landing' || type === 'LANDING') {
     APP_STATE.sourceFilter = 'LANDING_PAGE';
   } else {
     APP_STATE.sourceFilter = null;
@@ -497,10 +511,6 @@ window.filterOrdersBySource = function(type) {
   APP_STATE.activeFilter = 'All';
   renderOrdersTable();
 };
-
-
-
-
 
 // Monthly Activities Chart (HTML5 Canvas)
 function renderMonthlyChart() {
@@ -528,9 +538,9 @@ function renderMonthlyChart() {
   const mode = APP_STATE.dashboardMode || 'all';
   let chartOrders = APP_STATE.orders;
   if (mode === 'website') {
-    chartOrders = chartOrders.filter(o => (o.source || '').toLowerCase().includes('baby-fashion'));
+    chartOrders = chartOrders.filter(isStorefrontOrder);
   } else if (mode === 'landing') {
-    chartOrders = chartOrders.filter(o => !(o.source || '').toLowerCase().includes('baby-fashion'));
+    chartOrders = chartOrders.filter(isLandingOrder);
   }
 
   const monthSums = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -624,9 +634,9 @@ function renderOrdersTable() {
   // Source filter (set by filterOrdersBySource on dashboard or menu click)
   if (APP_STATE.sourceFilter) {
     if (APP_STATE.sourceFilter === 'MAIN_WEBSITE') {
-      filtered = filtered.filter(o => (o.source || '').toUpperCase().includes('MAIN_WEBSITE') || (o.source || '').toLowerCase().includes('baby-fashion'));
+      filtered = filtered.filter(isStorefrontOrder);
     } else if (APP_STATE.sourceFilter === 'LANDING_PAGE') {
-      filtered = filtered.filter(o => !(o.source || '').toUpperCase().includes('MAIN_WEBSITE') && !(o.source || '').toLowerCase().includes('baby-fashion'));
+      filtered = filtered.filter(isLandingOrder);
     }
 
     // Show a clear-filter banner at the top of the orders view
@@ -719,10 +729,14 @@ function renderOrdersTable() {
   filtered.forEach(ord => {
     const tr = document.createElement('tr');
     const isChecked = APP_STATE.selectedOrders.has(ord.invoice);
-    const isMainWeb = (ord.source || '').toUpperCase().includes('MAIN_WEBSITE') || (ord.source || '').toLowerCase().includes('baby-fashion');
+    const isMainWeb = isStorefrontOrder(ord);
     const sourceBadge = isMainWeb
       ? '<span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🛍️ MAIN WEB</span>'
       : '<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🚀 LANDING</span>';
+
+    const newBadge = ord.is_new
+      ? '<span style="background:#EF4444;color:#FFFFFF;padding:1px 5px;border-radius:4px;font-size:9.5px;font-weight:800;margin-left:4px;display:inline-block;letter-spacing:0.5px;">NEW</span>'
+      : '';
 
     const riskBadge = buildRiskBadge(ord.fraudLevel, ord.fraudScore);
 
@@ -731,7 +745,10 @@ function renderOrdersTable() {
         <input type="checkbox" onchange="toggleOrderSelect('${ord.invoice}', this.checked)" ${isChecked ? 'checked' : ''}>
       </td>
       <td>
-        <div class="invoice-text">${ord.invoice}</div>
+        <div class="invoice-text" style="display:flex;align-items:center;">
+          <span>${ord.invoice}</span>
+          ${newBadge}
+        </div>
         ${sourceBadge}
       </td>
       <td>
@@ -994,6 +1011,204 @@ window.openOrderStatusModal = function(invoiceOrOrder) {
   `;
 
   document.body.appendChild(modal);
+};
+
+window.viewOrderInvoice = function(invoice) {
+  const ord = APP_STATE.orders.find(o => o.invoice === invoice);
+  if (!ord) return;
+
+  // Mark as seen/read in background if currently is_new === true
+  if (ord.is_new) {
+    ord.is_new = false;
+    renderDashboardData();
+    renderOrdersTable();
+
+    const token = localStorage.getItem('admin_token') || '';
+    fetch(`/api/orders/${encodeURIComponent(invoice)}/viewed`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-admin-token': token
+      }
+    }).catch(() => {});
+  }
+
+  const existing = document.getElementById('orderInvoiceModal');
+  if (existing) existing.remove();
+
+  const isMainWeb = isStorefrontOrder(ord);
+  const sourceLabel = isMainWeb ? '🛍️ Main Website Order' : '🚀 Landing Page Order';
+  const statusNormalized = normalizeStatus(ord.status);
+
+  const modal = document.createElement('div');
+  modal.id = 'orderInvoiceModal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100000;';
+
+  modal.innerHTML = `
+    <div style="background:#FFFFFF;border-radius:12px;width:92%;max-width:600px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2), 0 10px 10px -5px rgba(0,0,0,0.1);border:1px solid #E2E8F0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+      <!-- Modal Header -->
+      <div style="background:#F8FAFC;padding:16px 20px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <h3 style="margin:0;font-size:16px;font-weight:800;color:#0F172A;">Order #${ord.invoice}</h3>
+            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:${isMainWeb ? '#E0F2FE' : '#FEF3C7'};color:${isMainWeb ? '#0369A1' : '#B45309'};">${sourceLabel}</span>
+          </div>
+          <div style="font-size:12px;color:#64748B;margin-top:3px;">Date: ${ord.date}</div>
+        </div>
+        <button type="button" onclick="document.getElementById('orderInvoiceModal').remove()" style="background:none;border:none;font-size:20px;color:#94A3B8;cursor:pointer;line-height:1;padding:4px;">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div id="printableInvoiceContent" style="padding:20px;overflow-y:auto;flex:1;">
+        <!-- Customer Info Box -->
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;">
+          <div style="font-weight:700;color:#1E293B;margin-bottom:8px;border-bottom:1px solid #E2E8F0;padding-bottom:6px;">👤 Customer Information</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div><span style="color:#64748B;">Name:</span> <b>${ord.customer}</b></div>
+            <div><span style="color:#64748B;">Phone:</span> <a href="tel:${ord.phone}" style="color:#0284C7;text-decoration:none;font-weight:600;">${ord.phone}</a></div>
+            <div style="grid-column:1/-1;"><span style="color:#64748B;">Address:</span> <span>${ord.address}</span></div>
+            <div><span style="color:#64748B;">Status:</span> <span style="font-weight:700;color:#0F172A;">${statusNormalized}</span></div>
+            <div><span style="color:#64748B;">Courier:</span> <span style="font-weight:600;color:#0F172A;">${ord.courier || 'None'}</span></div>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div style="margin-bottom:16px;">
+          <div style="font-weight:700;color:#1E293B;font-size:13px;margin-bottom:8px;">📦 Order Items</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+            <thead>
+              <tr style="background:#F1F5F9;border-bottom:1px solid #E2E8F0;">
+                <th style="text-align:left;padding:8px 10px;">Item</th>
+                <th style="text-align:center;padding:8px 10px;">Variant</th>
+                <th style="text-align:center;padding:8px 10px;">Qty</th>
+                <th style="text-align:right;padding:8px 10px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #F1F5F9;">
+                <td style="padding:10px;font-weight:600;color:#0F172A;">${ord.product}</td>
+                <td style="padding:10px;text-align:center;color:#64748B;">${ord.variant || 'Standard'}</td>
+                <td style="padding:10px;text-align:center;font-weight:600;">${ord.quantity}</td>
+                <td style="padding:10px;text-align:right;font-weight:700;color:#0F172A;">৳ ${ord.subtotal || ord.total}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Financial Summary -->
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#475569;">
+            <span>Subtotal:</span>
+            <span>৳ ${ord.subtotal || (ord.total - (ord.deliveryCharge || 0))}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;color:#475569;">
+            <span>Delivery Charge:</span>
+            <span>৳ ${ord.deliveryCharge || 0}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#DC2626;border-top:1px solid #E2E8F0;padding-top:6px;">
+            <span>Total Payable:</span>
+            <span>৳ ${ord.total}</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer / Actions -->
+      <div style="background:#F8FAFC;padding:14px 20px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+        <button type="button" onclick="printOrderInvoiceContent('${ord.invoice}')" style="background:#0F172A;color:#FFFFFF;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          📄 Print / Download Receipt
+        </button>
+        <button type="button" onclick="document.getElementById('orderInvoiceModal').remove()" style="padding:8px 16px;border:1px solid #CBD5E1;border-radius:6px;background:#FFFFFF;color:#475569;font-size:13px;font-weight:600;cursor:pointer;">
+          Close
+        </button>
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+};
+
+window.printOrderInvoiceContent = function(invoice) {
+  const ord = APP_STATE.orders.find(o => o.invoice === invoice);
+  if (!ord) return;
+
+  const printWindow = window.open('', '_blank', 'width=750,height=800');
+  if (!printWindow) {
+    window.print();
+    return;
+  }
+
+  const isMainWeb = isStorefrontOrder(ord);
+  const brandTitle = isMainWeb ? 'Growth Shop' : (ord.product || 'Growth Agro');
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Invoice #${ord.invoice}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #0F172A; font-size: 13px; }
+        .invoice-header { text-align: center; border-bottom: 2px solid #004D40; padding-bottom: 12px; margin-bottom: 20px; }
+        .invoice-header h1 { margin: 0 0 4px; font-size: 20px; color: #004D40; }
+        .box { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid #E2E8F0; }
+        th { background: #F1F5F9; text-align: left; }
+        .total-row { display: flex; justify-content: space-between; font-weight: 800; font-size: 15px; color: #DC2626; border-top: 1px solid #E2E8F0; padding-top: 8px; }
+      </style>
+    </head>
+    <body>
+      <div class="invoice-header">
+        <h1>${brandTitle}</h1>
+        <p style="margin:0;color:#64748B;">Official Order Receipt • Cash on Delivery</p>
+      </div>
+      <div class="box">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span><strong>Invoice #:</strong> ${ord.invoice}</span>
+          <span><strong>Date:</strong> ${ord.date}</span>
+        </div>
+        <div><strong>Customer:</strong> ${ord.customer} (${ord.phone})</div>
+        <div><strong>Address:</strong> ${ord.address}</div>
+        <div><strong>Status:</strong> ${normalizeStatus(ord.status)}</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Variant</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${ord.product}</td>
+            <td>${ord.variant || 'Standard'}</td>
+            <td style="text-align:center;">${ord.quantity}</td>
+            <td style="text-align:right;">৳ ${ord.subtotal || ord.total}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="box">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span>Subtotal:</span><span>৳ ${ord.subtotal || ord.total}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span>Delivery Charge:</span><span>৳ ${ord.deliveryCharge || 0}</span>
+        </div>
+        <div class="total-row">
+          <span>Total Payable:</span><span>৳ ${ord.total}</span>
+        </div>
+      </div>
+      <script>
+        window.onload = function() { window.print(); };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 };
 
 window.openOrderActionsModal = window.openOrderStatusModal;
@@ -4141,6 +4356,10 @@ const VIEW_ALIASES = {
   'manage-orders': 'orders',
   'all-orders': 'orders',
   'order': 'orders',
+  'main-website-orders': 'main-website-orders',
+  'website-orders': 'main-website-orders',
+  'landing-page-orders': 'landing-page-orders',
+  'landing-orders': 'landing-page-orders',
   'admin': 'manage-admin',
   'admins': 'manage-admin',
   'admin-users': 'manage-admin',
@@ -4171,14 +4390,24 @@ function normalizeViewName(name) {
   const cleaned = name.trim().toLowerCase().replace(/^#/, '');
   if (!cleaned) return null;
 
+  if (cleaned === 'main-website-orders' || cleaned === 'website-orders') {
+    return 'main-website-orders';
+  }
+  if (cleaned === 'landing-page-orders' || cleaned === 'landing-orders') {
+    return 'landing-page-orders';
+  }
+
   // Check exact panel match first
   if (document.getElementById(`view-${cleaned}`)) {
     return cleaned;
   }
 
   // Check alias mapping
-  if (VIEW_ALIASES[cleaned] && document.getElementById(`view-${VIEW_ALIASES[cleaned]}`)) {
-    return VIEW_ALIASES[cleaned];
+  if (VIEW_ALIASES[cleaned]) {
+    const aliasTarget = VIEW_ALIASES[cleaned];
+    if (aliasTarget === 'main-website-orders' || aliasTarget === 'landing-page-orders' || document.getElementById(`view-${aliasTarget}`)) {
+      return aliasTarget;
+    }
   }
 
   return null;
@@ -4216,9 +4445,22 @@ function doSwitchView(viewName, updateHash = true) {
 
   APP_STATE.activeView = targetView;
 
+  // Determine actual DOM view panel to show
+  let domPanelId = targetView;
+  if (targetView === 'main-website-orders' || targetView === 'landing-page-orders') {
+    domPanelId = 'orders';
+    if (targetView === 'main-website-orders') {
+      APP_STATE.sourceFilter = 'MAIN_WEBSITE';
+    } else if (targetView === 'landing-page-orders') {
+      APP_STATE.sourceFilter = 'LANDING_PAGE';
+    }
+  } else if (targetView === 'orders') {
+    APP_STATE.sourceFilter = null;
+  }
+
   // 1. Toggle view panels (display: none / block)
   document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
-  const panel = document.getElementById(`view-${targetView}`);
+  const panel = document.getElementById(`view-${domPanelId}`);
   if (panel) {
     panel.style.display = 'block';
   } else {
@@ -4235,21 +4477,29 @@ function doSwitchView(viewName, updateHash = true) {
   let activated = false;
 
   if (targetView === 'orders') {
-    const ordersLink = document.getElementById('subnav-manage-order') || document.querySelector(".tree-link[onclick*='orders']");
-    if (ordersLink) {
-      ordersLink.classList.add('active');
-      const parent = ordersLink.closest('.nav-has-sub') || document.getElementById('nav-group-orders');
-      if (parent) parent.classList.add('open');
-      activated = true;
-    }
+    const ordersLink = document.getElementById('subnav-manage-order');
+    if (ordersLink) ordersLink.classList.add('active');
+    const parent = document.getElementById('nav-group-orders');
+    if (parent) parent.classList.add('open');
+    activated = true;
+  } else if (targetView === 'main-website-orders') {
+    const webLink = document.getElementById('subnav-website-orders');
+    if (webLink) webLink.classList.add('active');
+    const parent = document.getElementById('nav-group-orders');
+    if (parent) parent.classList.add('open');
+    activated = true;
+  } else if (targetView === 'landing-page-orders') {
+    const lpLink = document.getElementById('subnav-landing-orders');
+    if (lpLink) lpLink.classList.add('active');
+    const parent = document.getElementById('nav-group-orders');
+    if (parent) parent.classList.add('open');
+    activated = true;
   } else if (targetView === 'report') {
     const repLink = document.getElementById('subnav-processing-report');
-    if (repLink) {
-      repLink.classList.add('active');
-      const parent = repLink.closest('.nav-has-sub') || document.getElementById('nav-group-orders');
-      if (parent) parent.classList.add('open');
-      activated = true;
-    }
+    if (repLink) repLink.classList.add('active');
+    const parent = document.getElementById('nav-group-orders');
+    if (parent) parent.classList.add('open');
+    activated = true;
   } else if (targetView === 'landing-page-builder' || targetView === 'landingpages' || targetView === 'landing-pages-list') {
     const lpGroup = document.getElementById('nav-group-landingpages');
     if (lpGroup) lpGroup.classList.add('open');
@@ -4307,11 +4557,15 @@ function doSwitchView(viewName, updateHash = true) {
       'dashboard': 'Dashboard',
       'analytics': 'Analytics & Attribution',
       'orders': 'Orders Management',
+      'main-website-orders': 'Main Website Orders',
+      'landing-page-orders': 'Landing Page Orders',
       'report': 'Order Processing Report',
       'income': 'Income Accounts',
       'expense': 'Expense Accounts',
       'balance': 'Balance Sheet',
       'products': 'Manage Products',
+      'categories': 'Manage Categories',
+      'sliders': 'Hero Sliders',
       'header-setting': 'Header Configuration',
       'theme-setting': 'Theme Settings',
       'marketing': 'Marketing & Meta Pixel',
@@ -4340,7 +4594,12 @@ function doSwitchView(viewName, updateHash = true) {
     renderMonthlyChart();
   }
   if (targetView === 'analytics') loadAnalyticsDashboard();
-  if (targetView === 'orders') renderOrdersTable();
+  if (targetView === 'orders' || targetView === 'main-website-orders' || targetView === 'landing-page-orders') {
+    renderOrdersTable();
+  }
+  if (targetView === 'report') {
+    renderOrderProcessingReport(CURRENT_REPORT_PERIOD || 'today');
+  }
   if (targetView === 'income') {
     if (typeof renderIncomeTable === 'function') renderIncomeTable();
     if (typeof renderCreditTable === 'function') renderCreditTable();
@@ -4361,6 +4620,8 @@ function doSwitchView(viewName, updateHash = true) {
   if (targetView === 'manage-admin') renderAdminUsersTable();
 }
 window.doSwitchView = doSwitchView;
+
+
 
 // Browser Back / Forward and Hash Navigation Listener
 function handleHashOrPopState() {

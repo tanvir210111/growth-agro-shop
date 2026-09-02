@@ -99,7 +99,10 @@
         </div>
 
         <!-- Action CTAs -->
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <div class="no-print" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <button type="button" onclick="window.print()" id="btnDownloadReceipt" class="btn-primary" style="background:#0F172A; border-color:#0F172A; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 700; cursor: pointer; color: #fff;">
+                📄 রসিদ ডাউনলোড / প্রিন্ট করুন
+            </button>
             <a href="{{ route('home') }}" class="btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.6rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
                 মূল ওয়েবসাইটে ফিরে যান &rarr;
             </a>
@@ -109,6 +112,26 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 12pt;
+    }
+    header, footer, .no-print, nav, .site-header, .site-footer {
+        display: none !important;
+    }
+    .container {
+        padding: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>

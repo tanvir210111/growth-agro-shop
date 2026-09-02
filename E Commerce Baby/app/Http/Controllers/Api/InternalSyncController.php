@@ -98,8 +98,9 @@ class InternalSyncController extends Controller
                 'total_amount' => $total,
                 'payment_method' => $paymentMethod,
                 'status' => 'pending',
+                'is_new' => true,
                 'note' => 'Landing Page Order: ' . $productName,
-                'source_type' => 'landing_page',
+                'source_type' => 'LANDING',
                 'landing_page' => $landingPage,
             ]);
 

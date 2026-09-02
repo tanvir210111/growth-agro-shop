@@ -88,7 +88,11 @@ Route::match(['get', 'post'], '/api/admin/fraud/courier-check', [AdminAnalyticsC
 
 // Admin Orders list (used by admin panel JS — includes fraud fields)
 Route::get('/api/orders', [AdminAnalyticsController::class, 'ordersIndex'])->name('api.orders.index');
+Route::get('/api/admin/orders', [AdminAnalyticsController::class, 'ordersIndex'])->name('api.admin.orders.index');
 Route::get('/api/orders/{order_number}/status', [AdminAnalyticsController::class, 'ordersIndex'])->name('api.orders.status');
+Route::patch('/api/orders/{order_number}/viewed', [AdminAnalyticsController::class, 'markOrderViewed'])->name('api.orders.viewed');
+Route::patch('/api/admin/orders/{order_number}/viewed', [AdminAnalyticsController::class, 'markOrderViewed'])->name('api.admin.orders.viewed');
+Route::get('/api/admin/reports/order-processing', [AdminAnalyticsController::class, 'orderProcessingReport'])->name('api.admin.reports.order-processing');
 Route::patch('/api/orders/{order_number}/status', [AdminAnalyticsController::class, 'updateStatus'])->name('api.orders.updateStatus');
 Route::patch('/api/admin/orders/{order_number}/status', [AdminAnalyticsController::class, 'updateStatus'])->name('api.admin.orders.updateStatus');
 Route::patch('/api/orders/{order_number}/courier', [AdminAnalyticsController::class, 'updateCourier'])->name('api.orders.updateCourier');

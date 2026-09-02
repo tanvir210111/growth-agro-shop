@@ -119,6 +119,8 @@ class CheckoutService
                 'total_amount' => $total,
                 'payment_method' => 'COD',
                 'status' => 'pending',
+                'is_new' => true,
+                'source_type' => 'MAIN_WEBSITE',
                 'note' => $order['notes'],
             ]);
 

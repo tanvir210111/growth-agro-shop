@@ -1063,9 +1063,17 @@ class AdminAnalyticsController extends Controller
             $firstName = $items->first();
             $isChecked = !empty($o->courier_checked_at);
 
+            $srcRaw = strtoupper(trim((string)($o->source_type ?? '')));
+            if ($srcRaw === 'LANDING' || $srcRaw === 'LANDING_PAGE' || str_contains(strtolower($srcRaw), 'landing')) {
+                $canonicalSource = 'LANDING';
+            } else {
+                $canonicalSource = 'MAIN_WEBSITE';
+            }
+
             return [
                 'order_number'    => $o->invoice_no,
-                'source'          => $o->source_type ?? 'storefront',
+                'source'          => $canonicalSource,
+                'is_new'          => (bool)($o->is_new ?? false),
                 'customer_name'   => $o->customer_name,
                 'phone'           => $o->customer_phone,
                 'address'         => $o->customer_address,
@@ -1100,6 +1108,86 @@ class AdminAnalyticsController extends Controller
             'success' => true,
             'count'   => $mapped->count(),
             'orders'  => $mapped,
+        ]);
+    }
+
+    /**
+     * Mark order viewed (is_new = false) without altering status or any other order attributes.
+     */
+    public function markOrderViewed(Request $request, string $order_number): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $order = Order::where('invoice_no', $order_number)->orWhere('id', $order_number)->first();
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
+        }
+
+        $order->is_new = false;
+        $order->save();
+
+        return response()->json([
+            'success'      => true,
+            'order_number' => $order->invoice_no,
+            'is_new'       => false,
+            'status'       => $order->status,
+            'message'      => "Order #{$order->invoice_no} marked as seen."
+        ]);
+    }
+
+    /**
+     * Order Processing Report from real database.
+     */
+    public function orderProcessingReport(Request $request): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $period = $request->query('period', 'today');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $query = Order::query();
+
+        $today = now()->startOfDay();
+        if ($period === 'today') {
+            $query->where('created_at', '>=', $today);
+        } elseif ($period === 'yesterday') {
+            $yesterday = now()->subDay()->startOfDay();
+            $query->whereBetween('created_at', [$yesterday, $yesterday->copy()->endOfDay()]);
+        } elseif ($period === 'this_week') {
+            $query->where('created_at', '>=', now()->startOfWeek());
+        } elseif ($period === 'this_month') {
+            $query->where('created_at', '>=', now()->startOfMonth());
+        } elseif ($period === 'custom' && $startDate && $endDate) {
+            $query->whereBetween('created_at', [
+                \Carbon\Carbon::parse($startDate)->startOfDay(),
+                \Carbon\Carbon::parse($endDate)->endOfDay()
+            ]);
+        }
+
+        $orders = $query->get();
+
+        $report = [
+            'created'          => $orders->count(),
+            'pending'          => $orders->filter(fn($o) => strtolower($o->status) === 'pending')->count(),
+            'approved'         => $orders->filter(fn($o) => in_array(strtolower($o->status), ['approved', 'confirmed']))->count(),
+            'work_in_progress' => $orders->filter(fn($o) => in_array(strtolower($o->status), ['work in progress', 'work_in_progress', 'wip', 'processing']))->count(),
+            'packaging'        => $orders->filter(fn($o) => strtolower($o->status) === 'packaging')->count(),
+            'shipment'         => $orders->filter(fn($o) => in_array(strtolower($o->status), ['shipment', 'shipped']))->count(),
+            'delivered'        => $orders->filter(fn($o) => strtolower($o->status) === 'delivered')->count(),
+            'returned'         => $orders->filter(fn($o) => in_array(strtolower($o->status), ['return', 'returned']))->count(),
+            'canceled'         => $orders->filter(fn($o) => in_array(strtolower($o->status), ['cancel', 'cancelled']))->count(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'period'  => $period,
+            'report'  => $report,
+            'metrics' => $report,
         ]);
     }
 

@@ -395,7 +395,7 @@ class UniversalProductLandingPageTest extends TestCase
             'subtotal'     => 1850,
             'delivery_charge' => 60,
             'total_amount' => 1910,
-            'source_type'  => 'landing_page',
+            'source_type'  => 'LANDING',
             'landing_page' => '/product/organic-honey-combo',
         ]);
 

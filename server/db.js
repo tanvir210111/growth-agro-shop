@@ -86,6 +86,7 @@ const existingColumns = new Set(
 );
 
 const requiredColumns = [
+  { name: 'is_new', def: "INTEGER DEFAULT 1" },
   { name: 'fraud_level', def: "TEXT DEFAULT 'new_customer'" },
   { name: 'fraud_score', def: "INTEGER DEFAULT 0" },
   { name: 'advance_amount', def: "INTEGER DEFAULT 0" },
