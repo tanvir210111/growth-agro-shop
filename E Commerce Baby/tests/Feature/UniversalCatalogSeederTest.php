@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\Category;
 use App\Models\LandingPage;
 use App\Models\Product;
+use App\Models\Slider;
 use Database\Seeders\UniversalCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -342,5 +343,101 @@ class UniversalCatalogSeederTest extends TestCase
         $res = $this->get('/product/smart-watch-pro-4');
         $res->assertStatus(200);
         $res->assertViewIs('pages.landing-page');
+    }
+
+    public function test_seeder_creates_3_canonical_hero_sliders_with_valid_media_and_paths()
+    {
+        $this->seed(UniversalCatalogSeeder::class);
+
+        $sliders = Slider::orderBy('sort_order', 'asc')->get();
+        $this->assertCount(3, $sliders);
+
+        $expectedImages = [
+            '/uploads/sliders/hero_banner_1.webp',
+            '/uploads/sliders/hero_banner_2.webp',
+            '/uploads/sliders/hero_banner_3.webp',
+        ];
+
+        foreach ($sliders as $idx => $slider) {
+            $this->assertEquals($expectedImages[$idx], $slider->image);
+            $this->assertTrue((bool)$slider->status);
+            $this->assertStringStartsWith('/uploads/sliders/', $slider->image);
+            $this->assertStringNotContainsString('landing-pages', $slider->image);
+            $this->assertStringNotContainsString('images/logo.png', $slider->image);
+
+            $relative = ltrim($slider->image, '/');
+            $this->assertFileExists(public_path($relative), "Slider image {$slider->image} does not exist on disk.");
+        }
+    }
+
+    public function test_seeder_does_not_duplicate_sliders_on_multiple_runs()
+    {
+        $this->seed(UniversalCatalogSeeder::class);
+        $this->assertEquals(3, Slider::count());
+
+        $this->seed(UniversalCatalogSeeder::class);
+        $this->assertEquals(3, Slider::count());
+    }
+
+    public function test_seeder_does_not_overwrite_admin_customized_slider_media_or_content()
+    {
+        $this->seed(UniversalCatalogSeeder::class);
+
+        $slider = Slider::where('sort_order', 1)->first();
+        $this->assertNotNull($slider);
+
+        // Admin edits slider 1
+        $customImage = '/uploads/sliders/admin-custom-banner-' . time() . '.webp';
+        $updateRes = $this->withHeaders(['x-admin-token' => 'adm_session'])
+            ->putJson("/api/admin/sliders/{$slider->id}", [
+                'title'       => 'Custom Admin Flash Deal',
+                'subtitle'    => 'FLASH DEAL 50% OFF',
+                'image'       => $customImage,
+                'link'        => '/shop?deal=flash',
+                'button_text' => 'GRAB DEAL NOW',
+                'sort_order'  => 1,
+                'status'      => true,
+            ]);
+        $updateRes->assertStatus(200);
+
+        $slider->refresh();
+        $this->assertEquals($customImage, $slider->image);
+        $this->assertEquals('Custom Admin Flash Deal', $slider->title);
+
+        // Re-run seeder
+        $this->seed(UniversalCatalogSeeder::class);
+
+        $slider->refresh();
+        $this->assertEquals($customImage, $slider->image, "Seeder overwrote admin custom slider image!");
+        $this->assertEquals('Custom Admin Flash Deal', $slider->title, "Seeder overwrote admin custom slider title!");
+    }
+
+    public function test_seeder_preserves_newly_created_admin_slider()
+    {
+        $this->seed(UniversalCatalogSeeder::class);
+        $this->assertEquals(3, Slider::count());
+
+        // Admin creates a 4th slider
+        $createRes = $this->withHeaders(['x-admin-token' => 'adm_session'])
+            ->postJson('/api/admin/sliders', [
+                'title'       => 'Fourth Exclusive Slider',
+                'subtitle'    => 'SPECIAL PROMO',
+                'image'       => '/uploads/sliders/custom-slide-4.webp',
+                'link'        => '/shop?promo=4',
+                'button_text' => 'VIEW MORE',
+                'sort_order'  => 4,
+                'status'      => true,
+            ]);
+        $createRes->assertStatus(201);
+
+        $this->assertEquals(4, Slider::count());
+
+        // Re-run seeder
+        $this->seed(UniversalCatalogSeeder::class);
+
+        $this->assertEquals(4, Slider::count(), "Seeder deleted admin-created slider!");
+        $this->assertDatabaseHas('sliders', [
+            'title' => 'Fourth Exclusive Slider',
+        ]);
     }
 }

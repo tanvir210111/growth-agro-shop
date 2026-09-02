@@ -11,7 +11,7 @@
 
     <!-- Favicon -->
     @php
-        $siteFavicon = \App\Models\Setting::get('site_favicon', 'images/logo.png');
+        $siteFavicon = \App\Models\Setting::get('site_favicon', '/favicon.ico');
     @endphp
     <link rel="icon" type="image/png" href="{{ \Illuminate\Support\Str::startsWith($siteFavicon, ['http://', 'https://', '/']) ? $siteFavicon : asset($siteFavicon) }}">
     

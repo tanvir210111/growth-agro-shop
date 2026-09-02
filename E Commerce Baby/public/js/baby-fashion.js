@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="drawer-empty-state">
                         <div class="drawer-empty-icon">🛍️</div>
                         <h4>Your shopping bag is empty</h4>
-                        <p style="color:#888; font-size:0.88rem; margin: 0.5rem 0 1.2rem;">Discover the cutest outfits for your little ones!</p>
+                        <p style="color:#888; font-size:0.88rem; margin: 0.5rem 0 1.2rem;">Discover quality products with fast nationwide Cash on Delivery!</p>
                         <a href="/shop" class="btn-primary" style="font-size:0.88rem; padding: 0.65rem 1.4rem;" onclick="closeCartDrawer()">Start Shopping</a>
                     </div>
                 `;
@@ -383,57 +383,124 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =========================================================================
-    // Hero Banner Slider
+    // Hero Banner Slider / Carousel
     // =========================================================================
+    const heroContainer = document.getElementById('heroSliderContainer');
     const slides = document.querySelectorAll('.hero-slide');
     const dots = document.querySelectorAll('.slider-dot');
     let currentSlide = 0;
     let slideInterval = null;
+    const ROTATION_DELAY = 4500;
 
     function showSlide(index) {
         if (!slides.length) return;
+        currentSlide = (index + slides.length) % slides.length;
         slides.forEach((s, i) => {
-            s.classList.toggle('active', i === index);
+            s.classList.toggle('active', i === currentSlide);
+            s.setAttribute('aria-hidden', i === currentSlide ? 'false' : 'true');
         });
         dots.forEach((d, i) => {
-            d.classList.toggle('active', i === index);
+            d.classList.toggle('active', i === currentSlide);
+            d.setAttribute('aria-selected', i === currentSlide ? 'true' : 'false');
         });
-        currentSlide = index;
     }
 
     function nextSlide() {
-        if (!slides.length) return;
-        let next = (currentSlide + 1) % slides.length;
-        showSlide(next);
+        if (slides.length <= 1) return;
+        showSlide(currentSlide + 1);
     }
 
     function prevSlide() {
-        if (!slides.length) return;
-        let prev = (currentSlide - 1 + slides.length) % slides.length;
-        showSlide(prev);
+        if (slides.length <= 1) return;
+        showSlide(currentSlide - 1);
+    }
+
+    function startSlideTimer() {
+        if (slides.length > 1 && !slideInterval) {
+            slideInterval = setInterval(nextSlide, ROTATION_DELAY);
+        }
+    }
+
+    function stopSlideTimer() {
+        if (slideInterval) {
+            clearInterval(slideInterval);
+            slideInterval = null;
+        }
+    }
+
+    function resetSlideTimer() {
+        stopSlideTimer();
+        startSlideTimer();
     }
 
     const nextBtn = document.getElementById('heroNextBtn');
     const prevBtn = document.getElementById('heroPrevBtn');
-    if (nextBtn) nextBtn.addEventListener('click', () => { nextSlide(); resetSlideTimer(); });
-    if (prevBtn) prevBtn.addEventListener('click', () => { prevSlide(); resetSlideTimer(); });
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            nextSlide();
+            resetSlideTimer();
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            prevSlide();
+            resetSlideTimer();
+        });
+    }
 
     dots.forEach((dot, idx) => {
-        dot.addEventListener('click', () => {
+        dot.addEventListener('click', (e) => {
+            e.preventDefault();
             showSlide(idx);
             resetSlideTimer();
         });
     });
 
-    function startSlideTimer() {
-        if (slides.length > 1) {
-            slideInterval = setInterval(nextSlide, 5000);
-        }
-    }
+    if (heroContainer) {
+        // Pause on hover
+        heroContainer.addEventListener('mouseenter', stopSlideTimer);
+        heroContainer.addEventListener('mouseleave', startSlideTimer);
 
-    function resetSlideTimer() {
-        clearInterval(slideInterval);
-        startSlideTimer();
+        // Pause on focus
+        heroContainer.addEventListener('focusin', stopSlideTimer);
+        heroContainer.addEventListener('focusout', startSlideTimer);
+
+        // Keyboard navigation (ArrowLeft, ArrowRight)
+        heroContainer.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                prevSlide();
+                resetSlideTimer();
+            } else if (e.key === 'ArrowRight') {
+                nextSlide();
+                resetSlideTimer();
+            }
+        });
+
+        // Touch swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        heroContainer.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            stopSlideTimer();
+        }, { passive: true });
+
+        heroContainer.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            const diffX = touchStartX - touchEndX;
+            if (Math.abs(diffX) > 45) {
+                if (diffX > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+            startSlideTimer();
+        }, { passive: true });
     }
 
     startSlideTimer();

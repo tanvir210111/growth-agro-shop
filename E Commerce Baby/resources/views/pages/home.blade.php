@@ -7,56 +7,50 @@
     <!-- Hero Banner Slider -->
     <section class="hero-slider-section">
         <div class="container">
-            <div class="hero-slider-container" style="border-radius: var(--radius-lg); overflow: hidden; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); min-height: 320px; position: relative; border: 1px solid #FED7AA; box-shadow: var(--shadow-sm);">
+            <div class="hero-slider-container" id="heroSliderContainer" tabindex="0" role="region" aria-label="Hero Carousel">
                 @php
                     $slides = !empty($sliders) ? $sliders : [];
                 @endphp
 
-                @if(!empty($slides))
+                @if(!empty($slides) && count($slides) > 0)
                     @foreach($slides as $index => $slide)
                         @php
-                            $slideImg = !empty($slide['image']) ? $slide['image'] : (!empty($slide['banner_image']) ? $slide['banner_image'] : '');
+                            $slideImg = !empty($slide['image']) ? $slide['image'] : '/uploads/sliders/hero_banner_1.webp';
                             $slideLink = !empty($slide['link']) ? $slide['link'] : route('shop');
-                            $slideTitle = !empty($slide['title']) ? $slide['title'] : 'Banner';
+                            $slideTitle = !empty($slide['title']) ? $slide['title'] : "SUMMER SALE\nUP TO 40% OFF";
+                            $slideSubtitle = !empty($slide['subtitle']) ? $slide['subtitle'] : 'TRENDING NOW';
+                            $slideDesc = !empty($slide['description']) ? $slide['description'] : 'Discover amazing deals on all quality verified products with nationwide Cash on Delivery.';
+                            $btnText = !empty($slide['button_text']) ? $slide['button_text'] : 'SHOP NOW →';
                         @endphp
-                        <div class="hero-slide {{ $index === 0 ? 'active' : '' }}">
-                            <a href="{{ $slideLink }}" style="display:block; width:100%; height:100%;">
-                                @if(!empty($slideImg))
-                                    <img src="{{ \Illuminate\Support\Str::startsWith($slideImg, ['http://', 'https://', '/']) ? $slideImg : asset($slideImg) }}" alt="{{ $slideTitle }}" style="width: 100%; height: 100%; object-fit: cover;">
-                                @else
-                                    <div style="padding: 2.5rem 2.5rem; max-width: 580px;">
-                                        <span style="display: inline-block; font-size: 0.78rem; font-weight: 800; color: #EA580C; background: #FFEDD5; padding: 3px 10px; border-radius: 9999px; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Special Promotion</span>
-                                        <h1 style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: #0F172A; line-height: 1.2; margin-bottom: 0.75rem;">{{ $slideTitle }}</h1>
-                                        <p style="color: #64748B; font-size: 0.95rem; margin-bottom: 1.4rem;">Discover verified quality products with nationwide Cash on Delivery.</p>
-                                        <span class="btn-primary" style="padding: 0.75rem 1.8rem; font-size: 0.92rem; display: inline-flex;">SHOP NOW &rarr;</span>
-                                    </div>
-                                @endif
-                            </a>
+                        <div class="hero-slide {{ $index === 0 ? 'active' : '' }}" data-slide-index="{{ $index }}" role="group" aria-roledescription="slide" aria-label="Slide {{ $index + 1 }} of {{ count($slides) }}">
+                            <div class="hero-slide-inner">
+                                <div class="hero-content">
+                                    <span class="hero-eyebrow">{{ $slideSubtitle }}</span>
+                                    <h1 class="hero-headline">{!! nl2br(e($slideTitle)) !!}</h1>
+                                    <p class="hero-desc">{{ $slideDesc }}</p>
+                                    <a href="{{ $slideLink }}" class="hero-cta-btn">{{ $btnText }}</a>
+                                </div>
+                                <div class="hero-artwork-wrap">
+                                    <img src="{{ \Illuminate\Support\Str::startsWith($slideImg, ['http://', 'https://', '/']) ? $slideImg : asset($slideImg) }}" alt="{{ strip_tags($slideTitle) }}" loading="{{ $index === 0 ? 'eager' : 'lazy' }}">
+                                </div>
+                            </div>
                         </div>
                     @endforeach
                 @else
                     <!-- Clean Modern Universal Fallback Hero -->
-                    <div class="hero-slide active">
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 2.5rem 2.5rem; min-height: 320px; flex-wrap: wrap; gap: 1.5rem;">
-                            <div style="max-width: 520px;">
-                                <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #EA580C; background: #FFEDD5; padding: 3px 10px; border-radius: 9999px; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                                    Growth Agro Special
-                                </span>
-                                <h1 style="font-family: var(--font-heading); font-size: 2.3rem; font-weight: 800; color: #0F172A; line-height: 1.15; margin-bottom: 0.65rem;">
-                                    SUPER SALE <br><span style="color: #EA580C;">UP TO 40% OFF</span>
-                                </h1>
-                                <p style="color: #64748B; font-size: 0.95rem; margin-bottom: 1.4rem; line-height: 1.5;">
-                                    Explore quality guaranteed catalog essentials with fast doorstep dispatch nationwide.
-                                </p>
-                                <a href="{{ route('shop') }}" class="btn-primary" style="padding: 0.75rem 2rem; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);">
-                                    SHOP NOW &rarr;
-                                </a>
+                    <div class="hero-slide active" data-slide-index="0" role="group" aria-roledescription="slide" aria-label="Slide 1 of 1">
+                        <div class="hero-slide-inner">
+                            <div class="hero-content">
+                                <span class="hero-eyebrow">TRENDING NOW</span>
+                                <h1 class="hero-headline">SUPER SALE<br><span style="color: #EA580C;">UP TO 40% OFF</span></h1>
+                                <p class="hero-desc">Discover amazing deals on quality products with nationwide Cash on Delivery.</p>
+                                <a href="{{ route('shop') }}" class="hero-cta-btn">SHOP NOW &rarr;</a>
                             </div>
-                            <div style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex: 1; min-width: 240px;">
-                                <div style="background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); padding: 1.5rem 2rem; border-radius: var(--radius-lg); text-align: center; border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 8px 20px rgba(0,0,0,0.04);">
-                                    <div style="font-size: 2.5rem; margin-bottom: 0.35rem;">🛍️</div>
-                                    <div style="font-weight: 800; font-size: 1.05rem; color: #0F172A;">Universal Marketplace</div>
-                                    <div style="font-size: 0.8rem; color: #64748B;">Curated for high performance & value</div>
+                            <div class="hero-artwork-wrap">
+                                <div style="background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); padding: 2rem 2.5rem; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 8px 24px rgba(0,0,0,0.05); width: 100%; max-width: 380px;">
+                                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🛍️</div>
+                                    <div style="font-weight: 800; font-size: 1.15rem; color: #0F172A; margin-bottom: 0.25rem;">Universal Marketplace</div>
+                                    <div style="font-size: 0.85rem; color: #64748B;">Curated for premium quality & value</div>
                                 </div>
                             </div>
                         </div>
@@ -64,13 +58,18 @@
                 @endif
 
                 @if(!empty($slides) && count($slides) > 1)
-                    <!-- Slider Controls -->
-                    <button type="button" class="slider-nav-btn prev" id="heroPrevBtn" aria-label="Previous Slide">‹</button>
-                    <button type="button" class="slider-nav-btn next" id="heroNextBtn" aria-label="Next Slide">›</button>
+                    <!-- Navigation Arrows -->
+                    <button type="button" class="hero-nav-arrow hero-prev" id="heroPrevBtn" aria-label="Previous Slide">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button type="button" class="hero-nav-arrow hero-next" id="heroNextBtn" aria-label="Next Slide">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                    </button>
 
-                    <div class="slider-dots">
+                    <!-- Pagination Dots -->
+                    <div class="slider-dots" id="heroSliderDots">
                         @foreach($slides as $index => $slide)
-                            <div class="slider-dot {{ $index === 0 ? 'active' : '' }}" data-slide="{{ $index }}" title="{{ $slide['title'] ?? '' }}"></div>
+                            <button type="button" class="slider-dot {{ $index === 0 ? 'active' : '' }}" data-slide="{{ $index }}" aria-label="Slide {{ $index + 1 }}"></button>
                         @endforeach
                     </div>
                 @endif

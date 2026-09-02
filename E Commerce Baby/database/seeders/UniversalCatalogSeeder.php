@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Slider;
 use Illuminate\Database\Seeder;
 
 class UniversalCatalogSeeder extends Seeder
@@ -1106,6 +1107,83 @@ class UniversalCatalogSeeder extends Seeder
                     'is_bestseller'     => (bool)($prodData['is_bestseller'] ?? false),
                     'is_clearance'      => false,
                     'status'            => true,
+                ]);
+            }
+        }
+
+        // 3. Sliders (Canonical Hero Banners)
+        // Clean up legacy Baby Fashion seed placeholders
+        Slider::where('image', 'like', 'images/banners/%')
+            ->orWhere('link', 'like', '/collections/%')
+            ->delete();
+
+        $canonicalSliders = [
+            [
+                'title'       => "SUMMER SALE\nUP TO 40% OFF",
+                'subtitle'    => 'TRENDING NOW',
+                'image'       => '/uploads/sliders/hero_banner_1.webp',
+                'link'        => '/shop',
+                'button_text' => 'SHOP NOW →',
+                'sort_order'  => 1,
+                'status'      => true,
+            ],
+            [
+                'title'       => "QUALITY PRODUCTS\nFOR EVERYDAY LIFE",
+                'subtitle'    => 'EVERYDAY ESSENTIALS',
+                'image'       => '/uploads/sliders/hero_banner_2.webp',
+                'link'        => '/shop',
+                'button_text' => 'SHOP NOW →',
+                'sort_order'  => 2,
+                'status'      => true,
+            ],
+            [
+                'title'       => "SMARTER PRODUCTS\nBETTER EVERYDAY",
+                'subtitle'    => 'TECH & LIFESTYLE',
+                'image'       => '/uploads/sliders/hero_banner_3.webp',
+                'link'        => '/shop',
+                'button_text' => 'EXPLORE NOW →',
+                'sort_order'  => 3,
+                'status'      => true,
+            ],
+        ];
+
+        $knownCanonicalImages = [
+            '/uploads/sliders/hero_banner_1.webp',
+            '/uploads/sliders/hero_banner_2.webp',
+            '/uploads/sliders/hero_banner_3.webp',
+            '/images/logo.png',
+            '/images/placeholder.webp',
+            '',
+        ];
+
+        foreach ($canonicalSliders as $sliderData) {
+            $existingSlider = Slider::where('image', $sliderData['image'])
+                ->orWhere(function ($query) use ($sliderData, $knownCanonicalImages) {
+                    $query->where('sort_order', $sliderData['sort_order'])
+                        ->whereIn('image', $knownCanonicalImages);
+                })
+                ->first();
+
+            if (!$existingSlider) {
+                Slider::create([
+                    'title'       => $sliderData['title'],
+                    'subtitle'    => $sliderData['subtitle'],
+                    'image'       => $sliderData['image'],
+                    'link'        => $sliderData['link'],
+                    'button_text' => $sliderData['button_text'],
+                    'sort_order'  => $sliderData['sort_order'],
+                    'status'      => $sliderData['status'],
+                ]);
+            } else {
+                // If the slider already exists, preserve all admin custom values
+                $isSeedOrEmptyImage = empty($existingSlider->image)
+                    || in_array($existingSlider->image, $knownCanonicalImages, true);
+
+                $imageToUse = $isSeedOrEmptyImage ? $sliderData['image'] : $existingSlider->image;
+
+                // Update only if image was empty or default seed, preserving any custom admin title/link/sort/status
+                $existingSlider->update([
+                    'image' => $imageToUse,
                 ]);
             }
         }
