@@ -70,7 +70,7 @@
       </div>
 
       <div class="sidebar-search">
-        <input type="text" placeholder="search menu.....">
+        <input type="search" name="sidebar_menu_search" autocomplete="off" placeholder="search menu.....">
       </div>
 
       <ul class="sidebar-nav">
@@ -278,7 +278,7 @@
           <a href="http://127.0.0.1:8000" target="_blank" class="btn-primary-teal" style="background:#0284C7;text-decoration:none;padding:6px 12px;font-size:12.5px;margin-right:6px;">
             🌐 View Live Store
           </a>
-          <input type="text" id="headerSearchInput" class="order-search-box" style="width:200px;margin-right:8px;" placeholder="Search anything...">
+          <input type="search" name="global_admin_search" autocomplete="off" id="headerSearchInput" class="order-search-box" style="width:200px;margin-right:8px;" placeholder="Search anything...">
           <button class="btn-primary-teal" onclick="openAddOrderModal()" style="padding:6px 14px;font-size:12.5px;">
             + নতুন অর্ডার
           </button>
@@ -990,7 +990,7 @@
             </div>
 
             <div class="table-bar-right">
-              <input type="text" id="orderSearchInput" class="order-search-box" placeholder="type invoice or customer phone">
+              <input type="search" name="orders_search_filter" autocomplete="off" id="orderSearchInput" class="order-search-box" placeholder="type invoice or customer phone">
               <button class="btn-order-search" onclick="renderOrdersTable()">Order</button>
             </div>
           </div>
@@ -1272,7 +1272,7 @@
               <select id="productCategoryFilter" onchange="loadProductsCatalog()" style="padding:7px 12px;border:1px solid #CBD5E0;border-radius:6px;font-size:13px;">
                 <option value="">All Categories</option>
               </select>
-              <input type="text" id="productSearchInput" class="order-search-box" placeholder="Search product title, SKU, slug..." style="width:260px;" onkeyup="if(event.key==='Enter') loadProductsCatalog()">
+              <input type="search" name="products_search_filter" autocomplete="off" id="productSearchInput" class="order-search-box" placeholder="Search product title, SKU, slug..." style="width:260px;" onkeyup="if(event.key==='Enter') loadProductsCatalog()">
               <button class="btn-order-search" onclick="loadProductsCatalog()">Search</button>
             </div>
           </div>
@@ -1849,7 +1849,7 @@
           <div class="white-box-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
               <h2 style="font-size:17px;font-weight:700;color:#2D3748;margin:0;">Cities</h2>
-              <input type="text" id="citySearchBox" class="order-search-box" placeholder="search here" oninput="filterCities(this.value)">
+              <input type="search" name="city_search_filter" autocomplete="off" id="citySearchBox" class="order-search-box" placeholder="search here" oninput="filterCities(this.value)">
             </div>
 
             <div class="orders-table-container">
@@ -2186,7 +2186,7 @@
           <div class="white-box-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
               <h2 style="font-size:16.5px;font-weight:700;color:#2D3748;margin:0;">Courier</h2>
-              <input type="text" class="order-search-box" placeholder="search here">
+              <input type="search" name="courier_subcity_search_filter" autocomplete="off" class="order-search-box" placeholder="search here">
             </div>
 
             <div class="orders-table-container">
@@ -2849,7 +2849,7 @@
             <h2 class="centered-card-title">Customers</h2>
 
             <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;">
-              <input type="text" class="order-search-box" style="width:340px;" placeholder="customer name or 01xxxxxxxxx">
+              <input type="search" name="customer_search_filter" autocomplete="off" class="order-search-box" style="width:340px;" placeholder="customer name or 01xxxxxxxxx">
               <button class="btn-order-search" style="padding:7px 18px;">search</button>
             </div>
 
@@ -2955,7 +2955,7 @@
               <button class="btn-status-filter" id="lpFilterDraft" onclick="filterLandingPagesByStatus('draft')">Draft (<span id="lpCountDraft">0</span>)</button>
               <button class="btn-status-filter" id="lpFilterUnpublished" onclick="filterLandingPagesByStatus('unpublished')">Unpublished (<span id="lpCountUnpublished">0</span>)</button>
             </div>
-            <input type="text" id="lpSearchInput" placeholder="Search pages by name or slug..." class="form-control" style="width:260px;height:36px;font-size:13px;" oninput="handleLandingPageSearch()">
+            <input type="search" name="lp_search_filter" autocomplete="off" id="lpSearchInput" placeholder="Search pages by name or slug..." class="form-control" style="width:260px;height:36px;font-size:13px;" oninput="handleLandingPageSearch()">
           </div>
 
           <div class="white-box-card">
@@ -3658,40 +3658,6 @@
           <div class="lp-grid" id="landingPagesGrid"></div>
         </div>
 
-        <!-- MULTI-DEVICE LIVE PREVIEW MODAL -->
-        <div class="lp-preview-modal-overlay" id="lpLivePreviewModal">
-          <div class="lp-preview-topbar">
-            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;">
-              <span>👁️ Live Preview:</span>
-              <span id="lpPreviewModalTitle" style="color:var(--accent-yellow);">Chicken Booster</span>
-            </div>
-
-            <!-- Device Switcher -->
-            <div class="lp-device-switcher">
-              <button type="button" class="lp-device-btn active" id="btnDeviceDesktop" onclick="setPreviewDevice('desktop')">
-                🖥️ Desktop (100%)
-              </button>
-              <button type="button" class="lp-device-btn" id="btnDeviceTablet" onclick="setPreviewDevice('tablet')">
-                📱 Tablet (768px)
-              </button>
-              <button type="button" class="lp-device-btn" id="btnDeviceMobile" onclick="setPreviewDevice('mobile')">
-                📱 Mobile (375px)
-              </button>
-            </div>
-
-            <div>
-              <button type="button" class="btn-lp-draft" onclick="closeLivePreviewModal()" style="padding:6px 14px;font-size:13px;">
-                ✕ Close Preview
-              </button>
-            </div>
-          </div>
-
-          <div class="lp-preview-body">
-            <div class="lp-preview-frame-container" id="lpPreviewContainer" style="width:100%;max-width:1200px;">
-              <iframe id="lpPreviewIframe" class="lp-preview-frame" src="about:blank"></iframe>
-            </div>
-          </div>
-        </div>
 
 
       </main>
