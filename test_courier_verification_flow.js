@@ -132,7 +132,7 @@ function sendGet(port, pathUrl, headers = {}) {
   console.log('\n--- Step 4: Test POST /api/admin/fraud/courier-check with phone ---');
   const courierRes1 = await sendPost(8000, '/api/admin/fraud/courier-check', {
     phone: testPhone
-  }, { Cookie: cookieHeader });
+  }, { Cookie: cookieHeader, 'x-mock-courier': '1' });
   console.log('Courier Check Status (Direct Phone):', courierRes1.status, courierRes1.data);
   assert.strictEqual(courierRes1.status, 200);
   assert.notStrictEqual(courierRes1.data.message, 'Phone number is required.');
@@ -142,7 +142,7 @@ function sendGet(port, pathUrl, headers = {}) {
   console.log('\n--- Step 5: Test POST /api/admin/fraud/courier-check with invoice fallback ---');
   const courierRes2 = await sendPost(8000, '/api/admin/fraud/courier-check', {
     invoice: orderNumber
-  }, { Cookie: cookieHeader });
+  }, { Cookie: cookieHeader, 'x-mock-courier': '1' });
   console.log('Courier Check Status (Invoice Fallback):', courierRes2.status, courierRes2.data);
   assert.strictEqual(courierRes2.status, 200);
   assert.notStrictEqual(courierRes2.data.message, 'Phone number is required.');

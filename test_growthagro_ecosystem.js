@@ -1,4 +1,5 @@
 const assert = require('assert');
+process.env.MOCK_BD_COURIER = 'true';
 const http = require('http');
 const { calculateDeliveryDecision } = require('./server/courier');
 const { createOrder, listOrders, getOrderByNumber, updateOrderStatus, addOrderTimelineEvent } = require('./server/db');

@@ -1,3 +1,4 @@
+process.env.MOCK_BD_COURIER = 'true';
 const http = require('http');
 const { execSync } = require('child_process');
 

@@ -1,5 +1,6 @@
 @php
   $pixelId = trim(\App\Models\Setting::get('facebook_pixel', '') ?? '');
+  $lpSlug = isset($landingPage) && is_object($landingPage) && !empty($landingPage->slug) ? $landingPage->slug : ($landingPageSlug ?? null);
 @endphp
 @if(!empty($pixelId) && preg_match('/^\d{14,18}$/', $pixelId))
 <!-- Meta Pixel Code -->
@@ -13,7 +14,17 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '{{ $pixelId }}');
+@if(!empty($lpSlug))
+(function() {
+  var pageViewKey = 'meta_tracked_pageview_{{ $lpSlug }}';
+  if (!sessionStorage.getItem(pageViewKey)) {
+    sessionStorage.setItem(pageViewKey, '1');
+    fbq('track', 'PageView');
+  }
+})();
+@else
 fbq('track', 'PageView');
+@endif
 </script>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id={{ $pixelId }}&ev=PageView&noscript=1"

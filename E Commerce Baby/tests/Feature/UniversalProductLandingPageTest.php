@@ -307,9 +307,27 @@ class UniversalProductLandingPageTest extends TestCase
             'landing_page' => '/product/wireless-earbuds',
         ]);
 
-        // Check BD courier risk assessment check endpoint
+        // Check BD courier risk assessment check endpoint (mocked to prevent external API calls)
+        \Illuminate\Support\Facades\Http::fake([
+            'https://api.bdcourier.com/*' => \Illuminate\Support\Facades\Http::response([
+                'status' => 'success',
+                'data' => [
+                    'total_parcel' => 20,
+                    'success_parcel' => 18,
+                    'cancelled_parcel' => 2,
+                    'success_ratio' => 90,
+                    'courier_breakdown' => [
+                        ['name' => 'Steadfast', 'status' => '10/11 (90.9%)'],
+                        ['name' => 'Pathao', 'status' => '8/9 (88.9%)'],
+                    ],
+                    'reports' => []
+                ]
+            ], 200),
+        ]);
+
         $courierRes = $this->getJson('/api/admin/fraud/courier-check?phone=01712345678', $this->getAdminHeaders());
         $courierRes->assertStatus(200);
+        $courierRes->assertJson(['success' => true]);
 
         $page->delete();
         $order->delete();

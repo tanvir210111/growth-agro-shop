@@ -1475,39 +1475,30 @@
       });
     });
 
-    document.querySelectorAll('.btn-qty-plus, .btn-qty-minus').forEach(btn => {
-      btn.addEventListener('click', fireCheckoutStarted, { passive: true });
-    });
+    function sanitize(str) {
+      if (!str) return '';
+      return String(str).trim();
+    }
 
-    optionCards.forEach(card => {
-      card.addEventListener('click', function() {
-        fireCheckoutStarted();
-        const key = this.getAttribute('data-variant');
-        const currentQty = variantQuantities[key] || 0;
-        variantQuantities[key] = currentQty > 0 ? 0 : 1;
-        recalculate();
-      });
-    });
+    function validatePhone(phone) {
+      if (!phone) return false;
+      const clean = String(phone).trim().replace(/[^0-9]/g, '');
+      return /^(?:\+?88)?01[3-9]\d{8}$/.test(clean);
+    }
 
-    deliveryRadios.forEach(radio => {
-      radio.addEventListener('change', function() {
-        fireCheckoutStarted();
-        currentDeliveryZone = this.value;
-        if (customerRiskData) {
-          checkPhoneRisk();
-        } else {
-          recalculate();
-        }
-      });
-    });
-
-    // AddToCart Event (Fires ONLY when user clicks order CTA buttons)
     let addToCartFired = false;
-    function fireAddToCart() {
+    // AddToCart Event (Fires ONLY when user clicks order CTA buttons, once per session)
+    function fireAddToCartOnce() {
       if (addToCartFired) return;
-      addToCartFired = true;
+      const dedupeKey = 'meta_tracked_addtocart_' + LANDING_PAGE_SLUG;
+      if (sessionStorage.getItem(dedupeKey)) {
+        addToCartFired = true;
+        return;
+      }
 
       if (META_ADD_TO_CART_ENABLED && typeof window.fbq === 'function') {
+        addToCartFired = true;
+        sessionStorage.setItem(dedupeKey, '1');
         let subtotalVal = 0;
         let totalItems = 0;
         if (typeof variantQuantities === 'object') {
@@ -1536,37 +1527,14 @@
       }
     }
 
-    // Helper for interactive hero cards
-    window.selectAndScroll = function(variantKey) {
-      fireAddToCart();
-      fireCheckoutStarted();
-      if (variantKey && CATALOG[variantKey]) {
-        variantQuantities[variantKey] = Math.max(1, variantQuantities[variantKey] || 0);
-      }
-      recalculate();
-      const checkout = document.getElementById('checkout-form-section');
-      if (checkout) checkout.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    // Tracking CTA Clicks
-    document.querySelectorAll('.btn-red-cta, .btn-header-order, a[href="#checkout-form-section"]').forEach(btn => {
-      btn.addEventListener('click', function() {
-        fireAddToCart();
-        fireCheckoutStarted();
-        if (window.GrowthAgroTracking) {
-          window.GrowthAgroTracking.trackCta('btn_landing_cta', LANDING_PAGE_SLUG);
-        }
-      });
-    });
-
-    // Checkout Started Tracking (First-Party Analytics & Meta Pixel InitiateCheckout)
     let checkoutStartedFired = false;
-    function fireCheckoutStarted() {
+    // InitiateCheckout Event (Fires at most ONCE per landing-page session via CTA click OR direct scroll)
+    function fireInitiateCheckoutOnce() {
       if (checkoutStartedFired) return;
-      checkoutStartedFired = true;
 
-      // 1. First-Party Tracking
-      if (window.GrowthAgroTracking) {
+      // 1. First-Party Tracking (Once per page lifetime)
+      if (!window._ga_checkout_started_tracked && window.GrowthAgroTracking) {
+        window._ga_checkout_started_tracked = true;
         window.GrowthAgroTracking.track('checkout_started', {
           entity_type: 'landing_page',
           entity_id: LANDING_PAGE_SLUG,
@@ -1575,7 +1543,15 @@
       }
 
       // 2. Meta Pixel: InitiateCheckout Event
+      const dedupeKey = 'meta_tracked_initiatecheckout_' + LANDING_PAGE_SLUG;
+      if (sessionStorage.getItem(dedupeKey)) {
+        checkoutStartedFired = true;
+        return;
+      }
+
       if (META_INITIATE_CHECKOUT_ENABLED && typeof window.fbq === 'function') {
+        checkoutStartedFired = true;
+        sessionStorage.setItem(dedupeKey, '1');
         let subtotalVal = 0;
         let totalItems = 0;
         if (typeof variantQuantities === 'object') {
@@ -1604,6 +1580,59 @@
       }
     }
 
+    function fireAddToCart() {
+      fireAddToCartOnce();
+    }
+
+    function fireCheckoutStarted() {
+      fireInitiateCheckoutOnce();
+    }
+
+    // Helper for interactive hero cards
+    window.selectAndScroll = function(variantKey) {
+      fireAddToCartOnce();
+      fireInitiateCheckoutOnce();
+      if (variantKey && CATALOG[variantKey]) {
+        variantQuantities[variantKey] = Math.max(1, variantQuantities[variantKey] || 0);
+      }
+      recalculate();
+      const checkout = document.getElementById('checkout-form-section');
+      if (checkout) checkout.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Tracking CTA Clicks
+    document.querySelectorAll('.btn-red-cta, .btn-header-order, a[href="#checkout-form-section"]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        fireAddToCartOnce();
+        fireInitiateCheckoutOnce();
+        if (window.GrowthAgroTracking) {
+          window.GrowthAgroTracking.trackCta('btn_landing_cta', LANDING_PAGE_SLUG);
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-qty-plus, .btn-qty-minus').forEach(btn => {
+      btn.addEventListener('click', fireInitiateCheckoutOnce, { passive: true });
+    });
+
+    optionCards.forEach(card => {
+      card.addEventListener('click', function() {
+        fireInitiateCheckoutOnce();
+        const key = this.getAttribute('data-variant');
+        const currentQty = variantQuantities[key] || 0;
+        variantQuantities[key] = currentQty > 0 ? 0 : 1;
+        recalculate();
+      });
+    });
+
+    deliveryRadios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        fireInitiateCheckoutOnce();
+        currentDeliveryZone = this.value;
+        recalculate();
+      });
+    });
+
     // Direct Scroll Visibility Tracking for Checkout Section
     const checkoutSectionEl = document.getElementById('checkout-form-section');
     if (checkoutSectionEl) {
@@ -1611,7 +1640,7 @@
         const checkoutObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
-              fireCheckoutStarted();
+              fireInitiateCheckoutOnce();
               checkoutObserver.disconnect();
             }
           });
@@ -1621,7 +1650,7 @@
         const onScrollCheck = () => {
           const rect = checkoutSectionEl.getBoundingClientRect();
           if (rect.top < window.innerHeight && rect.bottom > 0) {
-            fireCheckoutStarted();
+            fireInitiateCheckoutOnce();
             window.removeEventListener('scroll', onScrollCheck);
           }
         };
@@ -1630,13 +1659,15 @@
     }
 
     if (form) {
-      form.addEventListener('focusin', fireCheckoutStarted, { once: true, passive: true });
+      form.addEventListener('focusin', fireInitiateCheckoutOnce, { once: true, passive: true });
     }
 
     // Submit Order
     if (btnSubmit) {
-      btnSubmit.addEventListener('click', async function() {
-        fireCheckoutStarted();
+      btnSubmit.addEventListener('click', async function(e) {
+        if (e) e.preventDefault();
+        fireInitiateCheckoutOnce();
+
         const name = sanitize(nameInput ? nameInput.value : '');
         const addr = sanitize(addressInput ? addressInput.value : '');
         const phone = phoneInput ? phoneInput.value.trim().replace(/[^0-9]/g, '') : '';
@@ -1690,7 +1721,6 @@
 
         const totalQuantity = items.reduce((sum, it) => sum + it.quantity, 0);
         const primaryVariant = items[0].variantId;
-        const primaryName = items.map(it => it.name + ' (' + it.quantity + ' টি)').join(' + ');
 
         btnSubmit.disabled = true;
         if (orderSpinner) orderSpinner.style.display = 'inline-block';

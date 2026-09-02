@@ -271,7 +271,23 @@ function checkBdCourier(phone, overrideKey) {
       });
     }
 
-    // 2. Resolve server API key from environment (Never expose in response)
+    // 2. Mock / Offline testing mode for automated test suites (0 outgoing requests)
+    if (process.env.MOCK_BD_COURIER === 'true' || process.env.NODE_ENV === 'test') {
+      const normalized = normalizeCourierResponse(phone, {
+        total_parcel: 12,
+        success_parcel: 11,
+        cancelled_parcel: 1,
+        success_ratio: 92,
+        steadfast: '6/6 (100%)',
+        pathao: '5/6 (83.3%)'
+      });
+      return resolve({
+        success: true,
+        data: normalized
+      });
+    }
+
+    // 3. Resolve server API key from environment (Never expose in response)
     const apiKey = resolveApiKey(overrideKey);
 
     if (!apiKey) {

@@ -258,7 +258,8 @@ async function startSuite() {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'x-admin-token': ADMIN_TOKEN
+        'x-admin-token': ADMIN_TOKEN,
+        'x-mock-courier': '1'
       }
     }, { phone: testPhone, invoice: testInvoice1 });
 

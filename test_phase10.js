@@ -23,6 +23,7 @@
  * 27. Landing page JSON flow audit (audit_all.js)
  */
 
+process.env.MOCK_BD_COURIER = 'true';
 const http = require('http');
 const fs = require('fs');
 const path = require('path');

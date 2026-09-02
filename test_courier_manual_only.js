@@ -125,7 +125,8 @@ async function testStep(name, fn) {
   adminToken = (loginRes.data && loginRes.data.token) ? loginRes.data.token : 'admin-token-12345';
   authHeaders = {
     'Authorization': `Bearer ${adminToken}`,
-    'x-admin-token': adminToken
+    'x-admin-token': adminToken,
+    'x-mock-courier': '1'
   };
 
   const testPhone = '018' + Math.floor(10000000 + Math.random() * 90000000);

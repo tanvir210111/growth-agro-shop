@@ -347,8 +347,26 @@ class EndToEndLandingPageVerificationTest extends TestCase
 
     public function test_flow_15_bd_courier_check_during_checkout()
     {
+        \Illuminate\Support\Facades\Http::fake([
+            'https://api.bdcourier.com/*' => \Illuminate\Support\Facades\Http::response([
+                'status' => 'success',
+                'data' => [
+                    'total_parcel' => 15,
+                    'success_parcel' => 14,
+                    'cancelled_parcel' => 1,
+                    'success_ratio' => 93.33,
+                    'courier_breakdown' => [
+                        ['name' => 'Steadfast', 'status' => '10/10 (100%)'],
+                        ['name' => 'Pathao', 'status' => '4/5 (80%)'],
+                    ],
+                    'reports' => []
+                ]
+            ], 200),
+        ]);
+
         $res = $this->getJson('/api/admin/fraud/courier-check?phone=01711223344', $this->getAdminHeaders());
         $res->assertStatus(200);
+        $res->assertJson(['success' => true]);
     }
 
     public function test_flow_16_fraud_risk_result()

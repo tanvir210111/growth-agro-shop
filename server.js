@@ -717,7 +717,8 @@ const server = http.createServer(async (req, res) => {
         }
 
         // Perform timeout-protected and normalized BD Courier check
-        const courierResult = await checkBdCourier(validation.normalized);
+        const isMockReq = req.headers['x-mock-courier'] === '1' || process.env.MOCK_BD_COURIER === 'true';
+        const courierResult = await checkBdCourier(validation.normalized, isMockReq ? 'mock' : undefined);
         const statusCode = courierResult.success ? 200 : (courierResult.status_code || 200);
 
         return sendJson(res, statusCode, courierResult);

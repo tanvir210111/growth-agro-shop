@@ -43,9 +43,10 @@ return [
     | Never expose this key in frontend JS, HTML, API responses, or logs.
     */
     'bdcourier' => [
-        'key'     => env('BDCOURIER_API_KEY'),
-        'api_key' => env('BDCOURIER_API_KEY'),
+        'key'     => env('BDCOURIER_API_KEY', env('BD_COURIER_API_KEY')),
+        'api_key' => env('BDCOURIER_API_KEY', env('BD_COURIER_API_KEY')),
         'timeout' => env('BDCOURIER_TIMEOUT_SECONDS', 8),
+        'mock'    => env('MOCK_BD_COURIER', false),
     ],
 
 ];

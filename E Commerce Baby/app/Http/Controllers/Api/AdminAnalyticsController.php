@@ -920,12 +920,12 @@ class AdminAnalyticsController extends Controller
 
         $stats = Order::selectRaw("
             COUNT(*) as total_orders,
-            SUM(CASE WHEN fraud_level = 'LOW'    THEN 1 ELSE 0 END) as low_count,
-            SUM(CASE WHEN fraud_level = 'MEDIUM' THEN 1 ELSE 0 END) as medium_count,
-            SUM(CASE WHEN fraud_level = 'HIGH'   THEN 1 ELSE 0 END) as high_count,
-            SUM(CASE WHEN fraud_score IS NOT NULL THEN 1 ELSE 0 END) as assessed_count,
+            SUM(CASE WHEN courier_checked_at IS NOT NULL AND fraud_level = 'LOW'    THEN 1 ELSE 0 END) as low_count,
+            SUM(CASE WHEN courier_checked_at IS NOT NULL AND fraud_level = 'MEDIUM' THEN 1 ELSE 0 END) as medium_count,
+            SUM(CASE WHEN courier_checked_at IS NOT NULL AND fraud_level IN ('HIGH', 'CRITICAL') THEN 1 ELSE 0 END) as high_count,
+            SUM(CASE WHEN courier_checked_at IS NOT NULL AND fraud_score IS NOT NULL THEN 1 ELSE 0 END) as assessed_count,
             SUM(CASE WHEN courier_checked_at IS NOT NULL THEN 1 ELSE 0 END) as courier_checked_count,
-            ROUND(AVG(CASE WHEN fraud_score IS NOT NULL THEN fraud_score ELSE NULL END), 1) as avg_score
+            ROUND(AVG(CASE WHEN courier_checked_at IS NOT NULL AND fraud_score IS NOT NULL THEN fraud_score ELSE NULL END), 1) as avg_score
         ")->first();
 
         $fo = [
@@ -996,20 +996,22 @@ class AdminAnalyticsController extends Controller
             ];
         }
 
+        $isChecked = !empty($order->courier_checked_at);
+
         $detail = [
             'order_id'              => $order->id,
             'invoice_no'            => $order->invoice_no,
             'source_type'           => $order->source_type,
-            'fraud_score'           => $order->fraud_score !== null ? (int)$order->fraud_score : null,
-            'fraud_level'           => $order->fraud_level,
-            'fraud_reasons'         => is_array($order->fraud_reasons)
+            'fraud_score'           => $isChecked && $order->fraud_score !== null ? (int)$order->fraud_score : null,
+            'fraud_level'           => $isChecked ? $order->fraud_level : null,
+            'fraud_reasons'         => $isChecked ? (is_array($order->fraud_reasons)
                 ? $order->fraud_reasons
-                : (json_decode($order->fraud_reasons ?? '[]', true) ?: []),
-            'courier_success_rate'  => $order->courier_success_rate !== null ? round((float)$order->courier_success_rate, 1) : null,
-            'courier_total_orders'  => (int)($order->courier_total_orders ?? 0),
-            'courier_delivered'     => (int)($order->courier_delivered ?? 0),
-            'courier_cancelled'     => (int)($order->courier_cancelled ?? 0),
-            'courier_checked_at'    => $order->courier_checked_at
+                : (json_decode($order->fraud_reasons ?? '[]', true) ?: [])) : [],
+            'courier_success_rate'  => $isChecked && $order->courier_success_rate !== null ? round((float)$order->courier_success_rate, 1) : null,
+            'courier_total_orders'  => $isChecked ? (int)($order->courier_total_orders ?? 0) : 0,
+            'courier_delivered'     => $isChecked ? (int)($order->courier_delivered ?? 0) : 0,
+            'courier_cancelled'     => $isChecked ? (int)($order->courier_cancelled ?? 0) : 0,
+            'courier_checked_at'    => $isChecked && $order->courier_checked_at
                 ? (is_string($order->courier_checked_at)
                     ? $order->courier_checked_at
                     : $order->courier_checked_at->toIso8601String())
@@ -1043,22 +1045,23 @@ class AdminAnalyticsController extends Controller
         $query = Order::with('items')->orderByDesc('created_at')->limit(500);
 
         if ($riskFilter === 'high') {
-            $query->whereIn('fraud_level', ['HIGH', 'CRITICAL']);
+            $query->whereIn('fraud_level', ['HIGH', 'CRITICAL'])->whereNotNull('courier_checked_at');
         } elseif ($riskFilter === 'medium') {
-            $query->where('fraud_level', 'MEDIUM');
+            $query->where('fraud_level', 'MEDIUM')->whereNotNull('courier_checked_at');
         } elseif ($riskFilter === 'low') {
-            $query->where('fraud_level', 'LOW');
+            $query->where('fraud_level', 'LOW')->whereNotNull('courier_checked_at');
         } elseif ($riskFilter === 'not_assessed') {
             $query->where(function ($q) {
-                $q->whereNull('fraud_score')->orWhereNull('fraud_level');
+                $q->whereNull('courier_checked_at')->orWhereNull('fraud_score')->orWhereNull('fraud_level');
             });
         }
 
         $orders = $query->get();
 
         $mapped = $orders->map(function (Order $o) {
-            $items    = $o->items ?? collect();
+            $items     = $o->items ?? collect();
             $firstName = $items->first();
+            $isChecked = !empty($o->courier_checked_at);
 
             return [
                 'order_number'    => $o->invoice_no,
@@ -1080,11 +1083,16 @@ class AdminAnalyticsController extends Controller
                 'timeline'        => [],
                 'created_at'      => $o->created_at ? $o->created_at->toIso8601String() : null,
                 // Phase 5B fraud fields
-                'fraud_score'     => $o->fraud_score !== null ? (int)$o->fraud_score : null,
-                'fraud_level'     => $o->fraud_level,
-                'fraud_reasons'   => is_array($o->fraud_reasons)
+                'fraud_score'     => $isChecked && $o->fraud_score !== null ? (int)$o->fraud_score : null,
+                'fraud_level'     => $isChecked ? $o->fraud_level : null,
+                'fraud_reasons'   => $isChecked ? (is_array($o->fraud_reasons)
                     ? $o->fraud_reasons
-                    : (json_decode($o->fraud_reasons ?? '[]', true) ?: []),
+                    : (json_decode($o->fraud_reasons ?? '[]', true) ?: [])) : [],
+                'courier_checked_at' => $isChecked && $o->courier_checked_at
+                    ? (is_string($o->courier_checked_at)
+                        ? $o->courier_checked_at
+                        : $o->courier_checked_at->toIso8601String())
+                    : null,
             ];
         });
 
