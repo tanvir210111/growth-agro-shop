@@ -88,8 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderLandingPagesHub();
   renderLandingPagesList();
   // Admin users load lazily when 'manage-admin' view is activated (Phase 12)
-  loadServerOrders();
-
+  
   // Restore active view from URL hash on initial load / refresh
   const initialView = (typeof getViewFromHash === 'function' ? getViewFromHash() : null) || 'dashboard';
   doSwitchView(initialView, false);
@@ -144,7 +143,6 @@ function initAuthCheck() {
       updateSidebarUser(data.user);
       renderDashboardData();
       renderLandingPagesList();
-      loadServerOrders();
     } else {
       throw new Error('Not authenticated');
     }
@@ -252,10 +250,27 @@ window.handleLogout = function() {
 // ==============================================================================
 // 2. LIVE DATABASE SYNCHRONIZATION (GET /api/orders & PATCH /api/orders/:id/status)
 // ==============================================================================
+let currentOrderRequestId = 0;
+
 function loadServerOrders() {
   const token = localStorage.getItem('admin_token') || '';
+  
+  if (APP_STATE.orderAbortController) {
+    APP_STATE.orderAbortController.abort();
+  }
+  
   const controller = new AbortController();
+  APP_STATE.orderAbortController = controller;
+  
   const timer = setTimeout(() => controller.abort(), 8000);
+  const reqId = ++currentOrderRequestId;
+  
+  APP_STATE.isOrdersLoading = true;
+  APP_STATE.isOrdersError = false;
+  
+  if (!APP_STATE.isOrdersLoaded && (APP_STATE.activeView === 'orders' || APP_STATE.activeView === 'main-website-orders' || APP_STATE.activeView === 'landing-page-orders')) {
+      renderOrdersTable();
+  }
 
   fetch('/api/orders', {
     signal: controller.signal,
@@ -271,10 +286,16 @@ function loadServerOrders() {
     if (r.status === 401) {
       return { success: false, orders: [] };
     }
+    if (!r.ok) throw new Error('API Error ' + r.status);
     return r.json();
   })
   .then(data => {
+    if (reqId !== currentOrderRequestId) return; // Race protection
+    APP_STATE.isOrdersLoading = false;
+    APP_STATE.isOrdersError = false;
+
     if (data && data.success && Array.isArray(data.orders)) {
+      APP_STATE.isOrdersLoaded = true;
       APP_STATE.orders = data.orders.map(ord => ({
         invoice: ord.order_number,
         source: ord.source || "MAIN_WEBSITE",
@@ -314,10 +335,19 @@ function loadServerOrders() {
       renderCustomersTable();
       renderMonthlyChart();
       renderProfitReport();
+    } else {
+      throw new Error('Invalid API response');
     }
   })
   .catch(err => {
+    if (err.name === 'AbortError') return;
+    if (reqId !== currentOrderRequestId) return; // Race protection
     console.warn('Could not sync orders from server:', err);
+    APP_STATE.isOrdersLoading = false;
+    APP_STATE.isOrdersError = true;
+    if (APP_STATE.activeView === 'orders' || APP_STATE.activeView === 'main-website-orders' || APP_STATE.activeView === 'landing-page-orders') {
+      renderOrdersTable();
+    }
   });
 }
 
@@ -720,7 +750,13 @@ function renderOrdersTable() {
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#A0AEC0;font-size:14px;">No orders found</td></tr>`;
+    if (!APP_STATE.isOrdersLoaded && APP_STATE.isOrdersLoading !== false) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#64748B;font-size:14px;">⏳ Loading orders...</td></tr>`;
+    } else if (APP_STATE.isOrdersError) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#EF4444;font-size:14px;">⚠️ Failed to load orders. Please refresh or try again.</td></tr>`;
+    } else {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#A0AEC0;font-size:14px;">No orders found</td></tr>`;
+    }
     return;
   }
 
@@ -4332,10 +4368,10 @@ async function loadAdminUsers() {
   if (!tbody) return;
 
   // Clean initial search states — never autofill email
-  if (searchInput && !searchInput.dataset.userActive) {
+  if (searchInput && !(searchInput.dataset && searchInput.dataset.userActive)) {
     searchInput.value = '';
   }
-  if (statusFilter && !statusFilter.dataset.userActive) {
+  if (statusFilter && !(statusFilter.dataset && statusFilter.dataset.userActive)) {
     statusFilter.value = '';
   }
 
@@ -5039,10 +5075,12 @@ function doSwitchView(viewName, updateHash = true) {
   if (targetView === 'dashboard') {
     renderDashboardData();
     renderMonthlyChart();
+    loadServerOrders();
   }
   if (targetView === 'analytics') loadAnalyticsDashboard();
   if (targetView === 'orders' || targetView === 'main-website-orders' || targetView === 'landing-page-orders') {
     renderOrdersTable();
+    loadServerOrders();
   }
   if (targetView === 'report') {
     renderOrderProcessingReport(CURRENT_REPORT_PERIOD || 'today');
@@ -5068,12 +5106,12 @@ function doSwitchView(viewName, updateHash = true) {
     const sInput = document.getElementById('adminSearchInput');
     if (sInput) {
       sInput.value = '';
-      delete sInput.dataset.userActive;
+      if (sInput.dataset) delete sInput.dataset.userActive;
     }
     const sFilter = document.getElementById('adminStatusFilter');
     if (sFilter) {
       sFilter.value = '';
-      delete sFilter.dataset.userActive;
+      if (sFilter.dataset) delete sFilter.dataset.userActive;
     }
     loadAdminUsers();
   }

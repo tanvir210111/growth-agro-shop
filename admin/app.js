@@ -70,9 +70,7 @@ const APP_STATE = {
     { id: "watches", title: "TimeWear — Luxury Watch Collection", category: "Accessories", file: "watches__step_1_checkout__widget_4259dac.html", publicUrl: "/extracted_html/watches__step_1_checkout__widget_4259dac.html", jsonFile: "watches.json", status: "Active" },
     { id: "wlp", title: "Svelte — Natural Weight Loss Supplement", category: "Health & Fitness", file: "wlp__step_1_checkout__widget_4259dac.html", publicUrl: "/extracted_html/wlp__step_1_checkout__widget_4259dac.html", jsonFile: "wlp.json", status: "Active" }
   ],
-  adminUsers: JSON.parse(localStorage.getItem('admin_users_list')) || [
-    { id: 1, name: "Admin", email: "admin@gmail.com", phone: "01700000000", role: "Super Admin", status: "Active" }
-  ]
+  adminUsers: []
 };
 
 // ==============================================================================
@@ -89,9 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMonthlyChart();
   renderLandingPagesHub();
   renderLandingPagesList();
-  renderAdminUsersTable();
-  loadServerOrders();
-
+  // Admin users load lazily when 'manage-admin' view is activated (Phase 12)
+  
   // Restore active view from URL hash on initial load / refresh
   const initialView = (typeof getViewFromHash === 'function' ? getViewFromHash() : null) || 'dashboard';
   doSwitchView(initialView, false);
@@ -146,7 +143,6 @@ function initAuthCheck() {
       updateSidebarUser(data.user);
       renderDashboardData();
       renderLandingPagesList();
-      loadServerOrders();
     } else {
       throw new Error('Not authenticated');
     }
@@ -254,10 +250,27 @@ window.handleLogout = function() {
 // ==============================================================================
 // 2. LIVE DATABASE SYNCHRONIZATION (GET /api/orders & PATCH /api/orders/:id/status)
 // ==============================================================================
+let currentOrderRequestId = 0;
+
 function loadServerOrders() {
   const token = localStorage.getItem('admin_token') || '';
+  
+  if (APP_STATE.orderAbortController) {
+    APP_STATE.orderAbortController.abort();
+  }
+  
   const controller = new AbortController();
+  APP_STATE.orderAbortController = controller;
+  
   const timer = setTimeout(() => controller.abort(), 8000);
+  const reqId = ++currentOrderRequestId;
+  
+  APP_STATE.isOrdersLoading = true;
+  APP_STATE.isOrdersError = false;
+  
+  if (!APP_STATE.isOrdersLoaded && (APP_STATE.activeView === 'orders' || APP_STATE.activeView === 'main-website-orders' || APP_STATE.activeView === 'landing-page-orders')) {
+      renderOrdersTable();
+  }
 
   fetch('/api/orders', {
     signal: controller.signal,
@@ -273,13 +286,20 @@ function loadServerOrders() {
     if (r.status === 401) {
       return { success: false, orders: [] };
     }
+    if (!r.ok) throw new Error('API Error ' + r.status);
     return r.json();
   })
   .then(data => {
+    if (reqId !== currentOrderRequestId) return; // Race protection
+    APP_STATE.isOrdersLoading = false;
+    APP_STATE.isOrdersError = false;
+
     if (data && data.success && Array.isArray(data.orders)) {
+      APP_STATE.isOrdersLoaded = true;
       APP_STATE.orders = data.orders.map(ord => ({
         invoice: ord.order_number,
-        source: ord.source || "LANDING_PAGE",
+        source: ord.source || "MAIN_WEBSITE",
+        is_new: Boolean(ord.is_new !== false),
         customer: ord.customer_name || "Customer",
         customerType: "Regular",
         customerLevel: 1,
@@ -308,7 +328,6 @@ function loadServerOrders() {
         courier: ord.courier_name || ord.courier || null
       }));
 
-
       // Update customers aggregation
       aggregateCustomers();
       renderDashboardData();
@@ -316,11 +335,32 @@ function loadServerOrders() {
       renderCustomersTable();
       renderMonthlyChart();
       renderProfitReport();
+    } else {
+      throw new Error('Invalid API response');
     }
   })
   .catch(err => {
+    if (err.name === 'AbortError') return;
+    if (reqId !== currentOrderRequestId) return; // Race protection
     console.warn('Could not sync orders from server:', err);
+    APP_STATE.isOrdersLoading = false;
+    APP_STATE.isOrdersError = true;
+    if (APP_STATE.activeView === 'orders' || APP_STATE.activeView === 'main-website-orders' || APP_STATE.activeView === 'landing-page-orders') {
+      renderOrdersTable();
+    }
   });
+}
+
+function isStorefrontOrder(o) {
+  if (!o) return false;
+  const s = String(o.source || '').toUpperCase();
+  return s === 'MAIN_WEBSITE' || s.includes('BABY-FASHION') || s.includes('STOREFRONT');
+}
+
+function isLandingOrder(o) {
+  if (!o) return false;
+  const s = String(o.source || '').toUpperCase();
+  return s === 'LANDING' || s === 'LANDING_PAGE' || s.includes('LANDING');
 }
 
 function normalizeStatus(st) {
@@ -410,15 +450,17 @@ function renderDashboardData() {
   // Determine active dataset for the 12 status cards based on dashboardMode
   let activeOrders = allOrders;
   if (mode === 'website') {
-    activeOrders = allOrders.filter(o => (o.source || '').toLowerCase().includes('baby-fashion'));
+    activeOrders = allOrders.filter(isStorefrontOrder);
   } else if (mode === 'landing') {
-    activeOrders = allOrders.filter(o => !(o.source || '').toLowerCase().includes('baby-fashion'));
+    activeOrders = allOrders.filter(isLandingOrder);
   }
 
-  const countBy = (st) => activeOrders.filter(o => o.status.toLowerCase() === st.toLowerCase());
+  const countBy = (st) => activeOrders.filter(o => normalizeStatus(o.status).toLowerCase() === st.toLowerCase());
   const sumBy = (list) => list.reduce((acc, c) => acc + (c.total || 0), 0);
 
-  const newOrds = countBy('New');
+  // New Orders count = is_new === true (unread state)
+  const newOrds = activeOrders.filter(o => o.is_new === true);
+  // Workflow status counts
   const pendingOrds = countBy('Pending');
   const approvedOrds = countBy('Approved');
   const packagingOrds = countBy('Packaging');
@@ -426,7 +468,7 @@ function renderDashboardData() {
   const deliveredOrds = countBy('Delivered');
   const returnOrds = countBy('Return');
   const cancelOrds = countBy('Cancel');
-  const wfpOrds = countBy('WFP');
+  const wfpOrds = countBy('Work In Progress');
 
   const setCard = (countId, amountId, list) => {
     const cEl = document.getElementById(countId);
@@ -464,11 +506,11 @@ function renderDashboardData() {
   // =====================================================
   // SOURCE SPLIT CARDS: Always show actual totals for each
   // =====================================================
-  const websiteOrders = allOrders.filter(o => (o.source || '').toLowerCase().includes('baby-fashion'));
-  const landingOrders = allOrders.filter(o => !(o.source || '').toLowerCase().includes('baby-fashion'));
+  const websiteOrders = allOrders.filter(isStorefrontOrder);
+  const landingOrders = allOrders.filter(isLandingOrder);
 
-  const wsNew = websiteOrders.filter(o => ['new','pending'].includes(o.status.toLowerCase())).length;
-  const lpNew = landingOrders.filter(o => ['new','pending'].includes(o.status.toLowerCase())).length;
+  const wsNew = websiteOrders.filter(o => o.is_new === true).length;
+  const lpNew = landingOrders.filter(o => o.is_new === true).length;
 
   setEl('srcWebsiteTotal', websiteOrders.length);
   setEl('srcWebsiteNew',   wsNew);
@@ -487,9 +529,9 @@ function renderDashboardData() {
  * @param {string} type - 'MAIN_WEBSITE', 'LANDING_PAGE', or null (all)
  */
 window.filterOrdersBySource = function(type) {
-  if (type === 'MAIN_WEBSITE' || type === 'baby-fashion-storefront') {
+  if (type === 'MAIN_WEBSITE' || type === 'baby-fashion-storefront' || type === 'storefront') {
     APP_STATE.sourceFilter = 'MAIN_WEBSITE';
-  } else if (type === 'LANDING_PAGE' || type === 'landing') {
+  } else if (type === 'LANDING_PAGE' || type === 'landing' || type === 'LANDING') {
     APP_STATE.sourceFilter = 'LANDING_PAGE';
   } else {
     APP_STATE.sourceFilter = null;
@@ -497,10 +539,6 @@ window.filterOrdersBySource = function(type) {
   APP_STATE.activeFilter = 'All';
   renderOrdersTable();
 };
-
-
-
-
 
 // Monthly Activities Chart (HTML5 Canvas)
 function renderMonthlyChart() {
@@ -528,9 +566,9 @@ function renderMonthlyChart() {
   const mode = APP_STATE.dashboardMode || 'all';
   let chartOrders = APP_STATE.orders;
   if (mode === 'website') {
-    chartOrders = chartOrders.filter(o => (o.source || '').toLowerCase().includes('baby-fashion'));
+    chartOrders = chartOrders.filter(isStorefrontOrder);
   } else if (mode === 'landing') {
-    chartOrders = chartOrders.filter(o => !(o.source || '').toLowerCase().includes('baby-fashion'));
+    chartOrders = chartOrders.filter(isLandingOrder);
   }
 
   const monthSums = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -624,9 +662,9 @@ function renderOrdersTable() {
   // Source filter (set by filterOrdersBySource on dashboard or menu click)
   if (APP_STATE.sourceFilter) {
     if (APP_STATE.sourceFilter === 'MAIN_WEBSITE') {
-      filtered = filtered.filter(o => (o.source || '').toUpperCase().includes('MAIN_WEBSITE') || (o.source || '').toLowerCase().includes('baby-fashion'));
+      filtered = filtered.filter(isStorefrontOrder);
     } else if (APP_STATE.sourceFilter === 'LANDING_PAGE') {
-      filtered = filtered.filter(o => !(o.source || '').toUpperCase().includes('MAIN_WEBSITE') && !(o.source || '').toLowerCase().includes('baby-fashion'));
+      filtered = filtered.filter(isLandingOrder);
     }
 
     // Show a clear-filter banner at the top of the orders view
@@ -712,17 +750,27 @@ function renderOrdersTable() {
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#A0AEC0;font-size:14px;">No orders found</td></tr>`;
+    if (!APP_STATE.isOrdersLoaded && APP_STATE.isOrdersLoading !== false) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#64748B;font-size:14px;">⏳ Loading orders...</td></tr>`;
+    } else if (APP_STATE.isOrdersError) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#EF4444;font-size:14px;">⚠️ Failed to load orders. Please refresh or try again.</td></tr>`;
+    } else {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:#A0AEC0;font-size:14px;">No orders found</td></tr>`;
+    }
     return;
   }
 
   filtered.forEach(ord => {
     const tr = document.createElement('tr');
     const isChecked = APP_STATE.selectedOrders.has(ord.invoice);
-    const isMainWeb = (ord.source || '').toUpperCase().includes('MAIN_WEBSITE') || (ord.source || '').toLowerCase().includes('baby-fashion');
+    const isMainWeb = isStorefrontOrder(ord);
     const sourceBadge = isMainWeb
       ? '<span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🛍️ MAIN WEB</span>'
       : '<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🚀 LANDING</span>';
+
+    const newBadge = ord.is_new
+      ? '<span style="background:#EF4444;color:#FFFFFF;padding:1px 5px;border-radius:4px;font-size:9.5px;font-weight:800;margin-left:4px;display:inline-block;letter-spacing:0.5px;">NEW</span>'
+      : '';
 
     const riskBadge = buildRiskBadge(ord.fraudLevel, ord.fraudScore);
 
@@ -731,7 +779,10 @@ function renderOrdersTable() {
         <input type="checkbox" onchange="toggleOrderSelect('${ord.invoice}', this.checked)" ${isChecked ? 'checked' : ''}>
       </td>
       <td>
-        <div class="invoice-text">${ord.invoice}</div>
+        <div class="invoice-text" style="display:flex;align-items:center;">
+          <span>${ord.invoice}</span>
+          ${newBadge}
+        </div>
         ${sourceBadge}
       </td>
       <td>
@@ -994,6 +1045,204 @@ window.openOrderStatusModal = function(invoiceOrOrder) {
   `;
 
   document.body.appendChild(modal);
+};
+
+window.viewOrderInvoice = function(invoice) {
+  const ord = APP_STATE.orders.find(o => o.invoice === invoice);
+  if (!ord) return;
+
+  // Mark as seen/read in background if currently is_new === true
+  if (ord.is_new) {
+    ord.is_new = false;
+    renderDashboardData();
+    renderOrdersTable();
+
+    const token = localStorage.getItem('admin_token') || '';
+    fetch(`/api/orders/${encodeURIComponent(invoice)}/viewed`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-admin-token': token
+      }
+    }).catch(() => {});
+  }
+
+  const existing = document.getElementById('orderInvoiceModal');
+  if (existing) existing.remove();
+
+  const isMainWeb = isStorefrontOrder(ord);
+  const sourceLabel = isMainWeb ? '🛍️ Main Website Order' : '🚀 Landing Page Order';
+  const statusNormalized = normalizeStatus(ord.status);
+
+  const modal = document.createElement('div');
+  modal.id = 'orderInvoiceModal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100000;';
+
+  modal.innerHTML = `
+    <div style="background:#FFFFFF;border-radius:12px;width:92%;max-width:600px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2), 0 10px 10px -5px rgba(0,0,0,0.1);border:1px solid #E2E8F0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+      <!-- Modal Header -->
+      <div style="background:#F8FAFC;padding:16px 20px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <h3 style="margin:0;font-size:16px;font-weight:800;color:#0F172A;">Order #${ord.invoice}</h3>
+            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:${isMainWeb ? '#E0F2FE' : '#FEF3C7'};color:${isMainWeb ? '#0369A1' : '#B45309'};">${sourceLabel}</span>
+          </div>
+          <div style="font-size:12px;color:#64748B;margin-top:3px;">Date: ${ord.date}</div>
+        </div>
+        <button type="button" onclick="document.getElementById('orderInvoiceModal').remove()" style="background:none;border:none;font-size:20px;color:#94A3B8;cursor:pointer;line-height:1;padding:4px;">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div id="printableInvoiceContent" style="padding:20px;overflow-y:auto;flex:1;">
+        <!-- Customer Info Box -->
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;">
+          <div style="font-weight:700;color:#1E293B;margin-bottom:8px;border-bottom:1px solid #E2E8F0;padding-bottom:6px;">👤 Customer Information</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div><span style="color:#64748B;">Name:</span> <b>${ord.customer}</b></div>
+            <div><span style="color:#64748B;">Phone:</span> <a href="tel:${ord.phone}" style="color:#0284C7;text-decoration:none;font-weight:600;">${ord.phone}</a></div>
+            <div style="grid-column:1/-1;"><span style="color:#64748B;">Address:</span> <span>${ord.address}</span></div>
+            <div><span style="color:#64748B;">Status:</span> <span style="font-weight:700;color:#0F172A;">${statusNormalized}</span></div>
+            <div><span style="color:#64748B;">Courier:</span> <span style="font-weight:600;color:#0F172A;">${ord.courier || 'None'}</span></div>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div style="margin-bottom:16px;">
+          <div style="font-weight:700;color:#1E293B;font-size:13px;margin-bottom:8px;">📦 Order Items</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+            <thead>
+              <tr style="background:#F1F5F9;border-bottom:1px solid #E2E8F0;">
+                <th style="text-align:left;padding:8px 10px;">Item</th>
+                <th style="text-align:center;padding:8px 10px;">Variant</th>
+                <th style="text-align:center;padding:8px 10px;">Qty</th>
+                <th style="text-align:right;padding:8px 10px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #F1F5F9;">
+                <td style="padding:10px;font-weight:600;color:#0F172A;">${ord.product}</td>
+                <td style="padding:10px;text-align:center;color:#64748B;">${ord.variant || 'Standard'}</td>
+                <td style="padding:10px;text-align:center;font-weight:600;">${ord.quantity}</td>
+                <td style="padding:10px;text-align:right;font-weight:700;color:#0F172A;">৳ ${ord.subtotal || ord.total}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Financial Summary -->
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#475569;">
+            <span>Subtotal:</span>
+            <span>৳ ${ord.subtotal || (ord.total - (ord.deliveryCharge || 0))}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;color:#475569;">
+            <span>Delivery Charge:</span>
+            <span>৳ ${ord.deliveryCharge || 0}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#DC2626;border-top:1px solid #E2E8F0;padding-top:6px;">
+            <span>Total Payable:</span>
+            <span>৳ ${ord.total}</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer / Actions -->
+      <div style="background:#F8FAFC;padding:14px 20px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+        <button type="button" onclick="printOrderInvoiceContent('${ord.invoice}')" style="background:#0F172A;color:#FFFFFF;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          📄 Print / Download Receipt
+        </button>
+        <button type="button" onclick="document.getElementById('orderInvoiceModal').remove()" style="padding:8px 16px;border:1px solid #CBD5E1;border-radius:6px;background:#FFFFFF;color:#475569;font-size:13px;font-weight:600;cursor:pointer;">
+          Close
+        </button>
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+};
+
+window.printOrderInvoiceContent = function(invoice) {
+  const ord = APP_STATE.orders.find(o => o.invoice === invoice);
+  if (!ord) return;
+
+  const printWindow = window.open('', '_blank', 'width=750,height=800');
+  if (!printWindow) {
+    window.print();
+    return;
+  }
+
+  const isMainWeb = isStorefrontOrder(ord);
+  const brandTitle = isMainWeb ? 'Growth Shop' : (ord.product || 'Growth Agro');
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Invoice #${ord.invoice}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #0F172A; font-size: 13px; }
+        .invoice-header { text-align: center; border-bottom: 2px solid #004D40; padding-bottom: 12px; margin-bottom: 20px; }
+        .invoice-header h1 { margin: 0 0 4px; font-size: 20px; color: #004D40; }
+        .box { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid #E2E8F0; }
+        th { background: #F1F5F9; text-align: left; }
+        .total-row { display: flex; justify-content: space-between; font-weight: 800; font-size: 15px; color: #DC2626; border-top: 1px solid #E2E8F0; padding-top: 8px; }
+      </style>
+    </head>
+    <body>
+      <div class="invoice-header">
+        <h1>${brandTitle}</h1>
+        <p style="margin:0;color:#64748B;">Official Order Receipt • Cash on Delivery</p>
+      </div>
+      <div class="box">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span><strong>Invoice #:</strong> ${ord.invoice}</span>
+          <span><strong>Date:</strong> ${ord.date}</span>
+        </div>
+        <div><strong>Customer:</strong> ${ord.customer} (${ord.phone})</div>
+        <div><strong>Address:</strong> ${ord.address}</div>
+        <div><strong>Status:</strong> ${normalizeStatus(ord.status)}</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Variant</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${ord.product}</td>
+            <td>${ord.variant || 'Standard'}</td>
+            <td style="text-align:center;">${ord.quantity}</td>
+            <td style="text-align:right;">৳ ${ord.subtotal || ord.total}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="box">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span>Subtotal:</span><span>৳ ${ord.subtotal || ord.total}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span>Delivery Charge:</span><span>৳ ${ord.deliveryCharge || 0}</span>
+        </div>
+        <div class="total-row">
+          <span>Total Payable:</span><span>৳ ${ord.total}</span>
+        </div>
+      </div>
+      <script>
+        window.onload = function() { window.print(); };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 };
 
 window.openOrderActionsModal = window.openOrderStatusModal;
@@ -1490,60 +1739,878 @@ window.saveNewOrder = function() {
 };
 
 // ==============================================================================
-// 6. PRODUCTS CATALOG MANAGEMENT
+// 6. UNIVERSAL STOREFRONT CATALOG & CONTENT MANAGEMENT (PRODUCTS, CATEGORIES, SLIDERS, BRANDING)
 // ==============================================================================
-function renderProductsTable(filterQuery = '') {
-  const tbody = document.getElementById('productsTableBody');
+
+function getAdminFetchHeaders(contentType = 'application/json') {
+  const token = localStorage.getItem('admin_token') || 'adm_session';
+  const headers = { 'Accept': 'application/json' };
+  if (contentType) headers['Content-Type'] = contentType;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['x-admin-token'] = token;
+  }
+  return headers;
+}
+
+// ------------------------------------------------------------------------------
+// A. CATEGORIES MANAGEMENT
+// ------------------------------------------------------------------------------
+let STORE_CATEGORIES_CACHE = [];
+
+window.loadCategoriesCatalog = function() {
+  const tbody = document.getElementById('categoriesTableBody');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#718096;">⏳ Loading categories from database...</td></tr>`;
+  }
+
+  fetch('/api/admin/categories', {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && Array.isArray(res.categories)) {
+      STORE_CATEGORIES_CACHE = res.categories;
+      renderCategoriesTable(res.categories);
+      populateCategoryDropdowns(res.categories);
+    } else {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#E53E3E;">Failed to load categories.</td></tr>`;
+    }
+  })
+  .catch(err => {
+    console.error('Error fetching categories:', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#E53E3E;">Network error while loading categories.</td></tr>`;
+  });
+};
+
+function renderCategoriesTable(categories) {
+  const tbody = document.getElementById('categoriesTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  let list = APP_STATE.products;
-  if (filterQuery) {
-    const q = filterQuery.toLowerCase();
-    list = list.filter(p => p.title.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+  if (categories.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:26px;color:#718096;">No categories created yet. Click <strong>＋ Add Category</strong> to create your first storefront category.</td></tr>`;
+    const footer = document.getElementById('categoriesEntriesFooter');
+    if (footer) footer.textContent = `Showing 0 categories`;
+    return;
   }
 
-  list.forEach((p, idx) => {
+  categories.forEach((cat, idx) => {
     const tr = document.createElement('tr');
+    const isAct = Boolean(cat.status);
+    const imgHtml = cat.image
+      ? `<img src="${cat.image}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0;">`
+      : `<div style="width:36px;height:36px;background:#F1F5F9;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;">📁</div>`;
+
     tr.innerHTML = `
       <td>${idx + 1}</td>
+      <td>${imgHtml}</td>
       <td>
-        <div class="product-manage-row">
-          <img src="${p.thumb}" alt="Thumb" class="product-img">
-          <div>
-            <div style="font-weight:600;font-size:13.5px;color:#1A202C;">${p.title}</div>
-            <div style="font-size:11.5px;color:#718096;">SKU : ${p.sku}</div>
-          </div>
-        </div>
+        <div style="font-weight:700;font-size:13.5px;color:#0F172A;">${cat.title}</div>
+        <div style="font-size:11.5px;color:#64748B;">${cat.description || 'No description'}</div>
       </td>
+      <td><code style="background:#F1F5F9;padding:2px 6px;border-radius:4px;font-size:12px;color:#0284C7;">${cat.handle}</code></td>
+      <td><span class="product-stock-pill" style="background:#E0F2FE;color:#0369A1;">${cat.products_count ?? 0} Products</span></td>
+      <td><span style="font-weight:600;color:#475569;">${cat.sort_order ?? 0}</span></td>
       <td>
-        <span class="product-status-tag" style="background:#ECFDF5;color:#059669;">${p.status}</span>
-      </td>
-      <td>
-        <div class="product-price-meta">
-          <div>Price : ৳ ${p.price}</div>
-          <div>Discount : ৳ ${p.discount}</div>
-          <div style="font-weight:600;color:#1A202C;">Sale : ৳ ${p.salePrice}</div>
-        </div>
-      </td>
-      <td>
-        <span class="product-stock-pill">${p.stock}</span>
+        <button onclick="toggleCategoryStatus(${cat.id})" style="border:none;background:none;cursor:pointer;" title="Click to toggle status">
+          <span class="product-status-tag" style="background:${isAct ? '#ECFDF5' : '#FEF2F2'};color:${isAct ? '#059669' : '#DC2626'};">${isAct ? 'Active' : 'Disabled'}</span>
+        </button>
       </td>
       <td style="text-align:center;">
-        <button class="action-dots-btn" onclick="deleteProduct(${idx})" title="Delete" style="color:#E53E3E;">🗑️</button>
+        <div style="display:flex;gap:6px;justify-content:center;">
+          <button class="action-dots-btn" onclick="openEditCategoryModal(${cat.id})" title="Edit" style="color:#0284C7;">✏️</button>
+          <button class="action-dots-btn" onclick="deleteCategory(${cat.id})" title="Delete" style="color:#E53E3E;">🗑️</button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
   });
+
+  const footer = document.getElementById('categoriesEntriesFooter');
+  if (footer) footer.textContent = `Showing 1 to ${categories.length} of total ${categories.length} categories`;
 }
 
-window.deleteProduct = function(idx) {
-  if (confirm('আপনি কি এই প্রোডাক্টটি মুছে ফেলতে চান?')) {
-    APP_STATE.products.splice(idx, 1);
-    localStorage.setItem('admin_products', JSON.stringify(APP_STATE.products));
-    renderProductsTable();
-    showToast('প্রোডাক্ট মুছে ফেলা হয়েছে।');
+function populateCategoryDropdowns(categories) {
+  const prodFilter = document.getElementById('productCategoryFilter');
+  if (prodFilter) {
+    const curVal = prodFilter.value;
+    prodFilter.innerHTML = `<option value="">All Categories</option>` + categories.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+    prodFilter.value = curVal;
   }
+
+  const prodModalSelect = document.getElementById('prod_category_id');
+  if (prodModalSelect) {
+    const curVal = prodModalSelect.value;
+    prodModalSelect.innerHTML = `<option value="">Select Category</option>` + categories.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+    prodModalSelect.value = curVal;
+  }
+}
+
+window.openAddCategoryModal = function() {
+  document.getElementById('categoryModalTitle').textContent = 'Add New Category';
+  document.getElementById('cat_id').value = '';
+  document.getElementById('cat_title').value = '';
+  document.getElementById('cat_handle').value = '';
+  document.getElementById('cat_description').value = '';
+  document.getElementById('cat_image').value = '';
+  document.getElementById('cat_sort_order').value = '0';
+  document.getElementById('cat_status').checked = true;
+
+  const m = document.getElementById('categoryModal');
+  if (m) m.classList.add('active');
+};
+
+window.openEditCategoryModal = function(id) {
+  const cat = STORE_CATEGORIES_CACHE.find(c => c.id == id);
+  if (!cat) return;
+
+  document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+  document.getElementById('cat_id').value = cat.id;
+  document.getElementById('cat_title').value = cat.title || '';
+  document.getElementById('cat_handle').value = cat.handle || '';
+  document.getElementById('cat_description').value = cat.description || '';
+  document.getElementById('cat_image').value = cat.image || '';
+  document.getElementById('cat_sort_order').value = cat.sort_order ?? 0;
+  document.getElementById('cat_status').checked = Boolean(cat.status);
+
+  const m = document.getElementById('categoryModal');
+  if (m) m.classList.add('active');
+};
+
+window.closeCategoryModal = function() {
+  const m = document.getElementById('categoryModal');
+  if (m) m.classList.remove('active');
+};
+
+window.autoGenCategorySlug = function() {
+  const title = document.getElementById('cat_title').value;
+  const handleEl = document.getElementById('cat_handle');
+  if (handleEl && !document.getElementById('cat_id').value) {
+    handleEl.value = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+};
+
+window.saveCategoryData = function() {
+  const id = document.getElementById('cat_id').value;
+  const payload = {
+    title: document.getElementById('cat_title').value.trim(),
+    handle: document.getElementById('cat_handle').value.trim(),
+    description: document.getElementById('cat_description').value.trim(),
+    image: document.getElementById('cat_image').value.trim(),
+    sort_order: parseInt(document.getElementById('cat_sort_order').value, 10) || 0,
+    status: document.getElementById('cat_status').checked
+  };
+
+  const url = id ? `/api/admin/categories/${id}` : `/api/admin/categories`;
+  const method = id ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast(id ? 'Category updated successfully!' : 'Category created successfully!');
+      closeCategoryModal();
+      loadCategoriesCatalog();
+    } else {
+      alert(res.message || 'Failed to save category.');
+    }
+  })
+  .catch(err => {
+    console.error('Error saving category:', err);
+    alert('Network error while saving category.');
+  });
+};
+
+window.toggleCategoryStatus = function(id) {
+  fetch(`/api/admin/categories/${id}/status`, {
+    method: 'PATCH',
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast('Category status updated.');
+      loadCategoriesCatalog();
+    } else {
+      alert(res.message || 'Failed to update category status.');
+    }
+  });
+};
+
+window.deleteCategory = function(id) {
+  if (confirm('Are you sure you want to delete this category?')) {
+    fetch(`/api/admin/categories/${id}`, {
+      method: 'DELETE',
+      headers: getAdminFetchHeaders(),
+      credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        showToast('Category deleted.');
+        loadCategoriesCatalog();
+      } else {
+        alert(res.message || 'Cannot delete category.');
+      }
+    });
+  }
+};
+
+window.uploadCategoryAsset = function(target) {
+  const fileInput = document.getElementById('cat_image_file');
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+  const fd = new FormData();
+  fd.append('image', fileInput.files[0]);
+
+  fetch('/api/admin/products/upload-media', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(null),
+    credentials: 'same-origin',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.url) {
+      document.getElementById('cat_image').value = res.url;
+      showToast('Image uploaded successfully!');
+    } else {
+      alert(res.message || 'Upload failed.');
+    }
+  });
+};
+
+// ------------------------------------------------------------------------------
+// B. PRODUCTS MANAGEMENT
+// ------------------------------------------------------------------------------
+let STORE_PRODUCTS_CACHE = [];
+
+window.loadProductsCatalog = function() {
+  const tbody = document.getElementById('productsTableBody');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#718096;">⏳ Loading products from database...</td></tr>`;
+  }
+
+  const query = (document.getElementById('productSearchInput')?.value || '').trim();
+  const catId = document.getElementById('productCategoryFilter')?.value || '';
+
+  const params = new URLSearchParams();
+  if (query) params.append('search', query);
+  if (catId) params.append('category_id', catId);
+  params.append('per_page', '100');
+
+  fetch(`/api/admin/products?${params.toString()}`, {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && Array.isArray(res.products)) {
+      STORE_PRODUCTS_CACHE = res.products;
+      renderProductsTable(res.products);
+    } else {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#E53E3E;">Failed to load products.</td></tr>`;
+    }
+  })
+  .catch(err => {
+    console.error('Error fetching products:', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#E53E3E;">Network error while loading products.</td></tr>`;
+  });
+};
+
+function renderProductsTable(products) {
+  const tbody = document.getElementById('productsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!products || products.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:26px;color:#718096;">No products found. Click <strong>＋ Add Product</strong> to add a new item to your catalog.</td></tr>`;
+    const footer = document.getElementById('productsEntriesFooter');
+    if (footer) footer.textContent = `Showing 0 products`;
+    return;
+  }
+
+  products.forEach((p, idx) => {
+    const tr = document.createElement('tr');
+    const isAct = Boolean(p.status);
+    const imgUrl = p.featured_image || '/images/placeholder.webp';
+
+    const flags = [];
+    if (p.is_new_arrival) flags.push(`<span style="background:#FEF3C7;color:#D97706;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">NEW</span>`);
+    if (p.is_bestseller) flags.push(`<span style="background:#FEE2E2;color:#DC2626;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">BEST</span>`);
+    if (p.is_featured) flags.push(`<span style="background:#E0E7FF;color:#4338CA;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">FEAT</span>`);
+
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>
+        <div class="product-manage-row" style="display:flex;align-items:center;gap:10px;">
+          <img src="${imgUrl}" alt="Thumb" class="product-img" style="width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0;">
+          <div>
+            <div style="font-weight:700;font-size:13.5px;color:#1A202C;">${p.title}</div>
+            <div style="font-size:11.5px;color:#718096;">SKU : <strong>${p.sku}</strong> | <code style="color:#0284C7;">/${p.slug}</code></div>
+          </div>
+        </div>
+      </td>
+      <td><span style="font-size:12.5px;color:#4A5568;">${p.category ? p.category.title : '—'}</span></td>
+      <td>
+        <div class="product-price-meta">
+          <div>Reg: ৳ ${p.regular_price}</div>
+          <div style="font-weight:700;color:#0F172A;">Sale: ৳ ${p.sale_price}</div>
+        </div>
+      </td>
+      <td>
+        <span class="product-stock-pill" style="background:${p.stock > 0 ? '#E2E8F0' : '#FEE2E2'};color:${p.stock > 0 ? '#1E293B' : '#DC2626'};">${p.stock}</span>
+      </td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">${flags.join(' ') || '<span style="color:#94A3B8;font-size:11px;">—</span>'}</div>
+      </td>
+      <td>
+        <button onclick="toggleProductStatus(${p.id})" style="border:none;background:none;cursor:pointer;" title="Click to toggle status">
+          <span class="product-status-tag" style="background:${isAct ? '#ECFDF5' : '#FEF2F2'};color:${isAct ? '#059669' : '#DC2626'};">${isAct ? 'Active' : 'Disabled'}</span>
+        </button>
+      </td>
+      <td style="text-align:center;">
+        <div style="display:flex;gap:6px;justify-content:center;">
+          <button class="action-dots-btn" onclick="openEditProductModal(${p.id})" title="Edit" style="color:#0284C7;">✏️</button>
+          <button class="action-dots-btn" onclick="deleteProduct(${p.id})" title="Delete" style="color:#E53E3E;">🗑️</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const footer = document.getElementById('productsEntriesFooter');
+  if (footer) footer.textContent = `Showing 1 to ${products.length} of total ${products.length} products`;
+}
+
+window.openAddProductModal = function() {
+  document.getElementById('productModalTitle').textContent = 'Add New Product';
+  document.getElementById('prod_id').value = '';
+  document.getElementById('prod_title').value = '';
+  document.getElementById('prod_sku').value = '';
+  document.getElementById('prod_slug').value = '';
+  document.getElementById('prod_category_id').value = '';
+  document.getElementById('prod_regular_price').value = '';
+  document.getElementById('prod_sale_price').value = '';
+  document.getElementById('prod_stock').value = '50';
+  document.getElementById('prod_sizes').value = '';
+  document.getElementById('prod_featured_image').value = '';
+  document.getElementById('prod_hover_image').value = '';
+  document.getElementById('prod_short_description').value = '';
+  document.getElementById('prod_description').value = '';
+  document.getElementById('prod_is_new_arrival').checked = true;
+  document.getElementById('prod_is_bestseller').checked = false;
+  document.getElementById('prod_is_featured').checked = false;
+  document.getElementById('prod_status').checked = true;
+
+  const m = document.getElementById('productModal');
+  if (m) m.classList.add('active');
+};
+
+window.openEditProductModal = function(id) {
+  const p = STORE_PRODUCTS_CACHE.find(x => x.id == id);
+  if (!p) return;
+
+  document.getElementById('productModalTitle').textContent = 'Edit Product';
+  document.getElementById('prod_id').value = p.id;
+  document.getElementById('prod_title').value = p.title || '';
+  document.getElementById('prod_sku').value = p.sku || '';
+  document.getElementById('prod_slug').value = p.slug || '';
+  document.getElementById('prod_category_id').value = p.category_id || '';
+  document.getElementById('prod_regular_price').value = p.regular_price ?? '';
+  document.getElementById('prod_sale_price').value = p.sale_price ?? '';
+  document.getElementById('prod_stock').value = p.stock ?? 50;
+  document.getElementById('prod_sizes').value = Array.isArray(p.sizes) ? p.sizes.join(', ') : '';
+  document.getElementById('prod_featured_image').value = p.featured_image || '';
+  document.getElementById('prod_hover_image').value = p.hover_image || '';
+  document.getElementById('prod_short_description').value = p.short_description || '';
+  document.getElementById('prod_description').value = p.description || '';
+  document.getElementById('prod_is_new_arrival').checked = Boolean(p.is_new_arrival);
+  document.getElementById('prod_is_bestseller').checked = Boolean(p.is_bestseller);
+  document.getElementById('prod_is_featured').checked = Boolean(p.is_featured);
+  document.getElementById('prod_status').checked = Boolean(p.status);
+
+  const m = document.getElementById('productModal');
+  if (m) m.classList.add('active');
+};
+
+window.closeProductModal = function() {
+  const m = document.getElementById('productModal');
+  if (m) m.classList.remove('active');
+};
+
+window.autoGenProductSlug = function() {
+  const title = document.getElementById('prod_title').value;
+  const slugEl = document.getElementById('prod_slug');
+  if (slugEl && !document.getElementById('prod_id').value) {
+    slugEl.value = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+};
+
+window.saveProductData = function() {
+  const id = document.getElementById('prod_id').value;
+  const sizesRaw = document.getElementById('prod_sizes').value.trim();
+  const sizesArray = sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  const regPrice = parseFloat(document.getElementById('prod_regular_price').value);
+  const salePriceRaw = document.getElementById('prod_sale_price').value;
+  const salePrice = salePriceRaw !== '' ? parseFloat(salePriceRaw) : regPrice;
+
+  const payload = {
+    title: document.getElementById('prod_title').value.trim(),
+    sku: document.getElementById('prod_sku').value.trim(),
+    slug: document.getElementById('prod_slug').value.trim(),
+    category_id: document.getElementById('prod_category_id').value || null,
+    regular_price: regPrice,
+    sale_price: salePrice,
+    stock: parseInt(document.getElementById('prod_stock').value, 10) || 0,
+    sizes: sizesArray,
+    featured_image: document.getElementById('prod_featured_image').value.trim() || null,
+    hover_image: document.getElementById('prod_hover_image').value.trim() || null,
+    short_description: document.getElementById('prod_short_description').value.trim(),
+    description: document.getElementById('prod_description').value.trim(),
+    is_new_arrival: document.getElementById('prod_is_new_arrival').checked,
+    is_bestseller: document.getElementById('prod_is_bestseller').checked,
+    is_featured: document.getElementById('prod_is_featured').checked,
+    status: document.getElementById('prod_status').checked
+  };
+
+  const url = id ? `/api/admin/products/${id}` : `/api/admin/products`;
+  const method = id ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast(id ? 'Product updated successfully!' : 'Product created successfully!');
+      closeProductModal();
+      loadProductsCatalog();
+    } else {
+      alert(res.message || (res.errors ? JSON.stringify(res.errors) : 'Failed to save product.'));
+    }
+  })
+  .catch(err => {
+    console.error('Error saving product:', err);
+    alert('Network error while saving product.');
+  });
+};
+
+window.toggleProductStatus = function(id) {
+  fetch(`/api/admin/products/${id}/status`, {
+    method: 'PATCH',
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast('Product status updated.');
+      loadProductsCatalog();
+    } else {
+      alert(res.message || 'Failed to update product status.');
+    }
+  });
+};
+
+window.deleteProduct = function(id) {
+  if (confirm('Are you sure you want to delete this product?')) {
+    fetch(`/api/admin/products/${id}`, {
+      method: 'DELETE',
+      headers: getAdminFetchHeaders(),
+      credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        showToast('Product deleted.');
+        loadProductsCatalog();
+      } else {
+        alert(res.message || 'Cannot delete product.');
+      }
+    });
+  }
+};
+
+window.uploadProductImage = function(target) {
+  const fileInputId = target === 'hover' ? 'prod_hover_file' : 'prod_image_file';
+  const textInputId = target === 'hover' ? 'prod_hover_image' : 'prod_featured_image';
+
+  const fileInput = document.getElementById(fileInputId);
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+  const fd = new FormData();
+  fd.append('image', fileInput.files[0]);
+
+  fetch('/api/admin/products/upload-media', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(null),
+    credentials: 'same-origin',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.url) {
+      document.getElementById(textInputId).value = res.url;
+      showToast('Product image uploaded successfully!');
+    } else {
+      alert(res.message || 'Upload failed.');
+    }
+  });
+};
+
+// ------------------------------------------------------------------------------
+// C. HERO SLIDERS MANAGEMENT
+// ------------------------------------------------------------------------------
+let STORE_SLIDERS_CACHE = [];
+
+window.loadSlidersCatalog = function() {
+  const tbody = document.getElementById('slidersTableBody');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#718096;">⏳ Loading sliders from database...</td></tr>`;
+  }
+
+  fetch('/api/admin/sliders', {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && Array.isArray(res.sliders)) {
+      STORE_SLIDERS_CACHE = res.sliders;
+      renderSlidersTable(res.sliders);
+    } else {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Failed to load sliders.</td></tr>`;
+    }
+  })
+  .catch(err => {
+    console.error('Error fetching sliders:', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Network error while loading sliders.</td></tr>`;
+  });
+};
+
+function renderSlidersTable(sliders) {
+  const tbody = document.getElementById('slidersTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (sliders.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:26px;color:#718096;">No hero sliders created yet. Click <strong>＋ Add Hero Slider</strong> to add one.</td></tr>`;
+    const footer = document.getElementById('slidersEntriesFooter');
+    if (footer) footer.textContent = `Showing 0 sliders`;
+    return;
+  }
+
+  sliders.forEach((s, idx) => {
+    const tr = document.createElement('tr');
+    const isAct = Boolean(s.status);
+    const imgHtml = s.image
+      ? `<img src="${s.image}" style="width:70px;height:38px;object-fit:cover;border-radius:4px;border:1px solid #CBD5E0;">`
+      : `<div style="width:70px;height:38px;background:#F1F5F9;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94A3B8;">No Image</div>`;
+
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${imgHtml}</td>
+      <td>
+        <div style="font-weight:700;font-size:13.5px;color:#0F172A;">${s.title}</div>
+        <div style="font-size:11.5px;color:#64748B;">${s.subtitle || '—'}</div>
+      </td>
+      <td>
+        <span style="font-weight:600;color:#0F172A;">${s.button_text || 'Shop Now'}</span> &rarr; <code style="color:#0284C7;font-size:11.5px;">${s.link || '/shop'}</code>
+      </td>
+      <td><span style="font-weight:600;color:#475569;">${s.sort_order ?? 0}</span></td>
+      <td>
+        <button onclick="toggleSliderStatus(${s.id})" style="border:none;background:none;cursor:pointer;" title="Click to toggle status">
+          <span class="product-status-tag" style="background:${isAct ? '#ECFDF5' : '#FEF2F2'};color:${isAct ? '#059669' : '#DC2626'};">${isAct ? 'Active' : 'Disabled'}</span>
+        </button>
+      </td>
+      <td style="text-align:center;">
+        <div style="display:flex;gap:6px;justify-content:center;">
+          <button class="action-dots-btn" onclick="openEditSliderModal(${s.id})" title="Edit" style="color:#0284C7;">✏️</button>
+          <button class="action-dots-btn" onclick="deleteSlider(${s.id})" title="Delete" style="color:#E53E3E;">🗑️</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const footer = document.getElementById('slidersEntriesFooter');
+  if (footer) footer.textContent = `Showing 1 to ${sliders.length} of total ${sliders.length} hero sliders`;
+}
+
+window.openAddSliderModal = function() {
+  document.getElementById('sliderModalTitle').textContent = 'Add Hero Slider';
+  document.getElementById('slider_id').value = '';
+  document.getElementById('slider_title').value = '';
+  document.getElementById('slider_subtitle').value = '';
+  document.getElementById('slider_image').value = '';
+  document.getElementById('slider_button_text').value = 'Shop Now';
+  document.getElementById('slider_link').value = '/shop';
+  document.getElementById('slider_sort_order').value = '0';
+  document.getElementById('slider_status').checked = true;
+
+  const m = document.getElementById('sliderModal');
+  if (m) m.classList.add('active');
+};
+
+window.openEditSliderModal = function(id) {
+  const s = STORE_SLIDERS_CACHE.find(x => x.id == id);
+  if (!s) return;
+
+  document.getElementById('sliderModalTitle').textContent = 'Edit Hero Slider';
+  document.getElementById('slider_id').value = s.id;
+  document.getElementById('slider_title').value = s.title || '';
+  document.getElementById('slider_subtitle').value = s.subtitle || '';
+  document.getElementById('slider_image').value = s.image || '';
+  document.getElementById('slider_button_text').value = s.button_text || 'Shop Now';
+  document.getElementById('slider_link').value = s.link || '/shop';
+  document.getElementById('slider_sort_order').value = s.sort_order ?? 0;
+  document.getElementById('slider_status').checked = Boolean(s.status);
+
+  const m = document.getElementById('sliderModal');
+  if (m) m.classList.add('active');
+};
+
+window.closeSliderModal = function() {
+  const m = document.getElementById('sliderModal');
+  if (m) m.classList.remove('active');
+};
+
+window.saveSliderData = function() {
+  const id = document.getElementById('slider_id').value;
+  const payload = {
+    title: document.getElementById('slider_title').value.trim(),
+    subtitle: document.getElementById('slider_subtitle').value.trim(),
+    image: document.getElementById('slider_image').value.trim(),
+    button_text: document.getElementById('slider_button_text').value.trim(),
+    link: document.getElementById('slider_link').value.trim(),
+    sort_order: parseInt(document.getElementById('slider_sort_order').value, 10) || 0,
+    status: document.getElementById('slider_status').checked
+  };
+
+  const url = id ? `/api/admin/sliders/${id}` : `/api/admin/sliders`;
+  const method = id ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast(id ? 'Slider updated successfully!' : 'Slider created successfully!');
+      closeSliderModal();
+      loadSlidersCatalog();
+    } else {
+      alert(res.message || 'Failed to save slider.');
+    }
+  });
+};
+
+window.toggleSliderStatus = function(id) {
+  fetch(`/api/admin/sliders/${id}/status`, {
+    method: 'PATCH',
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast('Slider status updated.');
+      loadSlidersCatalog();
+    }
+  });
+};
+
+window.deleteSlider = function(id) {
+  if (confirm('Are you sure you want to delete this slider?')) {
+    fetch(`/api/admin/sliders/${id}`, {
+      method: 'DELETE',
+      headers: getAdminFetchHeaders(),
+      credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        showToast('Slider deleted.');
+        loadSlidersCatalog();
+      }
+    });
+  }
+};
+
+window.uploadSliderAsset = function() {
+  const fileInput = document.getElementById('slider_image_file');
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+  const fd = new FormData();
+  fd.append('image', fileInput.files[0]);
+
+  fetch('/api/admin/sliders/upload-media', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(null),
+    credentials: 'same-origin',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.url) {
+      document.getElementById('slider_image').value = res.url;
+      showToast('Slider image uploaded successfully!');
+    } else {
+      alert(res.message || 'Upload failed.');
+    }
+  });
+};
+
+// ------------------------------------------------------------------------------
+// D. STOREFRONT SETTINGS & PROMOTIONAL BANNERS
+// ------------------------------------------------------------------------------
+window.loadStorefrontSettings = function() {
+  fetch('/api/admin/settings/storefront', {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.settings) {
+      const s = res.settings;
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val || '';
+      };
+
+      setVal('setting_site_name', s.site_name);
+      setVal('setting_site_title', s.site_title);
+      setVal('setting_site_logo', s.site_logo);
+      setVal('setting_site_favicon', s.site_favicon);
+      setVal('setting_support_phone', s.support_phone);
+      setVal('setting_support_email', s.support_email);
+      setVal('setting_store_address', s.store_address);
+      setVal('setting_whatsapp_number', s.whatsapp_number);
+      setVal('setting_footer_description', s.footer_description);
+
+      setVal('setting_promo_banner_1_title', s.promo_banner_1_title);
+      setVal('setting_promo_banner_1_subtitle', s.promo_banner_1_subtitle);
+      setVal('setting_promo_banner_1_desc', s.promo_banner_1_desc);
+      setVal('setting_promo_banner_1_image', s.promo_banner_1_image);
+      setVal('setting_promo_banner_1_link', s.promo_banner_1_link);
+
+      setVal('setting_promo_banner_2_title', s.promo_banner_2_title);
+      setVal('setting_promo_banner_2_subtitle', s.promo_banner_2_subtitle);
+      setVal('setting_promo_banner_2_desc', s.promo_banner_2_desc);
+      setVal('setting_promo_banner_2_image', s.promo_banner_2_image);
+      setVal('setting_promo_banner_2_link', s.promo_banner_2_link);
+
+      const preview = document.getElementById('setting_logo_preview');
+      if (preview) {
+        if (s.site_logo) {
+          preview.innerHTML = `<img src="${s.site_logo}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+        } else {
+          preview.innerHTML = `<span style="font-size:11px;color:#94A3B8;">No Logo</span>`;
+        }
+      }
+    }
+  });
+};
+
+window.saveStorefrontSettings = function() {
+  const getVal = id => (document.getElementById(id)?.value || '').trim();
+
+  const payload = {
+    site_name: getVal('setting_site_name'),
+    site_title: getVal('setting_site_title'),
+    site_logo: getVal('setting_site_logo'),
+    site_favicon: getVal('setting_site_favicon'),
+    support_phone: getVal('setting_support_phone'),
+    support_email: getVal('setting_support_email'),
+    store_address: getVal('setting_store_address'),
+    whatsapp_number: getVal('setting_whatsapp_number'),
+    footer_description: getVal('setting_footer_description'),
+
+    promo_banner_1_title: getVal('setting_promo_banner_1_title'),
+    promo_banner_1_subtitle: getVal('setting_promo_banner_1_subtitle'),
+    promo_banner_1_desc: getVal('setting_promo_banner_1_desc'),
+    promo_banner_1_image: getVal('setting_promo_banner_1_image'),
+    promo_banner_1_link: getVal('setting_promo_banner_1_link'),
+
+    promo_banner_2_title: getVal('setting_promo_banner_2_title'),
+    promo_banner_2_subtitle: getVal('setting_promo_banner_2_subtitle'),
+    promo_banner_2_desc: getVal('setting_promo_banner_2_desc'),
+    promo_banner_2_image: getVal('setting_promo_banner_2_image'),
+    promo_banner_2_link: getVal('setting_promo_banner_2_link')
+  };
+
+  fetch('/api/admin/settings/storefront', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showToast('Storefront settings saved successfully!');
+      loadStorefrontSettings();
+    } else {
+      alert(res.message || 'Failed to save settings.');
+    }
+  });
+};
+
+window.uploadBrandingAsset = function(type) {
+  let fileInputId = 'setting_logo_file';
+  let textInputId = 'setting_site_logo';
+  if (type === 'favicon') {
+    fileInputId = 'setting_favicon_file';
+    textInputId = 'setting_site_favicon';
+  } else if (type === 'promo_1') {
+    fileInputId = 'setting_promo_1_file';
+    textInputId = 'setting_promo_banner_1_image';
+  } else if (type === 'promo_2') {
+    fileInputId = 'setting_promo_2_file';
+    textInputId = 'setting_promo_banner_2_image';
+  }
+
+  const fileInput = document.getElementById(fileInputId);
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+  const fd = new FormData();
+  fd.append('image', fileInput.files[0]);
+
+  fetch('/api/admin/settings/upload-branding', {
+    method: 'POST',
+    headers: getAdminFetchHeaders(null),
+    credentials: 'same-origin',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && res.url) {
+      document.getElementById(textInputId).value = res.url;
+      showToast('Asset uploaded successfully!');
+      if (type === 'logo') {
+        const preview = document.getElementById('setting_logo_preview');
+        if (preview) preview.innerHTML = `<img src="${res.url}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+      }
+    } else {
+      alert(res.message || 'Upload failed.');
+    }
+  });
 };
 
 // ==============================================================================
@@ -3283,30 +4350,479 @@ function renderLandingPagesHub() {
 
 
 // ==============================================================================
-// 10. ADMIN USERS MANAGEMENT
+// 10. ADMIN USERS MANAGEMENT (Phase 12/13 — Database-Backed & RBAC Enforced)
 // ==============================================================================
-function renderAdminUsersTable() {
+
+// Store loaded admins for client-side filtering
+let _adminUsersCache = [];
+
+/**
+ * Load admins from backend DB and render the table.
+ * Called when 'manage-admin' view is activated.
+ */
+async function loadAdminUsers() {
   const tbody = document.getElementById('adminUsersTableBody');
+  const countEl = document.getElementById('adminTableCountText');
+  const searchInput = document.getElementById('adminSearchInput');
+  const statusFilter = document.getElementById('adminStatusFilter');
   if (!tbody) return;
+
+  // Clean initial search states — never autofill email
+  if (searchInput && !(searchInput.dataset && searchInput.dataset.userActive)) {
+    searchInput.value = '';
+  }
+  if (statusFilter && !(statusFilter.dataset && statusFilter.dataset.userActive)) {
+    statusFilter.value = '';
+  }
+
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#718096;">Loading admins...</td></tr>';
+  if (countEl) countEl.textContent = 'Loading...';
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Accept': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
+    const resp = await fetch('/api/admin/admins', {
+      credentials: 'same-origin',
+      headers: headers
+    });
+
+    if (resp.status === 401) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Not authenticated. Please log in.</td></tr>';
+      return;
+    }
+
+    if (resp.status === 403) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Access denied. Admin role required.</td></tr>';
+      return;
+    }
+
+    const data = await resp.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to load admins');
+    }
+
+    _adminUsersCache = data.admins || [];
+    renderAdminUsersTable(_adminUsersCache);
+
+  } catch (err) {
+    console.error('[Admin Users Load Error]', err);
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#E53E3E;">Error loading admins: ${err.message}</td></tr>`;
+  }
+}
+
+/**
+ * Render the admin users table from an array.
+ */
+function renderAdminUsersTable(admins) {
+  const tbody = document.getElementById('adminUsersTableBody');
+  const countEl = document.getElementById('adminTableCountText');
+  if (!tbody) return;
+
+  // Use cache if called without args (legacy call from init)
+  if (!admins) {
+    admins = _adminUsersCache;
+  }
+
   tbody.innerHTML = '';
 
-  APP_STATE.adminUsers.forEach((u, idx) => {
+  if (!admins || admins.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#718096;">No admins found.</td></tr>';
+    if (countEl) countEl.textContent = '0 admin(s)';
+    return;
+  }
+
+  const roleBadgeColors = {
+    super_admin: { bg: '#FEF3C7', color: '#92400E' },
+    admin:       { bg: '#DBEAFE', color: '#1D4ED8' },
+    moderator:   { bg: '#F3F4F6', color: '#374151' },
+  };
+
+  admins.forEach((u, idx) => {
+    const rbc = roleBadgeColors[u.role] || { bg: '#F3F4F6', color: '#374151' };
+    const statusColor = u.status === 'Active' ? { bg: '#ECFDF5', color: '#059669' } : { bg: '#FEF2F2', color: '#DC2626' };
+    const initials = (u.name || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${idx + 1}</td>
-      <td><b>${u.name}</b></td>
-      <td>${u.email}</td>
-      <td>${u.phone || '017XXXXXXXX'}</td>
-      <td><div style="width:36px;height:36px;border-radius:50%;background:#004D40;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">AD</div></td>
-      <td><span class="product-status-tag" style="background:#ECFDF5;color:#059669;">${u.status}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#004D40;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;">${initials}</div>
+          <strong>${u.name}</strong>
+        </div>
+      </td>
+      <td style="font-size:13px;">${u.email}</td>
+      <td style="font-size:13px;">${u.phone || '<span style="color:#A0AEC0;">—</span>'}</td>
+      <td><span style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:12px;background:${rbc.bg};color:${rbc.color};">${u.role_label || u.role}</span></td>
+      <td><span class="product-status-tag" style="background:${statusColor.bg};color:${statusColor.color};">${u.status || 'Active'}</span></td>
       <td style="text-align:right;">
-        <button class="action-btn-square-teal" onclick="showToast('Edit admin active')">📝</button>
-        <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;" onclick="showToast('Password reset link sent')">Reset Password</button>
+        <button class="action-btn-square-teal" onclick="openEditAdminModal(${u.id})" title="Edit" style="margin-right:4px;">✏️</button>
+        <button class="btn-primary-teal" style="padding:4px 10px;font-size:11.5px;margin-right:4px;" onclick="openResetPasswordModal(${u.id}, '${(u.name || '').replace(/'/g, "\\'")}')">Reset Password</button>
+        <button style="padding:4px 10px;font-size:11.5px;background:#DC2626;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="deleteAdminUser(${u.id}, '${(u.name || '').replace(/'/g, "\\'")}')">Delete</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
+
+  if (countEl) countEl.textContent = `Showing ${admins.length} of ${_adminUsersCache.length} admin(s)`;
 }
+
+/**
+ * Filter the admin table by search query and status.
+ */
+function filterAdminTable(query) {
+  const sInput = document.getElementById('adminSearchInput');
+  const sFilter = document.getElementById('adminStatusFilter');
+  if (sInput && query !== undefined && query !== null && query !== '') {
+    sInput.dataset.userActive = 'true';
+  } else if (sInput && (query === '' || !sInput.value)) {
+    delete sInput.dataset.userActive;
+  }
+  if (sFilter && sFilter.value !== '') {
+    sFilter.dataset.userActive = 'true';
+  } else if (sFilter && sFilter.value === '') {
+    delete sFilter.dataset.userActive;
+  }
+
+  const statusFilter = (sFilter?.value || '').toLowerCase();
+  const q = (query !== undefined && query !== null ? String(query) : (sInput?.value || '')).toLowerCase().trim();
+
+  const filtered = _adminUsersCache.filter(u => {
+    const matchSearch = !q
+      || (u.name || '').toLowerCase().includes(q)
+      || (u.email || '').toLowerCase().includes(q)
+      || (u.phone || '').toLowerCase().includes(q);
+    const matchStatus = !statusFilter || (u.status || '').toLowerCase() === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  renderAdminUsersTable(filtered);
+}
+
+// ==============================================================================
+// ADD ADMIN
+// ==============================================================================
+
+async function submitAddAdmin() {
+  const btn = document.getElementById('addAdminSubmitBtn');
+  const errBanner = document.getElementById('addAdminErrorBanner');
+  const sucBanner = document.getElementById('addAdminSuccessBanner');
+
+  const name = document.getElementById('addAdminName')?.value?.trim();
+  const email = document.getElementById('addAdminEmail')?.value?.trim();
+  const phone = document.getElementById('addAdminPhone')?.value?.trim();
+  const password = document.getElementById('addAdminPassword')?.value;
+  const passwordConfirm = document.getElementById('addAdminPasswordConfirm')?.value;
+  const role = document.getElementById('addAdminRole')?.value;
+  const status = document.getElementById('addAdminStatus')?.value || 'Active';
+
+  // Hide banners
+  if (errBanner) errBanner.style.display = 'none';
+  if (sucBanner) sucBanner.style.display = 'none';
+
+  // Client-side validation
+  if (!name || !email || !phone || !password || !role) {
+    if (errBanner) { errBanner.textContent = 'All required fields must be filled.'; errBanner.style.display = 'block'; }
+    return;
+  }
+  if (password !== passwordConfirm) {
+    if (errBanner) { errBanner.textContent = 'Passwords do not match.'; errBanner.style.display = 'block'; }
+    return;
+  }
+  if (password.length < 8) {
+    if (errBanner) { errBanner.textContent = 'Password must be at least 8 characters.'; errBanner.style.display = 'block'; }
+    return;
+  }
+
+  if (btn) { btn.textContent = 'Creating...'; btn.disabled = true; }
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
+    const resp = await fetch('/api/admin/admins', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers,
+      body: JSON.stringify({ name, email, phone, password, new_password_confirmation: passwordConfirm, role, status }),
+    });
+
+    const data = await resp.json();
+
+    if (resp.status === 403) {
+      if (errBanner) { errBanner.textContent = data.message || 'Forbidden: Insufficient permissions.'; errBanner.style.display = 'block'; }
+      return;
+    }
+
+    if (!data.success) {
+      const msgs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Failed to create admin.');
+      if (errBanner) { errBanner.textContent = msgs; errBanner.style.display = 'block'; }
+      return;
+    }
+
+    // Success
+    if (sucBanner) { sucBanner.textContent = `Admin "${data.admin.name}" created successfully!`; sucBanner.style.display = 'block'; }
+    document.getElementById('addAdminForm')?.reset();
+
+    // Navigate to manage view after short delay
+    setTimeout(() => {
+      switchView('manage-admin');
+    }, 1200);
+
+  } catch (err) {
+    console.error('[Add Admin Error]', err);
+    if (errBanner) { errBanner.textContent = 'Network error. Please try again.'; errBanner.style.display = 'block'; }
+  } finally {
+    if (btn) { btn.textContent = 'Create Admin'; btn.disabled = false; }
+  }
+}
+
+// ==============================================================================
+// EDIT ADMIN MODAL
+// ==============================================================================
+
+function openEditAdminModal(adminId) {
+  const admin = _adminUsersCache.find(a => a.id === adminId);
+  if (!admin) { showToast('Admin not found in cache. Refreshing...'); loadAdminUsers(); return; }
+
+  document.getElementById('editAdminId').value = admin.id;
+  document.getElementById('editAdminName').value = admin.name || '';
+  document.getElementById('editAdminEmail').value = admin.email || '';
+  document.getElementById('editAdminPhone').value = admin.phone || '';
+  document.getElementById('editAdminRole').value = admin.role || 'admin';
+  document.getElementById('editAdminStatusSel').value = admin.status || 'Active';
+
+  const errEl = document.getElementById('editAdminError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  const modal = document.getElementById('editAdminModal');
+  if (modal) { modal.style.display = 'flex'; }
+}
+
+function closeEditAdminModal() {
+  const modal = document.getElementById('editAdminModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitEditAdmin() {
+  const btn = document.getElementById('editAdminSaveBtn');
+  const errEl = document.getElementById('editAdminError');
+  const adminId = document.getElementById('editAdminId')?.value;
+
+  if (!adminId) return;
+
+  const payload = {
+    name:   document.getElementById('editAdminName')?.value?.trim(),
+    email:  document.getElementById('editAdminEmail')?.value?.trim(),
+    phone:  document.getElementById('editAdminPhone')?.value?.trim(),
+    role:   document.getElementById('editAdminRole')?.value,
+    status: document.getElementById('editAdminStatusSel')?.value,
+  };
+
+  if (errEl) { errEl.style.display = 'none'; }
+  if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
+    const resp = await fetch(`/api/admin/admins/${adminId}`, {
+      method: 'PATCH',
+      credentials: 'same-origin',
+      headers: headers,
+      body: JSON.stringify(payload),
+    });
+
+    const data = await resp.json();
+
+    if (resp.status === 403) {
+      if (errEl) { errEl.textContent = data.message || 'Forbidden: Insufficient permissions.'; errEl.style.display = 'block'; }
+      return;
+    }
+
+    if (!data.success) {
+      const msgs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Failed to update admin.');
+      if (errEl) { errEl.textContent = msgs; errEl.style.display = 'block'; }
+      return;
+    }
+
+    closeEditAdminModal();
+    showToast(`Admin "${data.admin.name}" updated successfully!`);
+    await loadAdminUsers(); // Refresh table from DB
+
+  } catch (err) {
+    console.error('[Edit Admin Error]', err);
+    if (errEl) { errEl.textContent = 'Network error. Please try again.'; errEl.style.display = 'block'; }
+  } finally {
+    if (btn) { btn.textContent = 'Save Changes'; btn.disabled = false; }
+  }
+}
+
+// ==============================================================================
+// RESET PASSWORD MODAL
+// ==============================================================================
+
+function openResetPasswordModal(adminId, adminName) {
+  document.getElementById('resetPasswordAdminId').value = adminId;
+  document.getElementById('resetPasswordAdminName').textContent = `Resetting password for: ${adminName}`;
+  document.getElementById('newAdminPassword').value = '';
+  document.getElementById('newAdminPasswordConfirm').value = '';
+
+  const errEl = document.getElementById('resetPasswordError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  const modal = document.getElementById('resetPasswordModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeResetPasswordModal() {
+  const modal = document.getElementById('resetPasswordModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitResetPassword() {
+  const btn = document.getElementById('resetPasswordSaveBtn');
+  const errEl = document.getElementById('resetPasswordError');
+  const adminId = document.getElementById('resetPasswordAdminId')?.value;
+  const newPassword = document.getElementById('newAdminPassword')?.value;
+  const newPasswordConfirm = document.getElementById('newAdminPasswordConfirm')?.value;
+
+  if (errEl) errEl.style.display = 'none';
+
+  if (!newPassword || newPassword.length < 8) {
+    if (errEl) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; }
+    return;
+  }
+
+  if (newPassword !== newPasswordConfirm) {
+    if (errEl) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; }
+    return;
+  }
+
+  if (btn) { btn.textContent = 'Resetting...'; btn.disabled = true; }
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
+    const resp = await fetch(`/api/admin/admins/${adminId}/reset-password`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers,
+      body: JSON.stringify({
+        new_password: newPassword,
+        new_password_confirmation: newPasswordConfirm,
+      }),
+    });
+
+    const data = await resp.json();
+
+    if (resp.status === 403) {
+      if (errEl) { errEl.textContent = data.message || 'Forbidden: Insufficient permissions.'; errEl.style.display = 'block'; }
+      return;
+    }
+
+    if (!data.success) {
+      const msgs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Failed to reset password.');
+      if (errEl) { errEl.textContent = msgs; errEl.style.display = 'block'; }
+      return;
+    }
+
+    closeResetPasswordModal();
+    showToast('Password reset successfully!');
+
+  } catch (err) {
+    console.error('[Reset Password Error]', err);
+    if (errEl) { errEl.textContent = 'Network error. Please try again.'; errEl.style.display = 'block'; }
+  } finally {
+    if (btn) { btn.textContent = 'Reset Password'; btn.disabled = false; }
+  }
+}
+
+// ==============================================================================
+// DELETE ADMIN
+// ==============================================================================
+
+async function deleteAdminUser(adminId, adminName) {
+  if (!confirm(`Are you sure you want to delete admin "${adminName}"? This cannot be undone.`)) {
+    return;
+  }
+
+  try {
+    const token = APP_STATE.adminToken || localStorage.getItem('admin_token') || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (token) headers['x-admin-token'] = token;
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
+    const resp = await fetch(`/api/admin/admins/${adminId}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+      headers: headers,
+    });
+
+    const data = await resp.json().catch(() => ({}));
+
+    if (resp.status === 403 || resp.status === 401) {
+      showToast(data.message || 'Forbidden: Cannot delete this admin.');
+      return;
+    }
+
+    if (!resp.ok || !data.success) {
+      showToast(data.message || data.error || 'Failed to delete admin.');
+      return;
+    }
+
+    showToast(`Admin "${adminName}" deleted successfully.`);
+    await loadAdminUsers(); // Authoritatively reload from DB
+
+  } catch (err) {
+    console.error('[Delete Admin Error]', err);
+    showToast('Network error. Could not delete admin.');
+  }
+}
+
+// Explicit window assignments for HTML event handlers
+window.loadAdminUsers = loadAdminUsers;
+window.renderAdminUsersTable = renderAdminUsersTable;
+window.filterAdminTable = filterAdminTable;
+window.submitAddAdmin = submitAddAdmin;
+window.openEditAdminModal = openEditAdminModal;
+window.closeEditAdminModal = closeEditAdminModal;
+window.submitEditAdmin = submitEditAdmin;
+window.openResetPasswordModal = openResetPasswordModal;
+window.closeResetPasswordModal = closeResetPasswordModal;
+window.submitResetPassword = submitResetPassword;
+window.deleteAdminUser = deleteAdminUser;
+
+
 
 // ==============================================================================
 // 11. VIEW SWITCHER & GLOBAL NAVIGATION (URL HASH SPA PERSISTENCE)
@@ -3323,6 +4839,10 @@ const VIEW_ALIASES = {
   'manage-orders': 'orders',
   'all-orders': 'orders',
   'order': 'orders',
+  'main-website-orders': 'main-website-orders',
+  'website-orders': 'main-website-orders',
+  'landing-page-orders': 'landing-page-orders',
+  'landing-orders': 'landing-page-orders',
   'admin': 'manage-admin',
   'admins': 'manage-admin',
   'admin-users': 'manage-admin',
@@ -3353,14 +4873,24 @@ function normalizeViewName(name) {
   const cleaned = name.trim().toLowerCase().replace(/^#/, '');
   if (!cleaned) return null;
 
+  if (cleaned === 'main-website-orders' || cleaned === 'website-orders') {
+    return 'main-website-orders';
+  }
+  if (cleaned === 'landing-page-orders' || cleaned === 'landing-orders') {
+    return 'landing-page-orders';
+  }
+
   // Check exact panel match first
   if (document.getElementById(`view-${cleaned}`)) {
     return cleaned;
   }
 
   // Check alias mapping
-  if (VIEW_ALIASES[cleaned] && document.getElementById(`view-${VIEW_ALIASES[cleaned]}`)) {
-    return VIEW_ALIASES[cleaned];
+  if (VIEW_ALIASES[cleaned]) {
+    const aliasTarget = VIEW_ALIASES[cleaned];
+    if (aliasTarget === 'main-website-orders' || aliasTarget === 'landing-page-orders' || document.getElementById(`view-${aliasTarget}`)) {
+      return aliasTarget;
+    }
   }
 
   return null;
@@ -3398,9 +4928,22 @@ function doSwitchView(viewName, updateHash = true) {
 
   APP_STATE.activeView = targetView;
 
+  // Determine actual DOM view panel to show
+  let domPanelId = targetView;
+  if (targetView === 'main-website-orders' || targetView === 'landing-page-orders') {
+    domPanelId = 'orders';
+    if (targetView === 'main-website-orders') {
+      APP_STATE.sourceFilter = 'MAIN_WEBSITE';
+    } else if (targetView === 'landing-page-orders') {
+      APP_STATE.sourceFilter = 'LANDING_PAGE';
+    }
+  } else if (targetView === 'orders') {
+    APP_STATE.sourceFilter = null;
+  }
+
   // 1. Toggle view panels (display: none / block)
   document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
-  const panel = document.getElementById(`view-${targetView}`);
+  const panel = document.getElementById(`view-${domPanelId}`);
   if (panel) {
     panel.style.display = 'block';
   } else {
@@ -3417,21 +4960,29 @@ function doSwitchView(viewName, updateHash = true) {
   let activated = false;
 
   if (targetView === 'orders') {
-    const ordersLink = document.getElementById('subnav-manage-order') || document.querySelector(".tree-link[onclick*='orders']");
-    if (ordersLink) {
-      ordersLink.classList.add('active');
-      const parent = ordersLink.closest('.nav-has-sub') || document.getElementById('nav-group-orders');
-      if (parent) parent.classList.add('open');
-      activated = true;
-    }
+    const ordersLink = document.getElementById('subnav-manage-order');
+    if (ordersLink) ordersLink.classList.add('active');
+    const parent = document.getElementById('nav-group-orders');
+    if (parent) parent.classList.add('open');
+    activated = true;
+  } else if (targetView === 'main-website-orders') {
+    const webLink = document.getElementById('subnav-website-orders');
+    if (webLink) webLink.classList.add('active');
+    const parent = document.getElementById('nav-group-orders');
+    if (parent) parent.classList.add('open');
+    activated = true;
+  } else if (targetView === 'landing-page-orders') {
+    const lpLink = document.getElementById('subnav-landing-orders');
+    if (lpLink) lpLink.classList.add('active');
+    const parent = document.getElementById('nav-group-orders');
+    if (parent) parent.classList.add('open');
+    activated = true;
   } else if (targetView === 'report') {
     const repLink = document.getElementById('subnav-processing-report');
-    if (repLink) {
-      repLink.classList.add('active');
-      const parent = repLink.closest('.nav-has-sub') || document.getElementById('nav-group-orders');
-      if (parent) parent.classList.add('open');
-      activated = true;
-    }
+    if (repLink) repLink.classList.add('active');
+    const parent = document.getElementById('nav-group-orders');
+    if (parent) parent.classList.add('open');
+    activated = true;
   } else if (targetView === 'landing-page-builder' || targetView === 'landingpages' || targetView === 'landing-pages-list') {
     const lpGroup = document.getElementById('nav-group-landingpages');
     if (lpGroup) lpGroup.classList.add('open');
@@ -3489,11 +5040,15 @@ function doSwitchView(viewName, updateHash = true) {
       'dashboard': 'Dashboard',
       'analytics': 'Analytics & Attribution',
       'orders': 'Orders Management',
+      'main-website-orders': 'Main Website Orders',
+      'landing-page-orders': 'Landing Page Orders',
       'report': 'Order Processing Report',
       'income': 'Income Accounts',
       'expense': 'Expense Accounts',
       'balance': 'Balance Sheet',
       'products': 'Manage Products',
+      'categories': 'Manage Categories',
+      'sliders': 'Hero Sliders',
       'header-setting': 'Header Configuration',
       'theme-setting': 'Theme Settings',
       'marketing': 'Marketing & Meta Pixel',
@@ -3520,9 +5075,16 @@ function doSwitchView(viewName, updateHash = true) {
   if (targetView === 'dashboard') {
     renderDashboardData();
     renderMonthlyChart();
+    loadServerOrders();
   }
   if (targetView === 'analytics') loadAnalyticsDashboard();
-  if (targetView === 'orders') renderOrdersTable();
+  if (targetView === 'orders' || targetView === 'main-website-orders' || targetView === 'landing-page-orders') {
+    renderOrdersTable();
+    loadServerOrders();
+  }
+  if (targetView === 'report') {
+    renderOrderProcessingReport(CURRENT_REPORT_PERIOD || 'today');
+  }
   if (targetView === 'income') {
     if (typeof renderIncomeTable === 'function') renderIncomeTable();
     if (typeof renderCreditTable === 'function') renderCreditTable();
@@ -3530,16 +5092,33 @@ function doSwitchView(viewName, updateHash = true) {
   if (targetView === 'expense') {
     if (typeof renderExpenseTable === 'function') renderExpenseTable();
   }
-  if (targetView === 'products') renderProductsTable();
+  if (targetView === 'products') loadProductsCatalog();
+  if (targetView === 'categories') loadCategoriesCatalog();
+  if (targetView === 'sliders') loadSlidersCatalog();
+  if (targetView === 'header-setting' || targetView === 'storefront-settings') loadStorefrontSettings();
   if (targetView === 'customers') renderCustomersTable();
   if (targetView === 'landingpages') renderLandingPagesHub();
   if (targetView === 'landing-pages-list') renderLandingPagesList();
   if (targetView === 'profit-report') renderProfitReport();
   if (targetView === 'cities') renderCitiesTable();
   if (targetView === 'marketing') loadMarketingSettings();
-  if (targetView === 'manage-admin') renderAdminUsersTable();
+  if (targetView === 'manage-admin') {
+    const sInput = document.getElementById('adminSearchInput');
+    if (sInput) {
+      sInput.value = '';
+      if (sInput.dataset) delete sInput.dataset.userActive;
+    }
+    const sFilter = document.getElementById('adminStatusFilter');
+    if (sFilter) {
+      sFilter.value = '';
+      if (sFilter.dataset) delete sFilter.dataset.userActive;
+    }
+    loadAdminUsers();
+  }
 }
 window.doSwitchView = doSwitchView;
+
+
 
 // Browser Back / Forward and Hash Navigation Listener
 function handleHashOrPopState() {
