@@ -18,6 +18,7 @@ class Order extends Model
         'total_amount',
         'payment_method',
         'status',
+        'courier_name',
         'note',
         'visitor_id',
         'session_id',

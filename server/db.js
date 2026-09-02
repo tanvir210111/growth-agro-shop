@@ -208,23 +208,17 @@ function createOrder(orderInput = {}) {
   const lp = orderInput.landingPage || orderInput.landing_page || '/products/chicken-booster/';
   const src = orderInput.source || 'LANDING_PAGE';
   const payMethod = orderInput.paymentMethod || orderInput.payment_method || 'Cash on Delivery';
-  const fLevel = orderInput.fraudLevel || orderInput.fraud_level || 'new_customer';
-  const fScore = Number(orderInput.fraudScore ?? orderInput.fraud_score ?? 0);
+  const fLevel = orderInput.fraudLevel || orderInput.fraud_level || null;
+  const fScore = (orderInput.fraudScore !== undefined && orderInput.fraudScore !== null) ? Number(orderInput.fraudScore) : null;
   const advAmount = Number(orderInput.advanceAmount ?? orderInput.advance_amount ?? 0);
   const advPaid = Number(orderInput.advancePaid ?? orderInput.advance_paid ?? 0);
-  const cNameCourier = orderInput.courierName || orderInput.courier_name || 'Steadfast';
+  const cNameCourier = orderInput.courierName || orderInput.courier_name || null;
   const timeline = orderInput.timeline || null;
 
   const orderNumber = orderInput.orderNumber || orderInput.order_number || generateOrderNumber();
 
   const initialTimeline = Array.isArray(timeline) && timeline.length > 0 ? timeline : [
-    { event: 'Order Created', status: 'pending', time: now, note: `অর্ডার গ্রহণ করা হয়েছে (উৎস: ${src})` },
-    ...(fLevel && fLevel !== 'unknown' ? [{
-      event: 'Fraud Checked',
-      status: 'verified',
-      time: now,
-      note: `ফ্রড স্ট্যাটাস: ${fLevel} (সাকসেস রেট: ${fScore}%, অগ্রিম ডেলিভারি: ৳${advAmount})`
-    }] : [])
+    { event: 'Order Created', status: 'pending', time: now, note: `অর্ডার গ্রহণ করা হয়েছে (উৎস: ${src})` }
   ];
 
   db.exec('BEGIN TRANSACTION;');
@@ -454,6 +448,35 @@ function updateOrderStatus(orderNumber, newStatus, note = '') {
   return result.changes > 0;
 }
 
+/**
+  * Update order courier name
+  */
+function updateOrderCourier(orderNumber, courierName) {
+  const now = new Date().toISOString();
+  const update = db.prepare('UPDATE orders SET courier_name = ?, updated_at = ? WHERE order_number = ?');
+  const result = update.run(courierName || null, now, orderNumber);
+  return result.changes > 0;
+}
+
+/**
+  * Permanently delete an order and its order_items
+  */
+function deleteOrder(orderNumber) {
+  const order = db.prepare('SELECT id FROM orders WHERE order_number = ?').get(orderNumber);
+  if (!order) return false;
+
+  db.exec('BEGIN TRANSACTION;');
+  try {
+    db.prepare('DELETE FROM order_items WHERE order_id = ?').run(order.id);
+    const delOrder = db.prepare('DELETE FROM orders WHERE id = ?').run(order.id);
+    db.exec('COMMIT;');
+    return delOrder.changes > 0;
+  } catch (err) {
+    db.exec('ROLLBACK;');
+    throw err;
+  }
+}
+
 module.exports = {
   db,
   generateOrderNumber,
@@ -463,6 +486,8 @@ module.exports = {
   listOrders,
   getOrderByNumber,
   updateOrderStatus,
+  updateOrderCourier,
+  deleteOrder,
   addOrderTimelineEvent,
   ALLOWED_ORDER_STATUSES
 };

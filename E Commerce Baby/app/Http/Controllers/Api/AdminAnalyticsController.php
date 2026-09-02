@@ -1043,13 +1043,15 @@ class AdminAnalyticsController extends Controller
         $query = Order::with('items')->orderByDesc('created_at')->limit(500);
 
         if ($riskFilter === 'high') {
-            $query->where('fraud_level', 'HIGH');
+            $query->whereIn('fraud_level', ['HIGH', 'CRITICAL']);
         } elseif ($riskFilter === 'medium') {
             $query->where('fraud_level', 'MEDIUM');
         } elseif ($riskFilter === 'low') {
             $query->where('fraud_level', 'LOW');
         } elseif ($riskFilter === 'not_assessed') {
-            $query->whereNull('fraud_score');
+            $query->where(function ($q) {
+                $q->whereNull('fraud_score')->orWhereNull('fraud_level');
+            });
         }
 
         $orders = $query->get();
@@ -1074,7 +1076,7 @@ class AdminAnalyticsController extends Controller
                 'advance_paid'    => false,
                 'advance_amount'  => 0,
                 'status'          => $o->status,
-                'courier_name'    => 'Steadfast',
+                'courier_name'    => $o->courier_name ?: null,
                 'timeline'        => [],
                 'created_at'      => $o->created_at ? $o->created_at->toIso8601String() : null,
                 // Phase 5B fraud fields
@@ -1134,32 +1136,50 @@ class AdminAnalyticsController extends Controller
         $cancelled = (int) $result['cancelled_parcels'];
         $ratio     = (float) $result['success_ratio'];
 
-        // Persist verified courier data on the order if matched
+        // Determine heuristic risk level & calculated score from actual multi-courier verification
+        if ($total === 0) {
+            $level = 'LOW';
+            $score = 15;
+            $reasons = ['New customer: No prior parcel delivery history recorded in BD Courier'];
+            $label = 'নতুন কাস্টমার (No Delivery History)';
+        } elseif ($ratio >= 80) {
+            $level = 'LOW';
+            $score = 10;
+            $reasons = ["High delivery success rate: {$ratio}% ({$delivered}/{$total} parcels delivered)"];
+            $label = 'বিশ্বস্ত কাস্টমার (High Trust)';
+        } elseif ($ratio >= 50) {
+            $level = 'MEDIUM';
+            $score = 45;
+            $reasons = ["Moderate delivery success rate: {$ratio}% ({$cancelled} cancellations/returns)"];
+            $label = 'মাঝারি ঝুঁকি (Moderate Trust)';
+        } elseif ($ratio >= 25) {
+            $level = 'HIGH';
+            $score = 75;
+            $reasons = ["High cancellation/return rate: " . round(100 - $ratio, 1) . "% ({$cancelled} cancelled/returned parcels)"];
+            $label = 'ঝুঁকিপূর্ণ কাস্টমার (High Cancellation Risk)';
+        } else {
+            $level = 'CRITICAL';
+            $score = 90;
+            $reasons = ["Critical cancellation rate: " . round(100 - $ratio, 1) . "% ({$cancelled} cancelled/returned parcels)"];
+            $label = 'অত্যন্ত ঝুঁকিপূর্ণ (Critical Risk)';
+        }
+
+        // Persist verified courier & fraud data on the order if matched
         if (!empty($invoice)) {
             $matchedOrder = Order::where('invoice_no', $invoice)->first();
         } else {
             $matchedOrder = Order::where('customer_phone', $phone)->latest()->first();
         }
         if ($matchedOrder) {
-            $matchedOrder->courier_success_rate   = $ratio;
-            $matchedOrder->courier_total_orders   = $total;
-            $matchedOrder->courier_delivered      = $delivered;
-            $matchedOrder->courier_cancelled      = $cancelled;
-            $matchedOrder->courier_checked_at     = now();
+            $matchedOrder->fraud_score          = $score;
+            $matchedOrder->fraud_level          = $level;
+            $matchedOrder->fraud_reasons        = $reasons;
+            $matchedOrder->courier_success_rate = $ratio;
+            $matchedOrder->courier_total_orders = $total;
+            $matchedOrder->courier_delivered    = $delivered;
+            $matchedOrder->courier_cancelled    = $cancelled;
+            $matchedOrder->courier_checked_at   = now();
             $matchedOrder->save();
-        }
-
-        $level = 'safe';
-        $label = 'বিশ্বস্ত কাস্টমার (High Trust)';
-        if ($total === 0) {
-            $level = 'new_customer';
-            $label = 'নতুন কাস্টমার (No Delivery History)';
-        } elseif ($ratio < 50) {
-            $level = 'high_risk';
-            $label = 'ঝুঁকিপূর্ণ কাস্টমার (High Cancellation Risk)';
-        } elseif ($ratio <= 80) {
-            $level = 'medium';
-            $label = 'মাঝারি ঝুঁকি (Moderate Trust)';
         }
 
         return response()->json([
@@ -1170,10 +1190,14 @@ class AdminAnalyticsController extends Controller
                 'delivered'             => $delivered,
                 'cancelled_or_returned' => $cancelled,
                 'success_rate'          => $ratio,
+                'fraud_score'           => $score,
+                'fraud_level'           => $level,
+                'fraud_reasons'         => $reasons,
                 'courier_breakdown'     => $result['courier_breakdown'] ?? [],
                 'reports'               => $result['reports'] ?? [],
                 'heuristic_trust_score' => [
-                    'level'        => $level,
+                    'level'        => strtolower($level),
+                    'score'        => $score,
                     'label'        => $label,
                     'success_rate' => $ratio,
                     'methodology'  => 'BD Courier Live Multi-Courier Delivery Verification',
@@ -1181,5 +1205,95 @@ class AdminAnalyticsController extends Controller
             ],
             'message' => 'OK',
         ]);
+    }
+
+    /**
+     * 13. PATCH /api/orders/{order_number}/courier
+     * Update courier assignment for an order.
+     */
+    public function updateCourier(Request $request, string $order_number): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $courier = trim((string)($request->input('courier') ?: $request->input('courier_name', '')));
+        $order = Order::where('invoice_no', $order_number)->orWhere('id', $order_number)->first();
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
+        }
+
+        $order->courier_name = !empty($courier) ? $courier : null;
+        $order->save();
+
+        // Also sync with Node server if running
+        try {
+            $nodeHost = env('NODE_HOST', '127.0.0.1');
+            $nodePort = env('NODE_PORT', 3000);
+            \Illuminate\Support\Facades\Http::timeout(2)
+                ->withHeaders([
+                    'x-admin-token' => $request->header('x-admin-token', 'admin-token')
+                ])
+                ->patch("http://{$nodeHost}:{$nodePort}/api/orders/{$order->invoice_no}/courier", [
+                    'courier' => $order->courier_name
+                ]);
+        } catch (\Throwable $e) {}
+
+        return response()->json([
+            'success'      => true,
+            'order_number' => $order->invoice_no,
+            'courier'      => $order->courier_name,
+            'message'      => 'Courier assigned successfully.'
+        ]);
+    }
+
+    /**
+     * 14. DELETE /api/orders/{order_number} or /api/admin/orders/{order_number}
+     * Permanently delete an order and its items from database.
+     */
+    public function destroyOrder(Request $request, string $order_number): JsonResponse
+    {
+        if (!$this->authenticateAdmin($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        $order = Order::where('invoice_no', $order_number)->orWhere('id', $order_number)->first();
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
+        }
+
+        $invoiceNo = $order->invoice_no;
+
+        DB::beginTransaction();
+        try {
+            // Delete order items first
+            \App\Models\OrderItem::where('order_id', $order->id)->delete();
+            // Delete the order record
+            $order->delete();
+            DB::commit();
+
+            // Also delete from Node server if running
+            try {
+                $nodeHost = env('NODE_HOST', '127.0.0.1');
+                $nodePort = env('NODE_PORT', 3000);
+                \Illuminate\Support\Facades\Http::timeout(2)
+                    ->withHeaders([
+                        'x-admin-token' => $request->header('x-admin-token', 'admin-token')
+                    ])
+                    ->delete("http://{$nodeHost}:{$nodePort}/api/orders/{$invoiceNo}");
+            } catch (\Throwable $e) {}
+
+            return response()->json([
+                'success'      => true,
+                'order_number' => $invoiceNo,
+                'message'      => "Order #{$invoiceNo} permanently deleted from database."
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete order: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

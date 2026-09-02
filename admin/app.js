@@ -305,7 +305,7 @@ function loadServerOrders() {
         timeline: ord.timeline ? (typeof ord.timeline === 'string' ? JSON.parse(ord.timeline) : ord.timeline) : [],
         date: (ord.created_at || new Date().toISOString()).replace('T', ' ').substring(0, 19),
         createdBy: "Customer",
-        courier: ord.courier_name || "Steadfast"
+        courier: ord.courier_name || ord.courier || null
       }));
 
 
@@ -575,15 +575,25 @@ function renderMonthlyChart() {
 // 4. ORDERS TABLE, FILTERS, SEARCH, CSV EXPORT, & STATUS MODIFIERS
 // ==============================================================================
 function buildRiskBadge(level, score) {
-  if (level === null || level === undefined || score === null || score === undefined) {
-    return '<span class="risk-badge risk-badge-none">— Not assessed</span>';
+  if (level === null || level === undefined || level === '' || String(level).toUpperCase() === 'NOT_ASSESSED' || score === null || score === undefined) {
+    return '<span class="risk-badge" style="background:#F1F5F9;color:#64748B;padding:3px 8px;border-radius:4px;font-weight:600;font-size:11.5px;display:inline-block;border:1px solid #E2E8F0;">— Not Assessed</span>';
   }
   const lvl = String(level).toUpperCase();
   const scoreNum = parseInt(score, 10);
-  if (lvl === 'HIGH' || lvl === 'HIGH_RISK')   return `<span class="risk-badge risk-badge-high">🔴 High ${scoreNum}</span>`;
-  if (lvl === 'MEDIUM') return `<span class="risk-badge risk-badge-medium">🟡 Medium ${scoreNum}</span>`;
-  if (lvl === 'LOW' || lvl === 'SAFE')    return `<span class="risk-badge risk-badge-low">🟢 Low ${scoreNum}</span>`;
-  return `<span class="risk-badge risk-badge-none">— ${scoreNum}</span>`;
+  const scoreStr = isNaN(scoreNum) ? '' : ` ${scoreNum}%`;
+  if (lvl === 'CRITICAL') {
+    return `<span class="risk-badge" style="background:#1E293B;color:#F87171;padding:3px 8px;border-radius:4px;font-weight:800;font-size:11.5px;display:inline-block;border:1px solid #334155;">⚫ Critical${scoreStr}</span>`;
+  }
+  if (lvl === 'HIGH' || lvl === 'HIGH_RISK') {
+    return `<span class="risk-badge" style="background:#FEE2E2;color:#B91C1C;padding:3px 8px;border-radius:4px;font-weight:700;font-size:11.5px;display:inline-block;border:1px solid #FECACA;">🔴 High${scoreStr}</span>`;
+  }
+  if (lvl === 'MEDIUM') {
+    return `<span class="risk-badge" style="background:#FEF3C7;color:#B45309;padding:3px 8px;border-radius:4px;font-weight:700;font-size:11.5px;display:inline-block;border:1px solid #FDE68A;">🟡 Medium${scoreStr}</span>`;
+  }
+  if (lvl === 'LOW' || lvl === 'SAFE') {
+    return `<span class="risk-badge" style="background:#DCFCE7;color:#15803D;padding:3px 8px;border-radius:4px;font-weight:700;font-size:11.5px;display:inline-block;border:1px solid #BBF7D0;">🟢 Low${scoreStr}</span>`;
+  }
+  return `<span class="risk-badge" style="background:#F1F5F9;color:#64748B;padding:3px 8px;border-radius:4px;font-weight:600;font-size:11.5px;display:inline-block;border:1px solid #E2E8F0;">— ${lvl}</span>`;
 }
 
 function renderOrdersTable() {
@@ -621,20 +631,21 @@ function renderOrdersTable() {
     if (banner) banner.style.display = 'none';
   }
 
-  // Risk filter (client-side from already-loaded data)
+  // Risk filter (client-side from real database-loaded data)
   if (APP_STATE.riskFilter && APP_STATE.riskFilter !== 'all') {
     if (APP_STATE.riskFilter === 'not_assessed') {
       filtered = filtered.filter(o =>
         o.fraudLevel === null ||
         o.fraudLevel === undefined ||
+        o.fraudLevel === '' ||
+        String(o.fraudLevel).toLowerCase() === 'not_assessed' ||
         o.fraudScore === null ||
-        o.fraudScore === undefined ||
-        String(o.fraudLevel).toLowerCase() === 'not_assessed'
+        o.fraudScore === undefined
       );
     } else if (APP_STATE.riskFilter === 'high') {
       filtered = filtered.filter(o => {
         const lvl = String(o.fraudLevel || '').toLowerCase();
-        return lvl === 'high' || lvl === 'high_risk' || (o.fraudScore !== null && o.fraudScore !== undefined && o.fraudScore >= 70);
+        return lvl === 'high' || lvl === 'high_risk' || lvl === 'critical' || (o.fraudScore !== null && o.fraudScore !== undefined && o.fraudScore >= 70);
       });
     } else if (APP_STATE.riskFilter === 'medium') {
       filtered = filtered.filter(o => {
@@ -712,7 +723,7 @@ function renderOrdersTable() {
           </div>
           <div style="display:flex;align-items:center;gap:6px;margin:3px 0;">
             <a href="tel:${ord.phone}" class="phone-tag" style="text-decoration:none;">📞 ${ord.phone}</a>
-            <button type="button" onclick="checkCourierRatio('${ord.phone}', '${ord.customer}', '${ord.invoice}', this)" style="cursor:pointer;background:#004D40;color:#fff;border:none;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:600;display:inline-flex;align-items:center;gap:2px;" title="BD Courier Ratio & Fraud Check">🛡️ Check</button>
+            <button type="button" class="btn-check-courier" onclick="checkCourierRatio('${ord.phone}', '${ord.customer}', '${ord.invoice}', this)" style="cursor:pointer;background:#004D40;color:#fff;border:none;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600;display:inline-flex;align-items:center;gap:3px;" title="BD Courier Ratio & Fraud Check">🛡️ Check</button>
           </div>
           <div class="address-text">${ord.address}</div>
         </div>
@@ -747,21 +758,21 @@ function renderOrdersTable() {
       </td>
       <td>
         <div class="courier-cell">
-          <span>🚀 ${ord.courier}</span>
-          <span class="courier-edit-ic" onclick="showToast('Courier sync active')" title="Sync Courier">📝</span>
+          <select class="courier-select-box" onchange="assignOrderCourier('${ord.invoice}', this.value, this)" style="padding:4px 8px;border-radius:6px;border:1px solid #CBD5E1;font-size:12px;font-weight:600;color:#1E293B;background:#FFFFFF;cursor:pointer;outline:none;min-width:125px;" title="Assign Courier">
+            <option value="" ${!ord.courier ? 'selected' : ''}>Select Courier ▼</option>
+            <option value="Steadfast" ${ord.courier === 'Steadfast' ? 'selected' : ''}>🚀 Steadfast</option>
+            <option value="Pathao" ${ord.courier === 'Pathao' ? 'selected' : ''}>🚚 Pathao</option>
+            <option value="RedX" ${ord.courier === 'RedX' ? 'selected' : ''}>📦 REDX</option>
+            <option value="Paperfly" ${ord.courier === 'Paperfly' ? 'selected' : ''}>📮 Paperfly</option>
+          </select>
         </div>
       </td>
       <td style="text-align:center;">
-        <div style="display:flex;flex-direction:column;gap:3px;align-items:center;">
-          <div style="display:flex;gap:4px;">
-            <button class="icon-btn" onclick="openOrderTimelineModal('${ord.invoice}')" title="View Order Status Timeline">⏱️</button>
-            <button class="icon-btn" onclick="openOrderJourneyModal('${ord.invoice}')" title="View Customer Tracking Journey" style="font-size:11px;background:#E6FFFA;color:#234E52;padding:2px 6px;border-radius:4px;border:1px solid #B2F5EA;font-weight:700;">🗺️ Journey</button>
-          </div>
-          <div style="display:flex;gap:4px;">
-            <button class="action-dots-btn" onclick="viewOrderInvoice('${ord.invoice}')" title="Invoice">👁️</button>
-            <button class="action-dots-btn" onclick="openOrderActionsModal('${ord.invoice}')" title="Change Status">🔄</button>
-            <button class="action-dots-btn" onclick="deleteOrder('${ord.invoice}')" title="Delete" style="color:#E53E3E;">🗑️</button>
-          </div>
+        <div style="display:flex;gap:4px;justify-content:center;align-items:center;">
+          <button type="button" class="btn-action-icon" onclick="viewOrderInvoice('${ord.invoice}')" title="Invoice & Details" style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;">👁️</button>
+          <button type="button" class="btn-action-icon" onclick="openOrderActionsModal('${ord.invoice}')" title="Change Order Status" style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;">🔄</button>
+          <button type="button" class="btn-action-icon" onclick="openOrderTimelineModal('${ord.invoice}')" title="Order Status Timeline" style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;">⏱️</button>
+          <button type="button" class="btn-action-icon" onclick="deleteOrder('${ord.invoice}', this)" title="Delete Order Permanently" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;color:#DC2626;">🗑️</button>
         </div>
       </td>
     `;
@@ -890,6 +901,7 @@ window.openOrderActionsModal = function(invoice) {
 
   const nextStatus = prompt(`Change status for Order #${ord.invoice}:\n(New, Pending, Approved, Packaging, Shipment, Delivered, Cancel, Return)`, ord.status);
   if (nextStatus && nextStatus !== ord.status) {
+    const oldStatus = ord.status;
     ord.status = normalizeStatus(nextStatus);
     updateServerOrderStatus(ord.invoice, ord.status);
     renderDashboardData();
@@ -904,20 +916,105 @@ function updateServerOrderStatus(orderNumber, status) {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'x-admin-token': token
     },
     body: JSON.stringify({ status: status.toLowerCase() })
   }).catch(() => {});
 }
 
-window.deleteOrder = function(invoice) {
-  if (confirm(`আপনি কি অর্ডার #${invoice} মুছে ফেলতে চান?`)) {
-    APP_STATE.orders = APP_STATE.orders.filter(o => o.invoice !== invoice);
-    APP_STATE.selectedOrders.delete(invoice);
-    renderDashboardData();
-    renderOrdersTable();
-    showToast(`Order #${invoice} মুছে ফেলা হয়েছে।`);
+window.assignOrderCourier = function(invoice, courierName, selectEl) {
+  const ord = APP_STATE.orders.find(o => o.invoice === invoice);
+  if (!ord) return;
+
+  const previousCourier = ord.courier;
+  const newCourier = courierName ? String(courierName).trim() : null;
+  ord.courier = newCourier;
+
+  if (selectEl) {
+    selectEl.style.opacity = '0.6';
+    selectEl.disabled = true;
   }
+
+  const token = localStorage.getItem('admin_token') || '';
+  fetch(`/api/orders/${encodeURIComponent(invoice)}/courier`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'x-admin-token': token
+    },
+    body: JSON.stringify({ courier: newCourier, courier_name: newCourier })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (selectEl) {
+      selectEl.style.opacity = '1';
+      selectEl.disabled = false;
+    }
+    if (res.success) {
+      showToast(newCourier ? `কুরিয়ার '${newCourier}' সফলভাবে নির্ধারণ করা হয়েছে (Order #${invoice})` : `কুরিয়ার আন-অ্যাসাইন করা হয়েছে (Order #${invoice})`);
+    } else {
+      ord.courier = previousCourier;
+      if (selectEl) selectEl.value = previousCourier || '';
+      showToast(res.message || 'Courier assignment failed', true);
+    }
+  })
+  .catch(err => {
+    if (selectEl) {
+      selectEl.style.opacity = '1';
+      selectEl.disabled = false;
+      selectEl.value = previousCourier || '';
+    }
+    ord.courier = previousCourier;
+    showToast(`Network error: ${err.message}`, true);
+  });
+};
+
+window.deleteOrder = function(invoice, btnEl) {
+  if (!confirm(`আপনি কি নিশ্চিত যে আপনি অর্ডার #${invoice} সম্পূর্ণভাবে ডাটাবেজ থেকে মুছে ফেলতে চান?\n\nসতর্কতা: এই অর্ডার এবং এর সম্পর্কিত সমস্ত রেকর্ড ডাটাবেজ থেকে স্থায়ীভাবে মুছে যাবে।`)) {
+    return;
+  }
+
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.textContent = '⏳';
+  }
+
+  const token = localStorage.getItem('admin_token') || '';
+  fetch(`/api/orders/${encodeURIComponent(invoice)}`, {
+    method: 'DELETE',
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'x-admin-token': token
+    }
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      APP_STATE.orders = APP_STATE.orders.filter(o => o.invoice !== invoice);
+      APP_STATE.selectedOrders.delete(invoice);
+      renderDashboardData();
+      renderOrdersTable();
+      showToast(`অর্ডার #${invoice} ডাটাবেজ থেকে সফলভাবে মুছে ফেলা হয়েছে।`);
+    } else {
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.textContent = '🗑️';
+      }
+      showToast(res.message || res.error || 'Failed to delete order from database', true);
+    }
+  })
+  .catch(err => {
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.textContent = '🗑️';
+    }
+    showToast(`Server communication error: ${err.message}`, true);
+  });
 };
 
 window.openOrderTimelineModal = function(invoice) {
@@ -3719,12 +3816,25 @@ window.checkCourierRatio = function(phone, customerName, invoice, btnEl) {
       const ratio = d.success_rate || 0;
       const heuristic = d.heuristic_trust_score || {};
 
+      // Immediately update local order risk state & table display in real-time
+      const matched = APP_STATE.orders.find(o => (invoice && o.invoice === invoice) || (targetPhone && o.phone === targetPhone));
+      if (matched) {
+        matched.fraudScore = d.fraud_score !== undefined ? d.fraud_score : (heuristic.score !== undefined ? heuristic.score : Math.round(100 - ratio));
+        matched.fraudLevel = d.fraud_level ? d.fraud_level.toUpperCase() : (heuristic.level ? heuristic.level.toUpperCase() : (total === 0 ? 'LOW' : (ratio >= 80 ? 'LOW' : (ratio >= 50 ? 'MEDIUM' : (ratio >= 25 ? 'HIGH' : 'CRITICAL')))));
+        matched.fraudReasons = Array.isArray(d.fraud_reasons) ? d.fraud_reasons : (heuristic.label ? [heuristic.label] : []);
+        matched.courierTotalOrders = total;
+        matched.courierDelivered = success;
+        matched.courierCancelled = cancelled;
+        matched.courierSuccessRate = ratio;
+        renderOrdersTable();
+      }
+
       let badgeColor = '#10B981';
-      if (heuristic.level === 'high_risk') {
+      if (heuristic.level === 'high_risk' || String(d.fraud_level).toLowerCase() === 'high' || String(d.fraud_level).toLowerCase() === 'critical') {
         badgeColor = '#EF4444';
-      } else if (heuristic.level === 'medium') {
+      } else if (heuristic.level === 'medium' || String(d.fraud_level).toLowerCase() === 'medium') {
         badgeColor = '#F59E0B';
-      } else if (heuristic.level === 'new_customer') {
+      } else if (heuristic.level === 'new_customer' || total === 0) {
         badgeColor = '#3B82F6';
       }
 

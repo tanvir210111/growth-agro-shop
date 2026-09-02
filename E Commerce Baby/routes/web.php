@@ -95,8 +95,22 @@ Route::patch('/api/orders/{order_number}/status', function (\Illuminate\Http\Req
     }
     $newStatus = $request->input('status', '');
     $updated = \App\Models\Order::where('invoice_no', $order_number)->update(['status' => $newStatus]);
+
+    // Also sync status with Node server if running
+    try {
+        $nodeHost = env('NODE_HOST', '127.0.0.1');
+        $nodePort = env('NODE_PORT', 3000);
+        \Illuminate\Support\Facades\Http::timeout(2)
+            ->withHeaders(['x-admin-token' => $request->header('x-admin-token', 'admin-token')])
+            ->patch("http://{$nodeHost}:{$nodePort}/api/orders/{$order_number}/status", ['status' => $newStatus]);
+    } catch (\Throwable $e) {}
+
     return response()->json(['success' => $updated > 0]);
 })->name('api.orders.updateStatus');
+
+Route::patch('/api/orders/{order_number}/courier', [AdminAnalyticsController::class, 'updateCourier'])->name('api.orders.updateCourier');
+Route::delete('/api/orders/{order_number}', [AdminAnalyticsController::class, 'destroyOrder'])->name('api.orders.destroy');
+Route::delete('/api/admin/orders/{order_number}', [AdminAnalyticsController::class, 'destroyOrder'])->name('api.admin.orders.destroy');
 
 // Forward Public Node Order & Courier API endpoints
 Route::post('/api/orders', function (\Illuminate\Http\Request $request) {

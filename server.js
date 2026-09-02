@@ -36,7 +36,7 @@ loadLocalEnv();
 
 const { spawn } = require('child_process');
 const { calculateOrderTotals } = require('./server/products');
-const { createOrder, listOrders, getOrderByNumber, updateOrderStatus, findDuplicateOrder, ALLOWED_ORDER_STATUSES } = require('./server/db');
+const { createOrder, listOrders, getOrderByNumber, updateOrderStatus, updateOrderCourier, deleteOrder, findDuplicateOrder, ALLOWED_ORDER_STATUSES } = require('./server/db');
 const { authenticateAdmin, verifyAdminToken } = require('./server/auth');
 const { getHealthStatus } = require('./server/health');
 const { validateBdPhone, checkCourierRateLimit, checkBdCourier, calculateDeliveryDecision } = require('./server/courier');
@@ -641,6 +641,50 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { success: true, order_number: orderNumber, status: newStatus.toLowerCase() });
       } catch (err) {
         return sendJson(res, 400, { success: false, error: err.message });
+      }
+    }
+
+    // 5B. Admin: Update Order Courier (PATCH /api/orders/:orderNumber/courier) - Protected
+    const courierMatch = reqPath.match(/^\/api\/orders\/([A-Za-z0-9_\-]+)\/courier$/);
+    if (courierMatch && method === 'PATCH') {
+      const adminSession = verifyAdminToken(req);
+      if (!adminSession) {
+        return sendJson(res, 401, { success: false, error: 'Unauthorized: Admin authorization required' });
+      }
+
+      const orderNumber = courierMatch[1];
+      try {
+        const body = await parseJsonBody(req);
+        const courier = body.courier !== undefined ? body.courier : (body.courier_name || null);
+        const updated = updateOrderCourier(orderNumber, courier);
+        if (!updated) {
+          return sendJson(res, 404, { success: false, error: 'Order not found' });
+        }
+
+        return sendJson(res, 200, { success: true, order_number: orderNumber, courier: courier || null });
+      } catch (err) {
+        return sendJson(res, 400, { success: false, error: err.message });
+      }
+    }
+
+    // 5C. Admin: Delete Order (DELETE /api/orders/:orderNumber) - Protected
+    const deleteMatch = reqPath.match(/^\/api\/orders\/([A-Za-z0-9_\-]+)$/);
+    if (deleteMatch && method === 'DELETE') {
+      const adminSession = verifyAdminToken(req);
+      if (!adminSession) {
+        return sendJson(res, 401, { success: false, error: 'Unauthorized: Admin authorization required' });
+      }
+
+      const orderNumber = deleteMatch[1];
+      try {
+        const deleted = deleteOrder(orderNumber);
+        if (!deleted) {
+          return sendJson(res, 404, { success: false, error: 'Order not found or already deleted' });
+        }
+
+        return sendJson(res, 200, { success: true, message: `Order #${orderNumber} deleted successfully`, order_number: orderNumber });
+      } catch (err) {
+        return sendJson(res, 500, { success: false, error: err.message });
       }
     }
 
