@@ -1331,6 +1331,7 @@
                     <th style="width:40px;">#</th>
                     <th>Image</th>
                     <th>Category Title</th>
+                    <th>Parent Category</th>
                     <th>Slug / Handle</th>
                     <th>Products Count</th>
                     <th>Sort Order</th>
@@ -1339,7 +1340,7 @@
                   </tr>
                 </thead>
                 <tbody id="categoriesTableBody">
-                  <tr><td colspan="8" style="text-align:center;padding:24px;color:#718096;">Loading categories from database...</td></tr>
+                  <tr><td colspan="9" style="text-align:center;padding:24px;color:#718096;">Loading categories from database...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -3940,6 +3941,14 @@
           <div style="margin-bottom:12px;">
             <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Handle / Slug</label>
             <input type="text" id="cat_handle" class="form-control" placeholder="poultry-medicine">
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Parent Category</label>
+            <select id="cat_parent_id" class="form-control">
+              <option value="">— None (Top-Level Category) —</option>
+            </select>
+            <span style="font-size:11px;color:#64748B;">Select a parent category to create a subcategory, or leave as Top-Level.</span>
           </div>
 
           <div style="margin-bottom:12px;">

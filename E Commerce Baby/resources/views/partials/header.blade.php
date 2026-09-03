@@ -64,7 +64,7 @@
                     <a href="{{ route('categories') }}">All Categories</a>
                 </li>
                 @php
-                    $navCategories = \App\Models\Category::where('status', true)->where('handle', '!=', 'all-collection')->orderBy('sort_order', 'asc')->take(6)->get();
+                    $navCategories = \App\Models\Category::where('status', true)->whereNull('parent_id')->where('handle', '!=', 'all-collection')->orderBy('sort_order', 'asc')->orderBy('id', 'asc')->take(6)->get();
                 @endphp
                 @foreach($navCategories as $navCat)
                     <li class="nav-item {{ request()->is('collections/' . $navCat->handle) || request()->is('category/' . $navCat->handle) ? 'active' : '' }}">

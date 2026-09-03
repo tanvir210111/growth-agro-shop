@@ -62,7 +62,14 @@ class AdminProductController extends Controller
         }
 
         if ($request->filled('category_id')) {
-            $query->where('category_id', $request->query('category_id'));
+            $catId = (int) $request->query('category_id');
+            $category = Category::find($catId);
+            if ($category) {
+                $catIds = array_merge([$catId], $category->getAllDescendantIds());
+                $query->whereIn('category_id', $catIds);
+            } else {
+                $query->where('category_id', $catId);
+            }
         }
 
         if ($request->has('status') && $request->query('status') !== '' && $request->query('status') !== null) {

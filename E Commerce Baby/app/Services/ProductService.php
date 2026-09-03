@@ -97,27 +97,64 @@ class ProductService
     /**
      * Normalize an Eloquent Category model into the standard UI array contract.
      */
+    /**
+     * Normalize an Eloquent Category model into the standard UI array contract.
+     */
     public function formatCategory(Category $category): array
     {
+        $descendantIds = $category->getAllDescendantIds();
+        $catIds = array_merge([$category->id], $descendantIds);
+        $itemCount = Product::where('status', true)->whereIn('category_id', $catIds)->count();
+
+        $activeChildren = $category->relationLoaded('activeChildren')
+            ? $category->activeChildren
+            : $category->activeChildren()->get();
+
+        $children = $activeChildren->map(function ($c) {
+            $childCatIds = array_merge([$c->id], $c->getAllDescendantIds());
+            return [
+                'id'           => $c->handle,
+                'category_id'  => $c->id,
+                'title'        => $c->title,
+                'handle'       => $c->handle,
+                'image'        => $c->image ?: '/images/placeholder.webp',
+                'banner_image' => $c->banner_image ?: ($c->image ?: '/images/placeholder.webp'),
+                'description'  => $c->description ?: '',
+                'item_count'   => Product::where('status', true)->whereIn('category_id', $childCatIds)->count(),
+                'parent_id'    => $c->parent_id,
+            ];
+        })->toArray();
+
         return [
-            'id' => $category->handle,
-            'title' => $category->title,
-            'handle' => $category->handle,
-            'image' => $category->image ?: '/images/placeholder.webp',
-            'banner_image' => $category->banner_image ?: ($category->image ?: '/images/placeholder.webp'),
-            'description' => $category->description ?: '',
-            'item_count' => $category->products()->where('status', true)->count(),
+            'id'             => $category->handle,
+            'category_id'    => $category->id,
+            'parent_id'      => $category->parent_id,
+            'parent_title'   => $category->parent ? $category->parent->title : null,
+            'parent_handle'  => $category->parent ? $category->parent->handle : null,
+            'title'          => $category->title,
+            'handle'         => $category->handle,
+            'image'          => $category->image ?: '/images/placeholder.webp',
+            'banner_image'   => $category->banner_image ?: ($category->image ?: '/images/placeholder.webp'),
+            'description'    => $category->description ?: '',
+            'item_count'     => $itemCount,
+            'children'       => $children,
+            'has_children'   => count($children) > 0,
+            'is_subcategory' => !empty($category->parent_id),
         ];
     }
 
     /**
-     * Retrieve all active categories ordered by sort_order from database.
+     * Retrieve all active top-level categories ordered by sort_order from database.
+     * Each top-level category includes its active subcategories in 'children'.
      */
     public function getCollections(): array
     {
         try {
             $categories = Category::where('status', true)
+                ->whereNull('parent_id')
+                ->with(['activeChildren', 'parent'])
                 ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
                 ->get();
 
             if ($categories->isNotEmpty()) {
@@ -128,36 +165,51 @@ class ProductService
         return [
             [
                 'id' => 'all-collection',
+                'category_id' => 0,
+                'parent_id' => null,
+                'parent_title' => null,
+                'parent_handle' => null,
                 'title' => 'All Collection',
                 'handle' => 'all-collection',
                 'image' => '/images/placeholder.webp',
                 'banner_image' => '/images/placeholder.webp',
                 'description' => 'Explore our complete selection of products.',
-                'item_count' => 0
+                'item_count' => 0,
+                'children' => [],
+                'has_children' => false,
+                'is_subcategory' => false,
             ]
         ];
     }
 
     /**
-     * Retrieve single category by handle from database.
+     * Retrieve single category by handle from database (supports parent or subcategory).
      */
     public function getCollectionByHandle(string $handle): ?array
     {
         if ($handle === 'all-collection' || $handle === 'frontpage') {
             return [
                 'id' => 'all-collection',
+                'category_id' => 0,
+                'parent_id' => null,
+                'parent_title' => null,
+                'parent_handle' => null,
                 'title' => 'All Collection',
                 'handle' => 'all-collection',
                 'image' => '/images/placeholder.webp',
                 'banner_image' => '/images/placeholder.webp',
                 'description' => 'Explore our complete selection of products.',
-                'item_count' => Product::where('status', true)->count()
+                'item_count' => Product::where('status', true)->count(),
+                'children' => [],
+                'has_children' => false,
+                'is_subcategory' => false,
             ];
         }
 
         try {
             $category = Category::where('handle', $handle)
                 ->where('status', true)
+                ->with(['parent', 'activeChildren'])
                 ->first();
 
             if ($category) {
@@ -283,8 +335,10 @@ class ProductService
             if ($handle !== 'all-collection' && $handle !== 'frontpage') {
                 $category = Category::where('handle', $handle)->first();
                 if ($category) {
-                    $query->where(function($q) use ($category, $handle) {
-                        $q->where('category_id', $category->id)
+                    $descendantIds = $category->getAllDescendantIds();
+                    $catIds = array_merge([$category->id], $descendantIds);
+                    $query->where(function($q) use ($catIds, $handle) {
+                        $q->whereIn('category_id', $catIds)
                           ->orWhere('category_handle', $handle);
                     });
                 } else {
@@ -360,6 +414,7 @@ class ProductService
      * - title
      * - sku
      * - category_handle / category title
+     * - parent category title / handle
      * - short_description
      * - description
      */
@@ -380,7 +435,11 @@ class ProductService
                         ->orWhere('description', 'LIKE', "%{$q}%")
                         ->orWhereHas('category', function ($catQuery) use ($q) {
                             $catQuery->where('title', 'LIKE', "%{$q}%")
-                                ->orWhere('handle', 'LIKE', "%{$q}%");
+                                ->orWhere('handle', 'LIKE', "%{$q}%")
+                                ->orWhereHas('parent', function ($pQuery) use ($q) {
+                                    $pQuery->where('title', 'LIKE', "%{$q}%")
+                                        ->orWhere('handle', 'LIKE', "%{$q}%");
+                                });
                         });
                 })
                 ->with('category')
@@ -404,7 +463,16 @@ class ProductService
                 ->with('category');
 
             if ($categoryId) {
-                $query->where('category_id', $categoryId);
+                $category = Category::find($categoryId);
+                if ($category) {
+                    $catIds = array_merge([$category->id], $category->getAllDescendantIds());
+                    if ($category->parent_id) {
+                        $catIds[] = $category->parent_id;
+                    }
+                    $query->whereIn('category_id', array_unique($catIds));
+                } else {
+                    $query->where('category_id', $categoryId);
+                }
             } elseif ($categoryHandle && $categoryHandle !== 'all-collection') {
                 $query->where('category_handle', $categoryHandle);
             }

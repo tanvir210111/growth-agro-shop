@@ -1790,7 +1790,7 @@ function renderCategoriesTable(categories) {
   tbody.innerHTML = '';
 
   if (categories.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:26px;color:#718096;">No categories created yet. Click <strong>＋ Add Category</strong> to create your first storefront category.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:26px;color:#718096;">No categories created yet. Click <strong>＋ Add Category</strong> to create your first storefront category.</td></tr>`;
     const footer = document.getElementById('categoriesEntriesFooter');
     if (footer) footer.textContent = `Showing 0 categories`;
     return;
@@ -1799,17 +1799,29 @@ function renderCategoriesTable(categories) {
   categories.forEach((cat, idx) => {
     const tr = document.createElement('tr');
     const isAct = Boolean(cat.status);
+    const isSub = Boolean(cat.parent_id);
     const imgHtml = cat.image
       ? `<img src="${cat.image}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0;">`
       : `<div style="width:36px;height:36px;background:#F1F5F9;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;">📁</div>`;
 
+    const titleHtml = isSub
+      ? `<div style="padding-left:18px;font-weight:600;font-size:13px;color:#1E293B;display:flex;align-items:center;gap:6px;">
+           <span style="color:#94A3B8;font-family:monospace;font-size:14px;">├──</span>
+           <span>${cat.title}</span>
+         </div>
+         <div style="padding-left:34px;font-size:11.5px;color:#64748B;">${cat.description || 'No description'}</div>`
+      : `<div style="font-weight:700;font-size:13.5px;color:#0F172A;">${cat.title}</div>
+         <div style="font-size:11.5px;color:#64748B;">${cat.description || 'No description'}</div>`;
+
+    const parentHtml = isSub
+      ? `<span class="product-stock-pill" style="background:#F1F5F9;color:#334155;font-weight:600;font-size:11.5px;">📁 ${cat.parent ? cat.parent.title : 'Category #' + cat.parent_id}</span>`
+      : `<span style="color:#94A3B8;font-size:12px;">— (Top-Level)</span>`;
+
     tr.innerHTML = `
       <td>${idx + 1}</td>
       <td>${imgHtml}</td>
-      <td>
-        <div style="font-weight:700;font-size:13.5px;color:#0F172A;">${cat.title}</div>
-        <div style="font-size:11.5px;color:#64748B;">${cat.description || 'No description'}</div>
-      </td>
+      <td>${titleHtml}</td>
+      <td>${parentHtml}</td>
       <td><code style="background:#F1F5F9;padding:2px 6px;border-radius:4px;font-size:12px;color:#0284C7;">${cat.handle}</code></td>
       <td><span class="product-stock-pill" style="background:#E0F2FE;color:#0369A1;">${cat.products_count ?? 0} Products</span></td>
       <td><span style="font-weight:600;color:#475569;">${cat.sort_order ?? 0}</span></td>
@@ -1832,20 +1844,68 @@ function renderCategoriesTable(categories) {
   if (footer) footer.textContent = `Showing 1 to ${categories.length} of total ${categories.length} categories`;
 }
 
+function getCategoryDescendantIds(catId) {
+  const descendants = [];
+  const directChildren = STORE_CATEGORIES_CACHE.filter(c => c.parent_id == catId);
+  directChildren.forEach(child => {
+    descendants.push(Number(child.id));
+    descendants.push(...getCategoryDescendantIds(child.id));
+  });
+  return descendants;
+}
+
+function populateParentCategoryDropdown(excludeId = null) {
+  const catParentSelect = document.getElementById('cat_parent_id');
+  if (!catParentSelect) return;
+
+  const invalidIds = new Set(excludeId ? [Number(excludeId), ...getCategoryDescendantIds(excludeId)] : []);
+  let opts = `<option value="">— None (Top-Level Category) —</option>`;
+
+  const topParents = STORE_CATEGORIES_CACHE.filter(c => !c.parent_id && !invalidIds.has(Number(c.id)));
+  topParents.forEach(p => {
+    opts += `<option value="${p.id}">${p.title}</option>`;
+    const subs = STORE_CATEGORIES_CACHE.filter(c => c.parent_id == p.id && !invalidIds.has(Number(c.id)));
+    subs.forEach(s => {
+      opts += `<option value="${s.id}">&nbsp;&nbsp;&nbsp;↳ ${s.title}</option>`;
+    });
+  });
+
+  catParentSelect.innerHTML = opts;
+}
+
 function populateCategoryDropdowns(categories) {
+  // 1. Build hierarchical options for Product Filter and Product Form Select
+  const topParents = categories.filter(c => !c.parent_id);
+  let optionsHtml = '';
+  topParents.forEach(p => {
+    optionsHtml += `<option value="${p.id}" style="font-weight:700;">${p.title}</option>`;
+    const subs = categories.filter(c => c.parent_id == p.id);
+    subs.forEach(s => {
+      optionsHtml += `<option value="${s.id}">&nbsp;&nbsp;&nbsp;↳ ${s.title}</option>`;
+    });
+  });
+
+  // Also include any orphan categories
+  const handled = new Set([...topParents.map(p => p.id), ...categories.filter(c => c.parent_id).map(c => c.id)]);
+  categories.filter(c => !handled.has(c.id)).forEach(o => {
+    optionsHtml += `<option value="${o.id}">${o.title}</option>`;
+  });
+
   const prodFilter = document.getElementById('productCategoryFilter');
   if (prodFilter) {
     const curVal = prodFilter.value;
-    prodFilter.innerHTML = `<option value="">All Categories</option>` + categories.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+    prodFilter.innerHTML = `<option value="">All Categories</option>` + optionsHtml;
     prodFilter.value = curVal;
   }
 
   const prodModalSelect = document.getElementById('prod_category_id');
   if (prodModalSelect) {
     const curVal = prodModalSelect.value;
-    prodModalSelect.innerHTML = `<option value="">Select Category</option>` + categories.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+    prodModalSelect.innerHTML = `<option value="">Select Category</option>` + optionsHtml;
     prodModalSelect.value = curVal;
   }
+
+  populateParentCategoryDropdown();
 }
 
 window.openAddCategoryModal = function() {
@@ -1857,6 +1917,10 @@ window.openAddCategoryModal = function() {
   document.getElementById('cat_image').value = '';
   document.getElementById('cat_sort_order').value = '0';
   document.getElementById('cat_status').checked = true;
+
+  populateParentCategoryDropdown(null);
+  const catParentSelect = document.getElementById('cat_parent_id');
+  if (catParentSelect) catParentSelect.value = '';
 
   const m = document.getElementById('categoryModal');
   if (m) m.classList.add('active');
@@ -1874,6 +1938,13 @@ window.openEditCategoryModal = function(id) {
   document.getElementById('cat_image').value = cat.image || '';
   document.getElementById('cat_sort_order').value = cat.sort_order ?? 0;
   document.getElementById('cat_status').checked = Boolean(cat.status);
+
+  // Populate parent dropdown excluding current category and all its descendants
+  populateParentCategoryDropdown(cat.id);
+  const catParentSelect = document.getElementById('cat_parent_id');
+  if (catParentSelect) {
+    catParentSelect.value = cat.parent_id ? String(cat.parent_id) : '';
+  }
 
   const m = document.getElementById('categoryModal');
   if (m) m.classList.add('active');
@@ -1894,7 +1965,10 @@ window.autoGenCategorySlug = function() {
 
 window.saveCategoryData = function() {
   const id = document.getElementById('cat_id').value;
+  const parentIdVal = document.getElementById('cat_parent_id') ? document.getElementById('cat_parent_id').value : '';
+
   const payload = {
+    parent_id: parentIdVal ? parseInt(parentIdVal, 10) : null,
     title: document.getElementById('cat_title').value.trim(),
     handle: document.getElementById('cat_handle').value.trim(),
     description: document.getElementById('cat_description').value.trim(),
@@ -1955,11 +2029,15 @@ window.deleteCategory = function(id) {
     .then(r => r.json())
     .then(res => {
       if (res.success) {
-        showToast('Category deleted.');
+        showToast('Category deleted successfully.');
         loadCategoriesCatalog();
       } else {
         alert(res.message || 'Cannot delete category.');
       }
+    })
+    .catch(err => {
+      console.error('Error deleting category:', err);
+      alert('Network error while deleting category.');
     });
   }
 };
