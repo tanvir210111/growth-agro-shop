@@ -102,9 +102,8 @@ class ProductService
      */
     public function formatCategory(Category $category, int $depth = 0): array
     {
-        $descendantIds = $category->getAllDescendantIds();
-        $catIds = array_merge([$category->id], $descendantIds);
-        $itemCount = Product::where('status', true)->whereIn('category_id', $catIds)->count();
+        // Direct products assigned strictly to this exact category
+        $itemCount = Product::where('status', true)->where('category_id', $category->id)->count();
 
         $activeChildren = $category->activeChildren()->get();
 
@@ -336,12 +335,7 @@ class ProductService
             if ($handle !== 'all-collection' && $handle !== 'frontpage') {
                 $category = Category::where('handle', $handle)->first();
                 if ($category) {
-                    $descendantIds = $category->getAllDescendantIds();
-                    $catIds = array_merge([$category->id], $descendantIds);
-                    $query->where(function($q) use ($catIds, $handle) {
-                        $q->whereIn('category_id', $catIds)
-                          ->orWhere('category_handle', $handle);
-                    });
+                    $query->where('category_id', $category->id);
                 } else {
                     $query->where('category_handle', $handle);
                 }

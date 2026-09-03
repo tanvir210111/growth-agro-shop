@@ -365,8 +365,8 @@ class CategoryHierarchyPhase17Test extends TestCase
         $response = $this->get('/category/electronics');
         $response->assertStatus(200);
         $response->assertSee('Universal Adaptor');
-        $response->assertSee('Wireless Earbuds');
-        $response->assertSee('Smartphone Holder');
+        $response->assertDontSee('Wireless Earbuds');
+        $response->assertDontSee('Smartphone Holder');
     }
 
     /**
@@ -480,10 +480,9 @@ class CategoryHierarchyPhase17Test extends TestCase
             'status'          => true,
         ]);
 
-        // Querying parent returns subcategory products
+        // Querying parent returns only its direct products (0 here)
         $parentProducts = $this->productService->getProductsByCollection('electronics');
-        $this->assertCount(1, $parentProducts);
-        $this->assertEquals('Apple Watch', $parentProducts[0]['title']);
+        $this->assertCount(0, $parentProducts);
 
         // Querying subcategory returns its products
         $subProducts = $this->productService->getProductsByCollection('smart-watches');
@@ -999,26 +998,26 @@ class CategoryHierarchyPhase17Test extends TestCase
             'status'          => true,
         ]);
 
-        // 1. Filter by Level 1 (Store Agro) -> Should contain product
+        // 1. Filter by Level 1 (Store Agro) -> Should NOT contain product from Level 5
         $prodsLvl1 = $this->productService->getProductsByCollection('store-agro');
-        $this->assertCount(1, $prodsLvl1);
-        $this->assertEquals('Penicillin Injection 10ml', $prodsLvl1[0]['title']);
+        $this->assertCount(0, $prodsLvl1);
 
-        // 2. Filter by Level 2 (Store Poultry) -> Should contain product
+        // 2. Filter by Level 2 (Store Poultry) -> Should NOT contain product from Level 5
         $prodsLvl2 = $this->productService->getProductsByCollection('store-poultry');
-        $this->assertCount(1, $prodsLvl2);
+        $this->assertCount(0, $prodsLvl2);
 
-        // 3. Filter by Level 3 (Store Med) -> Should contain product
+        // 3. Filter by Level 3 (Store Med) -> Should NOT contain product from Level 5
         $prodsLvl3 = $this->productService->getProductsByCollection('store-med');
-        $this->assertCount(1, $prodsLvl3);
+        $this->assertCount(0, $prodsLvl3);
 
-        // 4. Filter by Level 4 (Store Anti) -> Should contain product
+        // 4. Filter by Level 4 (Store Anti) -> Should NOT contain product from Level 5
         $prodsLvl4 = $this->productService->getProductsByCollection('store-anti');
-        $this->assertCount(1, $prodsLvl4);
+        $this->assertCount(0, $prodsLvl4);
 
-        // 5. Filter by Level 5 (Store Penicillin) -> Should contain product
+        // 5. Filter by Level 5 (Store Penicillin) -> Should contain product strictly
         $prodsLvl5 = $this->productService->getProductsByCollection('store-penicillin');
         $this->assertCount(1, $prodsLvl5);
+        $this->assertEquals('Penicillin Injection 10ml', $prodsLvl5[0]['title']);
 
         // 6. Filter by Unrelated branch -> Should NOT contain product
         $prodsUnrelated = $this->productService->getProductsByCollection('store-cattle');
