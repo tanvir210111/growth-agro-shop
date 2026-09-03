@@ -59,10 +59,10 @@
                         @php
                             $renderSubLinks = function($children, $depth = 1) use (&$renderSubLinks) {
                                 foreach ($children as $child) {
-                                    $indent = ($depth - 1) * 8;
-                                    echo '<a href="' . route('collection.show', $child['handle']) . '" title="' . e($child['title']) . '" style="font-size: 0.75rem; color: #334155; background: #fff; border: 1px solid var(--color-border); border-radius: 4px; padding: 4px 6px; margin-left: ' . $indent . 'px; text-decoration: none; display: flex; justify-content: space-between; align-items: center; transition: all 0.15s ease;">';
-                                    echo '<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">↳ ' . e($child['title']) . '</span>';
-                                    echo '<span style="font-size: 0.7rem; color: #94a3b8; margin-left: 4px;">' . ($child['item_count'] ?? 0) . '</span>';
+                                    $indent = min(($depth - 1) * 6, 20);
+                                    echo '<a href="' . route('collection.show', $child['handle']) . '" title="' . e($child['title']) . '" class="subcat-link-item" style="font-size: 0.75rem; color: #334155; background: #fff; border: 1px solid var(--color-border); border-radius: 4px; padding: 4px 6px; margin-left: ' . $indent . 'px; text-decoration: none; display: flex; justify-content: space-between; align-items: center; transition: all 0.15s ease; min-width: 0;">';
+                                    echo '<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; min-width: 0; flex: 1;">↳ ' . e($child['title']) . '</span>';
+                                    echo '<span style="font-size: 0.7rem; color: #94a3b8; margin-left: 4px; flex-shrink: 0;">' . ($child['item_count'] ?? 0) . '</span>';
                                     echo '</a>';
                                     if (!empty($child['children']) && count($child['children']) > 0) {
                                         $renderSubLinks($child['children'], $depth + 1);

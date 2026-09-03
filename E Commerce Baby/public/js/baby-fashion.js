@@ -510,18 +510,56 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
     const mobileNavDrawer = document.getElementById('mobileNavDrawer');
+    const mobileNavDrawerOverlay = document.getElementById('mobileNavDrawerOverlay');
     const mobileDrawerClose = document.getElementById('mobileDrawerClose');
 
-    if (mobileMenuToggle && mobileNavDrawer) {
-        mobileMenuToggle.addEventListener('click', () => {
-            mobileNavDrawer.classList.toggle('active');
-        });
+    function openMobileNav() {
+        if (mobileNavDrawer && mobileNavDrawerOverlay) {
+            mobileNavDrawer.classList.add('active');
+            mobileNavDrawerOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
     }
-    if (mobileDrawerClose && mobileNavDrawer) {
-        mobileDrawerClose.addEventListener('click', () => {
+
+    function closeMobileNav() {
+        if (mobileNavDrawer && mobileNavDrawerOverlay) {
             mobileNavDrawer.classList.remove('active');
-        });
+            mobileNavDrawerOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
     }
+
+    if (mobileMenuToggle) mobileMenuToggle.addEventListener('click', openMobileNav);
+    if (mobileDrawerClose) mobileDrawerClose.addEventListener('click', closeMobileNav);
+    if (mobileNavDrawerOverlay) mobileNavDrawerOverlay.addEventListener('click', closeMobileNav);
+
+    // =========================================================================
+    // Shop Page Mobile Filter Drawer
+    // =========================================================================
+    const openFilterDrawerBtn = document.getElementById('openFilterDrawerBtn');
+    const catalogSidebar = document.getElementById('catalogSidebar');
+    const filterDrawerOverlay = document.getElementById('filterDrawerOverlay');
+    const filterDrawerClose = document.getElementById('filterDrawerClose');
+
+    function openFilterDrawer() {
+        if (catalogSidebar && filterDrawerOverlay) {
+            catalogSidebar.classList.add('active');
+            filterDrawerOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeFilterDrawer() {
+        if (catalogSidebar && filterDrawerOverlay) {
+            catalogSidebar.classList.remove('active');
+            filterDrawerOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (openFilterDrawerBtn) openFilterDrawerBtn.addEventListener('click', openFilterDrawer);
+    if (filterDrawerClose) filterDrawerClose.addEventListener('click', closeFilterDrawer);
+    if (filterDrawerOverlay) filterDrawerOverlay.addEventListener('click', closeFilterDrawer);
 
     // Initial cart load
     fetchCartData();
