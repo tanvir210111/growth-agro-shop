@@ -199,7 +199,60 @@ class MobileStorefrontResponsiveTest extends TestCase
     }
 
     /**
-     * 7. baby-fashion.css contains all required mobile-first rules
+     * 7. All 3 hero slides render complete artwork structure and non-overlapping controls
+     */
+    public function test_all_3_hero_slides_render_complete_artwork_and_controls()
+    {
+        // Seed the 3 canonical sliders
+        \App\Models\Slider::create([
+            'title'       => "SUMMER SALE\nUP TO 40% OFF",
+            'subtitle'    => 'TRENDING NOW',
+            'image'       => '/uploads/sliders/hero_banner_1.webp',
+            'link'        => '/shop',
+            'button_text' => 'SHOP NOW →',
+            'sort_order'  => 1,
+            'status'      => true,
+        ]);
+        \App\Models\Slider::create([
+            'title'       => "QUALITY PRODUCTS\nFOR EVERYDAY LIFE",
+            'subtitle'    => 'EVERYDAY ESSENTIALS',
+            'image'       => '/uploads/sliders/hero_banner_2.webp',
+            'link'        => '/shop',
+            'button_text' => 'SHOP NOW →',
+            'sort_order'  => 2,
+            'status'      => true,
+        ]);
+        \App\Models\Slider::create([
+            'title'       => "SMARTER PRODUCTS\nBETTER EVERYDAY",
+            'subtitle'    => 'TECH & LIFESTYLE',
+            'image'       => '/uploads/sliders/hero_banner_3.webp',
+            'link'        => '/shop',
+            'button_text' => 'EXPLORE NOW →',
+            'sort_order'  => 3,
+            'status'      => true,
+        ]);
+
+        $response = $this->get('/');
+        $response->assertStatus(200);
+
+        // All 3 slides present in HTML
+        $response->assertSee('/uploads/sliders/hero_banner_1.webp');
+        $response->assertSee('/uploads/sliders/hero_banner_2.webp');
+        $response->assertSee('/uploads/sliders/hero_banner_3.webp');
+
+        // All 3 titles present
+        $response->assertSee('SUMMER SALE');
+        $response->assertSee('QUALITY PRODUCTS');
+        $response->assertSee('SMARTER PRODUCTS');
+
+        // Navigation controls present
+        $response->assertSee('id="heroPrevBtn"', false);
+        $response->assertSee('id="heroNextBtn"', false);
+        $response->assertSee('id="heroSliderDots"', false);
+    }
+
+    /**
+     * 8. baby-fashion.css contains mobile hero zero-crop and zero-overlap rules
      */
     public function test_stylesheet_contains_mobile_first_rules()
     {
@@ -220,6 +273,15 @@ class MobileStorefrontResponsiveTest extends TestCase
         // Hero mobile constraints (220-280px range)
         $this->assertStringContainsString('.hero-slider-container', $css);
         $this->assertStringContainsString('250px', $css);
+
+        // Hero mobile zero-crop rules (object-fit: contain, right center alignment)
+        $this->assertStringContainsString('object-fit: contain', $css);
+        $this->assertStringContainsString('object-position: right center', $css);
+
+        // Hero arrow clearance and extreme edge positioning
+        $this->assertStringContainsString('.hero-nav-arrow.hero-prev', $css);
+        $this->assertStringContainsString('left: 3px', $css);
+        $this->assertStringContainsString('right: 3px', $css);
 
         // Category grid 2 columns
         $this->assertStringContainsString('.homepage-categories-grid', $css);
