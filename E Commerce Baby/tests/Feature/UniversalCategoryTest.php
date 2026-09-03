@@ -214,4 +214,133 @@ class UniversalCategoryTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('pages.landing-page');
     }
+
+    /**
+     * 8. Storefront 3-Level Category Hierarchy rendering in shop sidebar (Beauty -> Makeup -> Korean Makeup)
+     */
+    public function test_08_storefront_3_level_category_hierarchy_rendering_in_sidebar()
+    {
+        $beauty = Category::create([
+            'title'      => 'Beauty Storefront',
+            'handle'     => 'beauty-storefront',
+            'sort_order' => 1,
+            'status'     => true,
+        ]);
+
+        $makeup = Category::create([
+            'parent_id'  => $beauty->id,
+            'title'      => 'Makeup Collection',
+            'handle'     => 'makeup-collection',
+            'sort_order' => 1,
+            'status'     => true,
+        ]);
+
+        $koreanMakeup = Category::create([
+            'parent_id'  => $makeup->id,
+            'title'      => 'Korean Makeup Line',
+            'handle'     => 'korean-makeup-line',
+            'sort_order' => 1,
+            'status'     => true,
+        ]);
+
+        $product = Product::create([
+            'title'           => 'Korean Cushion BB Cream 15g',
+            'slug'            => 'korean-cushion-bb-cream-15g',
+            'category_id'     => $koreanMakeup->id,
+            'category_handle' => 'korean-makeup-line',
+            'regular_price'   => 1250,
+            'sale_price'      => 990,
+            'status'          => true,
+        ]);
+
+        // 1. Visit /collections/beauty-storefront
+        $resBeauty = $this->get('/collections/beauty-storefront');
+        $resBeauty->assertStatus(200);
+        $resBeauty->assertSee('Beauty Storefront');
+        $resBeauty->assertSee('Makeup Collection');
+        $resBeauty->assertSee('Korean Makeup Line');
+        $resBeauty->assertSee('Korean Cushion BB Cream 15g');
+
+        // 2. Visit /collections/makeup-collection
+        $resMakeup = $this->get('/collections/makeup-collection');
+        $resMakeup->assertStatus(200);
+        $resMakeup->assertSee('Makeup Collection');
+        $resMakeup->assertSee('Korean Makeup Line');
+        $resMakeup->assertSee('Korean Cushion BB Cream 15g');
+
+        // 3. Visit /category/korean-makeup-line
+        $resKorean = $this->get('/category/korean-makeup-line');
+        $resKorean->assertStatus(200);
+        $resKorean->assertSee('Korean Makeup Line');
+        $resKorean->assertSee('Korean Cushion BB Cream 15g');
+    }
+
+    /**
+     * 9. Deep Breadcrumbs on arbitrary depth category pages
+     */
+    public function test_09_deep_breadcrumbs_on_multi_level_category_pages()
+    {
+        $beauty = Category::create([
+            'title'      => 'Beauty Breadcrumb',
+            'handle'     => 'beauty-crumb',
+            'status'     => true,
+        ]);
+
+        $makeup = Category::create([
+            'parent_id'  => $beauty->id,
+            'title'      => 'Makeup Breadcrumb',
+            'handle'     => 'makeup-crumb',
+            'status'     => true,
+        ]);
+
+        $koreanMakeup = Category::create([
+            'parent_id'  => $makeup->id,
+            'title'      => 'Korean Makeup Breadcrumb',
+            'handle'     => 'korean-makeup-crumb',
+            'status'     => true,
+        ]);
+
+        // Test breadcrumb order on Level 3 category: Home > Categories > Beauty > Makeup > Korean Makeup
+        $res = $this->get('/category/korean-makeup-crumb');
+        $res->assertStatus(200);
+        $res->assertSeeInOrder([
+            'Home',
+            'Categories',
+            'Beauty Breadcrumb',
+            'Makeup Breadcrumb',
+            'Korean Makeup Breadcrumb',
+        ]);
+    }
+
+    /**
+     * 10. /categories page renders recursive multi-level subcategories
+     */
+    public function test_10_categories_page_renders_multi_level_subcategories_recursively()
+    {
+        $beauty = Category::create([
+            'title'      => 'Beauty AllCat',
+            'handle'     => 'beauty-allcat',
+            'status'     => true,
+        ]);
+
+        $makeup = Category::create([
+            'parent_id'  => $beauty->id,
+            'title'      => 'Makeup SubCat',
+            'handle'     => 'makeup-subcat',
+            'status'     => true,
+        ]);
+
+        $korean = Category::create([
+            'parent_id'  => $makeup->id,
+            'title'      => 'Korean SubSubCat',
+            'handle'     => 'korean-subsubcat',
+            'status'     => true,
+        ]);
+
+        $res = $this->get('/categories');
+        $res->assertStatus(200);
+        $res->assertSee('Beauty AllCat');
+        $res->assertSee('Makeup SubCat');
+        $res->assertSee('Korean SubSubCat');
+    }
 }

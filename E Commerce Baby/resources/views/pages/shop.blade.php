@@ -10,7 +10,11 @@
         <a href="{{ route('home') }}">Home</a> &rsaquo;
         @if(($currentCollection['handle'] ?? '') !== 'all-collection')
             <a href="{{ route('categories') }}">Categories</a> &rsaquo;
-            @if(!empty($currentCollection['parent_handle']))
+            @if(!empty($currentCollection['ancestors']))
+                @foreach($currentCollection['ancestors'] as $ancestor)
+                    <a href="{{ route('collection.show', $ancestor['handle']) }}">{{ $ancestor['title'] }}</a> &rsaquo;
+                @endforeach
+            @elseif(!empty($currentCollection['parent_handle']))
                 <a href="{{ route('collection.show', $currentCollection['parent_handle']) }}">{{ $currentCollection['parent_title'] }}</a> &rsaquo;
             @endif
         @endif
@@ -53,14 +57,9 @@
                                     <span style="font-size: 0.75rem; color: #94a3b8; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{{ $col['item_count'] ?? 0 }}</span>
                                 </a>
                                 @if(!empty($col['children']) && count($col['children']) > 0)
-                                    <ul style="list-style: none; padding-left: 14px; margin: 4px 0 6px; display: flex; flex-direction: column; gap: 3px;">
+                                    <ul style="list-style: none; padding: 0; margin: 4px 0 6px; display: flex; flex-direction: column; gap: 3px;">
                                         @foreach($col['children'] as $child)
-                                            <li>
-                                                <a href="{{ route('collection.show', $child['handle']) }}" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: {{ ($currentCollection['handle'] ?? '') === $child['handle'] ? '#ea580c' : '#64748b' }}; font-weight: {{ ($currentCollection['handle'] ?? '') === $child['handle'] ? '700' : '400' }}; text-decoration: none;">
-                                                    <span>↳ {{ $child['title'] }}</span>
-                                                    <span style="font-size: 0.7rem; color: #94a3b8;">{{ $child['item_count'] ?? 0 }}</span>
-                                                </a>
-                                            </li>
+                                            @include('partials.category-sidebar-item', ['category' => $child, 'depth' => 1, 'currentCollection' => $currentCollection])
                                         @endforeach
                                     </ul>
                                 @endif

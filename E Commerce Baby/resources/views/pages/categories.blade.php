@@ -34,7 +34,16 @@
             @php
                 $colImg = !empty($col['image']) ? $col['image'] : '/images/placeholder.webp';
                 $isAllCol = ($col['handle'] === 'all-collection');
-                $subTitles = !empty($col['children']) ? collect($col['children'])->pluck('title')->implode(' ') : '';
+
+                $getAllTitles = function($cat) use (&$getAllTitles) {
+                    $titles = [];
+                    foreach ($cat['children'] ?? [] as $ch) {
+                        $titles[] = $ch['title'];
+                        $titles = array_merge($titles, $getAllTitles($ch));
+                    }
+                    return $titles;
+                };
+                $subTitles = implode(' ', $getAllTitles($col));
             @endphp
             <div class="cat-item-card" data-title="{{ strtolower($col['title'] . ' ' . $subTitles) }}" style="display: flex; flex-direction: column;">
                 <a href="{{ $isAllCol ? route('shop') : route('collection.show', $col['handle']) }}" class="category-card" style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.15rem 0.75rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s ease; text-decoration: none;">
@@ -47,12 +56,21 @@
 
                 @if(!empty($col['children']) && count($col['children']) > 0)
                     <div class="subcategory-links" style="margin-top: 0.45rem; display: flex; flex-direction: column; gap: 4px;">
-                        @foreach($col['children'] as $child)
-                            <a href="{{ route('collection.show', $child['handle']) }}" title="{{ $child['title'] }}" style="font-size: 0.75rem; color: #334155; background: #fff; border: 1px solid var(--color-border); border-radius: 4px; padding: 4px 6px; text-decoration: none; display: flex; justify-content: space-between; align-items: center; transition: all 0.15s ease;">
-                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">↳ {{ $child['title'] }}</span>
-                                <span style="font-size: 0.7rem; color: #94a3b8; margin-left: 4px;">{{ $child['item_count'] ?? 0 }}</span>
-                            </a>
-                        @endforeach
+                        @php
+                            $renderSubLinks = function($children, $depth = 1) use (&$renderSubLinks) {
+                                foreach ($children as $child) {
+                                    $indent = ($depth - 1) * 8;
+                                    echo '<a href="' . route('collection.show', $child['handle']) . '" title="' . e($child['title']) . '" style="font-size: 0.75rem; color: #334155; background: #fff; border: 1px solid var(--color-border); border-radius: 4px; padding: 4px 6px; margin-left: ' . $indent . 'px; text-decoration: none; display: flex; justify-content: space-between; align-items: center; transition: all 0.15s ease;">';
+                                    echo '<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">↳ ' . e($child['title']) . '</span>';
+                                    echo '<span style="font-size: 0.7rem; color: #94a3b8; margin-left: 4px;">' . ($child['item_count'] ?? 0) . '</span>';
+                                    echo '</a>';
+                                    if (!empty($child['children']) && count($child['children']) > 0) {
+                                        $renderSubLinks($child['children'], $depth + 1);
+                                    }
+                                }
+                            };
+                            $renderSubLinks($col['children']);
+                        @endphp
                     </div>
                 @endif
             </div>

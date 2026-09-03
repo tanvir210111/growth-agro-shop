@@ -98,30 +98,25 @@ class ProductService
      * Normalize an Eloquent Category model into the standard UI array contract.
      */
     /**
-     * Normalize an Eloquent Category model into the standard UI array contract.
+     * Normalize an Eloquent Category model into the standard UI array contract recursively at any depth.
      */
-    public function formatCategory(Category $category): array
+    public function formatCategory(Category $category, int $depth = 0): array
     {
         $descendantIds = $category->getAllDescendantIds();
         $catIds = array_merge([$category->id], $descendantIds);
         $itemCount = Product::where('status', true)->whereIn('category_id', $catIds)->count();
 
-        $activeChildren = $category->relationLoaded('activeChildren')
-            ? $category->activeChildren
-            : $category->activeChildren()->get();
+        $activeChildren = $category->activeChildren()->get();
 
-        $children = $activeChildren->map(function ($c) {
-            $childCatIds = array_merge([$c->id], $c->getAllDescendantIds());
+        $children = $activeChildren->map(function ($c) use ($depth) {
+            return $this->formatCategory($c, $depth + 1);
+        })->toArray();
+
+        $ancestors = collect($category->getAncestors())->map(function ($a) {
             return [
-                'id'           => $c->handle,
-                'category_id'  => $c->id,
-                'title'        => $c->title,
-                'handle'       => $c->handle,
-                'image'        => $c->image ?: '/images/placeholder.webp',
-                'banner_image' => $c->banner_image ?: ($c->image ?: '/images/placeholder.webp'),
-                'description'  => $c->description ?: '',
-                'item_count'   => Product::where('status', true)->whereIn('category_id', $childCatIds)->count(),
-                'parent_id'    => $c->parent_id,
+                'id'     => $a->id,
+                'title'  => $a->title,
+                'handle' => $a->handle,
             ];
         })->toArray();
 
@@ -131,6 +126,8 @@ class ProductService
             'parent_id'      => $category->parent_id,
             'parent_title'   => $category->parent ? $category->parent->title : null,
             'parent_handle'  => $category->parent ? $category->parent->handle : null,
+            'ancestors'      => $ancestors,
+            'depth'          => $depth,
             'title'          => $category->title,
             'handle'         => $category->handle,
             'image'          => $category->image ?: '/images/placeholder.webp',
@@ -145,20 +142,20 @@ class ProductService
 
     /**
      * Retrieve all active top-level categories ordered by sort_order from database.
-     * Each top-level category includes its active subcategories in 'children'.
+     * Each top-level category includes its recursive active subcategories in 'children'.
      */
     public function getCollections(): array
     {
         try {
             $categories = Category::where('status', true)
                 ->whereNull('parent_id')
-                ->with(['activeChildren', 'parent'])
+                ->with(['parent'])
                 ->orderBy('sort_order', 'asc')
                 ->orderBy('id', 'asc')
                 ->get();
 
             if ($categories->isNotEmpty()) {
-                return $categories->map(fn($c) => $this->formatCategory($c))->toArray();
+                return $categories->map(fn($c) => $this->formatCategory($c, 0))->toArray();
             }
         } catch (\Throwable $e) {}
 
@@ -169,6 +166,8 @@ class ProductService
                 'parent_id' => null,
                 'parent_title' => null,
                 'parent_handle' => null,
+                'ancestors' => [],
+                'depth' => 0,
                 'title' => 'All Collection',
                 'handle' => 'all-collection',
                 'image' => '/images/placeholder.webp',
@@ -183,7 +182,7 @@ class ProductService
     }
 
     /**
-     * Retrieve single category by handle from database (supports parent or subcategory).
+     * Retrieve single category by handle from database (supports parent or subcategory at any depth).
      */
     public function getCollectionByHandle(string $handle): ?array
     {
@@ -194,6 +193,8 @@ class ProductService
                 'parent_id' => null,
                 'parent_title' => null,
                 'parent_handle' => null,
+                'ancestors' => [],
+                'depth' => 0,
                 'title' => 'All Collection',
                 'handle' => 'all-collection',
                 'image' => '/images/placeholder.webp',
@@ -209,7 +210,7 @@ class ProductService
         try {
             $category = Category::where('handle', $handle)
                 ->where('status', true)
-                ->with(['parent', 'activeChildren'])
+                ->with(['parent'])
                 ->first();
 
             if ($category) {

@@ -103,4 +103,26 @@ class Category extends Model
         }
         return false;
     }
+
+    /**
+     * Retrieve all ancestor categories from top-level down to immediate parent.
+     * e.g. for Korean Makeup: [Beauty, Makeup]
+     *
+     * @return array<Category>
+     */
+    public function getAncestors(): array
+    {
+        $ancestors = [];
+        $current = $this->parent;
+        $visited = [$this->id];
+        while ($current) {
+            if (in_array($current->id, $visited, true)) {
+                break;
+            }
+            $visited[] = $current->id;
+            $ancestors[] = $current;
+            $current = $current->parent;
+        }
+        return array_reverse($ancestors);
+    }
 }
