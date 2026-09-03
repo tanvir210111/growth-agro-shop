@@ -32,6 +32,9 @@ class MobileStorefrontResponsiveTest extends TestCase
 
         // Brand Logo (Row 1 Center/Left)
         $response->assertSee('Growth Shop');
+        $response->assertSee('brand-logo-fallback', false);
+        $response->assertSee('brand-icon', false);
+        $response->assertSee('✦');
 
         // Phone call link (Row 1 Right)
         $response->assertSee('phone-action-btn', false);

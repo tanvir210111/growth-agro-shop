@@ -160,33 +160,50 @@ button {
 .brand-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   text-decoration: none;
+  flex-shrink: 0;
 }
 
-.brand-logo img {
-  height: 68px;
-  max-width: 190px;
+.brand-logo img,
+.site-header-logo {
+  height: 44px;
+  max-width: 180px;
   width: auto;
   object-fit: contain;
 }
 
-.brand-logo-text {
+.brand-logo-fallback {
   font-family: var(--font-heading);
-  font-size: 1.45rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  line-height: 1.1;
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  line-height: 1;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  transition: opacity var(--transition-fast);
 }
 
-.brand-logo-text span {
-  color: var(--color-accent);
-  display: block;
-  font-size: 0.82rem;
-  font-family: var(--font-body);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.brand-logo:hover .brand-logo-fallback {
+  opacity: 0.9;
+}
+
+.brand-logo-fallback .brand-icon {
+  color: var(--color-primary);
+  font-size: 1.65rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-logo-fallback .brand-name {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  color: #0f172a;
 }
 
 /* Search Bar */
