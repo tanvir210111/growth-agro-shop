@@ -782,4 +782,272 @@ class CategoryHierarchyPhase17Test extends TestCase
         $subInApi = collect($resIndex->json('categories'))->firstWhere('id', $sub->id);
         $this->assertEquals(1, $subInApi['products_count']);
     }
+
+    /**
+     * 27. Phase 18: Full 5-Level Category Chain Creation (Agro -> Poultry -> Chicken Medicine -> Antibiotics -> Penicillin)
+     */
+    public function test_27_full_5_level_category_chain_creation_and_persistence()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        // Level 1: Agro (Top-Level)
+        $res1 = $this->postJson('/api/admin/categories', [
+            'parent_id'   => null,
+            'title'       => 'Agro',
+            'handle'      => 'agro-p18',
+            'description' => 'Agro top-level',
+            'status'      => true,
+        ]);
+        $res1->assertStatus(201);
+        $lvl1Id = $res1->json('category.id');
+        $this->assertNull($res1->json('category.parent_id'));
+
+        // Level 2: Poultry (under Agro)
+        $res2 = $this->postJson('/api/admin/categories', [
+            'parent_id'   => $lvl1Id,
+            'title'       => 'Poultry',
+            'handle'      => 'poultry-p18',
+            'description' => 'Poultry section',
+            'status'      => true,
+        ]);
+        $res2->assertStatus(201);
+        $lvl2Id = $res2->json('category.id');
+        $this->assertEquals($lvl1Id, $res2->json('category.parent_id'));
+
+        // Level 3: Chicken Medicine (under Poultry)
+        $res3 = $this->postJson('/api/admin/categories', [
+            'parent_id'   => $lvl2Id,
+            'title'       => 'Chicken Medicine',
+            'handle'      => 'chicken-medicine-p18',
+            'description' => 'Chicken medicine section',
+            'status'      => true,
+        ]);
+        $res3->assertStatus(201);
+        $lvl3Id = $res3->json('category.id');
+        $this->assertEquals($lvl2Id, $res3->json('category.parent_id'));
+
+        // Level 4: Antibiotics (under Chicken Medicine)
+        $res4 = $this->postJson('/api/admin/categories', [
+            'parent_id'   => $lvl3Id,
+            'title'       => 'Antibiotics',
+            'handle'      => 'antibiotics-p18',
+            'description' => 'Antibiotics section',
+            'status'      => true,
+        ]);
+        $res4->assertStatus(201);
+        $lvl4Id = $res4->json('category.id');
+        $this->assertEquals($lvl3Id, $res4->json('category.parent_id'));
+
+        // Level 5: Penicillin (under Antibiotics)
+        $res5 = $this->postJson('/api/admin/categories', [
+            'parent_id'   => $lvl4Id,
+            'title'       => 'Penicillin',
+            'handle'      => 'penicillin-p18',
+            'description' => 'Penicillin sub-sub-sub-subcategory',
+            'status'      => true,
+        ]);
+        $res5->assertStatus(201);
+        $lvl5Id = $res5->json('category.id');
+        $this->assertEquals($lvl4Id, $res5->json('category.parent_id'));
+
+        // Verify all 5 levels exist in database with accurate parent_ids
+        $this->assertDatabaseHas('categories', ['id' => $lvl1Id, 'parent_id' => null, 'title' => 'Agro']);
+        $this->assertDatabaseHas('categories', ['id' => $lvl2Id, 'parent_id' => $lvl1Id, 'title' => 'Poultry']);
+        $this->assertDatabaseHas('categories', ['id' => $lvl3Id, 'parent_id' => $lvl2Id, 'title' => 'Chicken Medicine']);
+        $this->assertDatabaseHas('categories', ['id' => $lvl4Id, 'parent_id' => $lvl3Id, 'title' => 'Antibiotics']);
+        $this->assertDatabaseHas('categories', ['id' => $lvl5Id, 'parent_id' => $lvl4Id, 'title' => 'Penicillin']);
+    }
+
+    /**
+     * 28. Phase 18: Recursive Tree Structure and accurate children_count at every nesting level
+     */
+    public function test_28_recursive_api_tree_at_5_levels_with_correct_children_count()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $c1 = Category::create(['title' => 'Agro Tree', 'handle' => 'agro-tree', 'status' => true]);
+        $c2 = Category::create(['parent_id' => $c1->id, 'title' => 'Poultry Tree', 'handle' => 'poultry-tree', 'status' => true]);
+        $c3 = Category::create(['parent_id' => $c2->id, 'title' => 'Chicken Med Tree', 'handle' => 'chicken-med-tree', 'status' => true]);
+        $c4a = Category::create(['parent_id' => $c3->id, 'title' => 'Antibiotics Tree', 'handle' => 'antibiotics-tree', 'status' => true]);
+        $c4b = Category::create(['parent_id' => $c3->id, 'title' => 'Vitamins Tree', 'handle' => 'vitamins-tree', 'status' => true]);
+        $c5 = Category::create(['parent_id' => $c4a->id, 'title' => 'Penicillin Tree', 'handle' => 'penicillin-tree', 'status' => true]);
+
+        $res = $this->getJson('/api/admin/categories');
+        $res->assertStatus(200);
+
+        $tree = $res->json('tree');
+        $node1 = collect($tree)->firstWhere('id', $c1->id);
+        $this->assertNotNull($node1);
+        $this->assertEquals(0, $node1['depth']);
+        $this->assertEquals(1, $node1['children_count']);
+
+        // Level 2
+        $node2 = $node1['children'][0];
+        $this->assertEquals($c2->id, $node2['id']);
+        $this->assertEquals(1, $node2['depth']);
+        $this->assertEquals(1, $node2['children_count']);
+
+        // Level 3
+        $node3 = $node2['children'][0];
+        $this->assertEquals($c3->id, $node3['id']);
+        $this->assertEquals(2, $node3['depth']);
+        $this->assertEquals(2, $node3['children_count']); // Antibiotics and Vitamins
+
+        // Level 4
+        $node4a = collect($node3['children'])->firstWhere('id', $c4a->id);
+        $this->assertNotNull($node4a);
+        $this->assertEquals(3, $node4a['depth']);
+        $this->assertEquals(1, $node4a['children_count']);
+
+        $node4b = collect($node3['children'])->firstWhere('id', $c4b->id);
+        $this->assertNotNull($node4b);
+        $this->assertEquals(3, $node4b['depth']);
+        $this->assertEquals(0, $node4b['children_count']);
+
+        // Level 5
+        $node5 = $node4a['children'][0];
+        $this->assertEquals($c5->id, $node5['id']);
+        $this->assertEquals(4, $node5['depth']);
+        $this->assertEquals(0, $node5['children_count']);
+        $this->assertEmpty($node5['children']);
+    }
+
+    /**
+     * 29. Phase 18: Edit Category Parent across unrelated branches
+     */
+    public function test_29_edit_category_parent_across_unrelated_branches()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $agro = Category::create(['title' => 'Agro Branch', 'handle' => 'agro-branch', 'status' => true]);
+        $poultry = Category::create(['parent_id' => $agro->id, 'title' => 'Poultry Branch', 'handle' => 'poultry-branch', 'status' => true]);
+        $med = Category::create(['parent_id' => $poultry->id, 'title' => 'Med Branch', 'handle' => 'med-branch', 'status' => true]);
+
+        $cattle = Category::create(['title' => 'Cattle Branch', 'handle' => 'cattle-branch', 'status' => true]);
+
+        // Move Med from Poultry (under Agro) to Cattle
+        $res = $this->putJson("/api/admin/categories/{$med->id}", [
+            'parent_id' => $cattle->id,
+        ]);
+        $res->assertStatus(200);
+        $this->assertEquals($cattle->id, $res->json('category.parent_id'));
+        $this->assertDatabaseHas('categories', [
+            'id'        => $med->id,
+            'parent_id' => $cattle->id,
+        ]);
+    }
+
+    /**
+     * 30. Phase 18: Prevent selecting descendant at any depth (Deep Circular Hierarchy Prevention)
+     */
+    public function test_30_edit_category_prevents_selecting_descendant_at_any_depth()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $agro = Category::create(['title' => 'Agro Circ', 'handle' => 'agro-circ', 'status' => true]);
+        $poultry = Category::create(['parent_id' => $agro->id, 'title' => 'Poultry Circ', 'handle' => 'poultry-circ', 'status' => true]);
+        $med = Category::create(['parent_id' => $poultry->id, 'title' => 'Med Circ', 'handle' => 'med-circ', 'status' => true]);
+        $anti = Category::create(['parent_id' => $med->id, 'title' => 'Anti Circ', 'handle' => 'anti-circ', 'status' => true]);
+        $pen = Category::create(['parent_id' => $anti->id, 'title' => 'Pen Circ', 'handle' => 'pen-circ', 'status' => true]);
+
+        // 1. Agro (Level 1) cannot select Penicillin (Level 5) as parent
+        $res1 = $this->putJson("/api/admin/categories/{$agro->id}", [
+            'parent_id' => $pen->id,
+        ]);
+        $res1->assertStatus(422);
+        $res1->assertJsonValidationErrors(['parent_id']);
+
+        // 2. Poultry (Level 2) cannot select Penicillin (Level 5) as parent
+        $res2 = $this->putJson("/api/admin/categories/{$poultry->id}", [
+            'parent_id' => $pen->id,
+        ]);
+        $res2->assertStatus(422);
+        $res2->assertJsonValidationErrors(['parent_id']);
+
+        // 3. Med (Level 3) cannot select Anti (Level 4) as parent
+        $res3 = $this->putJson("/api/admin/categories/{$med->id}", [
+            'parent_id' => $anti->id,
+        ]);
+        $res3->assertStatus(422);
+        $res3->assertJsonValidationErrors(['parent_id']);
+    }
+
+    /**
+     * 31. Phase 18: Products assigned to deep subcategory and hierarchical storefront filtering
+     */
+    public function test_31_products_at_deep_subcategories_and_hierarchical_filtering()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $c1 = Category::create(['title' => 'Store Agro', 'handle' => 'store-agro', 'status' => true]);
+        $c2 = Category::create(['parent_id' => $c1->id, 'title' => 'Store Poultry', 'handle' => 'store-poultry', 'status' => true]);
+        $c3 = Category::create(['parent_id' => $c2->id, 'title' => 'Store Med', 'handle' => 'store-med', 'status' => true]);
+        $c4 = Category::create(['parent_id' => $c3->id, 'title' => 'Store Anti', 'handle' => 'store-anti', 'status' => true]);
+        $c5 = Category::create(['parent_id' => $c4->id, 'title' => 'Store Penicillin', 'handle' => 'store-penicillin', 'status' => true]);
+
+        $unrelated = Category::create(['title' => 'Store Cattle', 'handle' => 'store-cattle', 'status' => true]);
+
+        // Product in Level 5: Penicillin
+        $product = Product::create([
+            'category_id'     => $c5->id,
+            'category_handle' => $c5->handle,
+            'title'           => 'Penicillin Injection 10ml',
+            'slug'            => 'penicillin-injection-10ml',
+            'regular_price'   => 500,
+            'sale_price'      => 450,
+            'stock'           => 100,
+            'status'          => true,
+        ]);
+
+        // 1. Filter by Level 1 (Store Agro) -> Should contain product
+        $prodsLvl1 = $this->productService->getProductsByCollection('store-agro');
+        $this->assertCount(1, $prodsLvl1);
+        $this->assertEquals('Penicillin Injection 10ml', $prodsLvl1[0]['title']);
+
+        // 2. Filter by Level 2 (Store Poultry) -> Should contain product
+        $prodsLvl2 = $this->productService->getProductsByCollection('store-poultry');
+        $this->assertCount(1, $prodsLvl2);
+
+        // 3. Filter by Level 3 (Store Med) -> Should contain product
+        $prodsLvl3 = $this->productService->getProductsByCollection('store-med');
+        $this->assertCount(1, $prodsLvl3);
+
+        // 4. Filter by Level 4 (Store Anti) -> Should contain product
+        $prodsLvl4 = $this->productService->getProductsByCollection('store-anti');
+        $this->assertCount(1, $prodsLvl4);
+
+        // 5. Filter by Level 5 (Store Penicillin) -> Should contain product
+        $prodsLvl5 = $this->productService->getProductsByCollection('store-penicillin');
+        $this->assertCount(1, $prodsLvl5);
+
+        // 6. Filter by Unrelated branch -> Should NOT contain product
+        $prodsUnrelated = $this->productService->getProductsByCollection('store-cattle');
+        $this->assertCount(0, $prodsUnrelated);
+    }
+
+    /**
+     * 32. Phase 18: Hierarchical list preserves depth-first ordering and depth metadata
+     */
+    public function test_32_hierarchical_list_preserves_depth_first_ordering()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $c1 = Category::create(['title' => 'Main Agro', 'handle' => 'main-agro', 'status' => true]);
+        $c2 = Category::create(['parent_id' => $c1->id, 'title' => 'Sub Poultry', 'handle' => 'sub-poultry', 'status' => true]);
+        $c3 = Category::create(['parent_id' => $c2->id, 'title' => 'Sub Med', 'handle' => 'sub-med', 'status' => true]);
+
+        $res = $this->getJson('/api/admin/categories');
+        $res->assertStatus(200);
+
+        $categories = $res->json('categories');
+        $idx1 = collect($categories)->search(fn($c) => $c['id'] === $c1->id);
+        $idx2 = collect($categories)->search(fn($c) => $c['id'] === $c2->id);
+        $idx3 = collect($categories)->search(fn($c) => $c['id'] === $c3->id);
+
+        $this->assertTrue($idx1 !== false && $idx2 !== false && $idx3 !== false);
+        $this->assertTrue($idx1 < $idx2 && $idx2 < $idx3);
+        $this->assertEquals(0, $categories[$idx1]['depth']);
+        $this->assertEquals(1, $categories[$idx2]['depth']);
+        $this->assertEquals(2, $categories[$idx3]['depth']);
+    }
 }

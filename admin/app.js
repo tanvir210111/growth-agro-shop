@@ -1796,25 +1796,44 @@ function renderCategoriesTable(categories) {
     return;
   }
 
+  // Fast map to determine hierarchy depth
+  const catMap = {};
+  categories.forEach(c => { catMap[c.id] = c; });
+
+  function getDepth(cat) {
+    if (typeof cat.depth === 'number') return cat.depth;
+    let d = 0;
+    let cur = cat;
+    const visited = new Set();
+    while (cur && cur.parent_id && !visited.has(cur.id)) {
+      visited.add(cur.id);
+      cur = catMap[cur.parent_id];
+      if (cur) d++;
+    }
+    return d;
+  }
+
   categories.forEach((cat, idx) => {
     const tr = document.createElement('tr');
     const isAct = Boolean(cat.status);
-    const isSub = Boolean(cat.parent_id);
+    const depth = getDepth(cat);
+    const isSub = depth > 0;
     const imgHtml = cat.image
       ? `<img src="${cat.image}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0;">`
       : `<div style="width:36px;height:36px;background:#F1F5F9;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;">📁</div>`;
 
+    const indentPx = depth * 22;
     const titleHtml = isSub
-      ? `<div style="padding-left:18px;font-weight:600;font-size:13px;color:#1E293B;display:flex;align-items:center;gap:6px;">
-           <span style="color:#94A3B8;font-family:monospace;font-size:14px;">├──</span>
+      ? `<div style="padding-left:${indentPx}px;font-weight:600;font-size:13px;color:#1E293B;display:flex;align-items:center;gap:6px;">
+           <span style="color:#94A3B8;font-family:monospace;font-size:13px;">↳</span>
            <span>${cat.title}</span>
          </div>
-         <div style="padding-left:34px;font-size:11.5px;color:#64748B;">${cat.description || 'No description'}</div>`
+         <div style="padding-left:${indentPx + 16}px;font-size:11.5px;color:#64748B;">${cat.description || 'No description'}</div>`
       : `<div style="font-weight:700;font-size:13.5px;color:#0F172A;">${cat.title}</div>
          <div style="font-size:11.5px;color:#64748B;">${cat.description || 'No description'}</div>`;
 
     const parentHtml = isSub
-      ? `<span class="product-stock-pill" style="background:#F1F5F9;color:#334155;font-weight:600;font-size:11.5px;">📁 ${cat.parent ? cat.parent.title : 'Category #' + cat.parent_id}</span>`
+      ? `<span class="product-stock-pill" style="background:#F1F5F9;color:#334155;font-weight:600;font-size:11.5px;">📁 ${cat.parent ? cat.parent.title : (cat.parent_title || 'Category #' + cat.parent_id)}</span>`
       : `<span style="color:#94A3B8;font-size:12px;">— (Top-Level)</span>`;
 
     tr.innerHTML = `
@@ -1861,11 +1880,59 @@ function renderParentCategoryOptions(excludeId = null, selectedParentId = null) 
   const invalidIds = new Set(excludeId ? [Number(excludeId), ...getCategoryDescendantIds(excludeId)] : []);
   let opts = `<option value="">— None (Top-Level Category) —</option>`;
 
-  // Only top-level categories can be parents (parent_id is null/falsy)
-  const topParents = STORE_CATEGORIES_CACHE.filter(c => !c.parent_id && !invalidIds.has(Number(c.id)));
-  topParents.forEach(p => {
-    const isSel = (selectedParentId !== null && selectedParentId !== undefined && Number(selectedParentId) === Number(p.id)) ? ' selected' : '';
-    opts += `<option value="${p.id}"${isSel}>${p.title}</option>`;
+  // Recursively append options at unlimited depth with clear indentation
+  function appendCategoryBranch(parentId, depth) {
+    const children = STORE_CATEGORIES_CACHE.filter(c => {
+      if (parentId === null) {
+        return !c.parent_id;
+      }
+      return Number(c.parent_id) === Number(parentId);
+    }).sort((a, b) => (Number(a.sort_order || 0) - Number(b.sort_order || 0)) || (Number(a.id) - Number(b.id)));
+
+    children.forEach(c => {
+      const isInvalid = invalidIds.has(Number(c.id));
+      const isSel = (selectedParentId !== null && selectedParentId !== undefined && Number(selectedParentId) === Number(c.id)) ? ' selected' : '';
+      const disabledAttr = isInvalid ? ' disabled' : '';
+
+      // Indent based on depth: 2 non-breaking spaces per depth level, plus ↳ for subcategories
+      let prefix = '';
+      if (depth > 0) {
+        prefix = '\u00A0\u00A0'.repeat(depth) + '↳ ';
+      }
+
+      let note = '';
+      if (isInvalid) {
+        note = Number(c.id) === Number(excludeId) ? ' (Current Category)' : ' (Cannot select descendant)';
+      }
+
+      const optStyle = isInvalid ? 'color:#94A3B8;' : (depth === 0 ? 'font-weight:700;' : '');
+
+      opts += `<option value="${c.id}"${isSel}${disabledAttr} style="${optStyle}">${prefix}${c.title}${note}</option>`;
+
+      // Recursively walk through children of this category
+      appendCategoryBranch(c.id, depth + 1);
+    });
+  }
+
+  appendCategoryBranch(null, 0);
+
+  // Append any orphaned categories (parent_id points to non-existent ID)
+  const handledIds = new Set();
+  function collectHandled(pId) {
+    const subs = STORE_CATEGORIES_CACHE.filter(c => pId === null ? !c.parent_id : Number(c.parent_id) === Number(pId));
+    subs.forEach(s => {
+      handledIds.add(Number(s.id));
+      collectHandled(s.id);
+    });
+  }
+  collectHandled(null);
+
+  const orphans = STORE_CATEGORIES_CACHE.filter(c => !handledIds.has(Number(c.id)));
+  orphans.forEach(o => {
+    const isInvalid = invalidIds.has(Number(o.id));
+    const isSel = (selectedParentId !== null && selectedParentId !== undefined && Number(selectedParentId) === Number(o.id)) ? ' selected' : '';
+    const disabledAttr = isInvalid ? ' disabled' : '';
+    opts += `<option value="${o.id}"${isSel}${disabledAttr} style="${isInvalid ? 'color:#94A3B8;' : ''}">[Orphan] ${o.title}</option>`;
   });
 
   catParentSelect.innerHTML = opts;
@@ -1898,22 +1965,25 @@ function populateParentCategoryDropdown(excludeId = null, selectedParentId = nul
 }
 
 function populateCategoryDropdowns(categories) {
-  // 1. Build hierarchical options for Product Filter and Product Form Select
-  const topParents = categories.filter(c => !c.parent_id);
   let optionsHtml = '';
-  topParents.forEach(p => {
-    optionsHtml += `<option value="${p.id}" style="font-weight:700;">${p.title}</option>`;
-    const subs = categories.filter(c => Number(c.parent_id) === Number(p.id));
-    subs.forEach(s => {
-      optionsHtml += `<option value="${s.id}">&nbsp;&nbsp;&nbsp;↳ ${s.title}</option>`;
-    });
-  });
 
-  // Also include any orphan categories
-  const handled = new Set([...topParents.map(p => p.id), ...categories.filter(c => c.parent_id).map(c => c.id)]);
-  categories.filter(c => !handled.has(c.id)).forEach(o => {
-    optionsHtml += `<option value="${o.id}">${o.title}</option>`;
-  });
+  function appendBranch(parentId, depth) {
+    const children = categories.filter(c => {
+      if (parentId === null) return !c.parent_id;
+      return Number(c.parent_id) === Number(parentId);
+    }).sort((a, b) => (Number(a.sort_order || 0) - Number(b.sort_order || 0)) || (Number(a.id) - Number(b.id)));
+
+    children.forEach(c => {
+      let prefix = '';
+      if (depth > 0) {
+        prefix = '\u00A0\u00A0'.repeat(depth) + '↳ ';
+      }
+      optionsHtml += `<option value="${c.id}" style="${depth === 0 ? 'font-weight:700;' : ''}">${prefix}${c.title}</option>`;
+      appendBranch(c.id, depth + 1);
+    });
+  }
+
+  appendBranch(null, 0);
 
   const prodFilter = document.getElementById('productCategoryFilter');
   if (prodFilter) {

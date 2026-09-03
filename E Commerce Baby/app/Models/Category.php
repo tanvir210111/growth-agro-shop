@@ -64,29 +64,41 @@ class Category extends Model
     }
 
     /**
-     * Recursively collect all descendant category IDs.
+     * Recursively collect all descendant category IDs at unlimited depth.
      */
-    public function getAllDescendantIds(): array
+    public function getAllDescendantIds(array &$visited = []): array
     {
         $ids = [];
+        if (in_array($this->id, $visited, true)) {
+            return $ids;
+        }
+        $visited[] = $this->id;
+
         $children = $this->children()->get();
         foreach ($children as $child) {
-            $ids[] = $child->id;
-            $ids = array_merge($ids, $child->getAllDescendantIds());
+            if (!in_array($child->id, $visited, true)) {
+                $ids[] = $child->id;
+                $ids = array_merge($ids, $child->getAllDescendantIds($visited));
+            }
         }
         return array_values(array_unique($ids));
     }
 
     /**
-     * Check if a category is a descendant of the given candidate parent ID.
+     * Check if a category is a descendant of the given candidate parent ID at unlimited depth.
      */
     public function isDescendantOf(int $candidateParentId): bool
     {
         $currentParent = $this->parent;
+        $visited = [$this->id];
         while ($currentParent) {
             if ($currentParent->id === $candidateParentId) {
                 return true;
             }
+            if (in_array($currentParent->id, $visited, true)) {
+                break;
+            }
+            $visited[] = $currentParent->id;
             $currentParent = $currentParent->parent;
         }
         return false;

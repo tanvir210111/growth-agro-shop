@@ -56,20 +56,21 @@ class AdminCategoryController extends Controller
         $hierarchicalList = collect();
 
         // Recursively build hierarchical list: Top-level categories ordered by sort_order ASC, id ASC,
-        // followed immediately by their descendants ordered by sort_order ASC, id ASC.
-        $buildHierarchy = function ($parentId) use (&$buildHierarchy, $categories, &$hierarchicalList) {
+        // followed immediately by their descendants ordered by sort_order ASC, id ASC at unlimited depth.
+        $buildHierarchy = function ($parentId, $depth = 0) use (&$buildHierarchy, $categories, &$hierarchicalList) {
             $items = $categories->where('parent_id', $parentId)->sortBy([
                 ['sort_order', 'asc'],
                 ['id', 'asc']
             ])->values();
 
             foreach ($items as $item) {
+                $item->depth = $depth;
                 $hierarchicalList->push($item);
-                $buildHierarchy($item->id);
+                $buildHierarchy($item->id, $depth + 1);
             }
         };
 
-        $buildHierarchy(null);
+        $buildHierarchy(null, 0);
 
         // Include any orphaned categories (e.g. parent_id points to non-existent category)
         $includedIds = $hierarchicalList->pluck('id')->all();
@@ -78,24 +79,26 @@ class AdminCategoryController extends Controller
             ['id', 'asc']
         ]);
         foreach ($orphaned as $orphan) {
+            $orphan->depth = 0;
             $hierarchicalList->push($orphan);
         }
 
-        // Build clean nested tree structure
-        $buildTree = function ($parentId) use (&$buildTree, $categories) {
+        // Build clean nested tree structure at unlimited depth
+        $buildTree = function ($parentId, $depth = 0) use (&$buildTree, $categories) {
             $items = $categories->where('parent_id', $parentId)->sortBy([
                 ['sort_order', 'asc'],
                 ['id', 'asc']
             ])->values();
 
-            return $items->map(function ($c) use ($buildTree) {
-                $subTree = $buildTree($c->id);
+            return $items->map(function ($c) use ($buildTree, $depth) {
+                $subTree = $buildTree($c->id, $depth + 1);
                 return [
                     'id'             => $c->id,
                     'title'          => $c->title,
                     'handle'         => $c->handle,
                     'parent_id'      => $c->parent_id,
                     'parent_title'   => $c->parent ? $c->parent->title : null,
+                    'depth'          => $depth,
                     'description'    => $c->description,
                     'image'          => $c->image,
                     'banner_image'   => $c->banner_image,
@@ -103,13 +106,13 @@ class AdminCategoryController extends Controller
                     'status'         => (bool) $c->status,
                     'is_active'      => (bool) $c->status,
                     'products_count' => $c->products_count,
-                    'children_count' => $c->children_count,
+                    'children_count' => count($subTree),
                     'children'       => $subTree,
                 ];
             })->toArray();
         };
 
-        $tree = $buildTree(null);
+        $tree = $buildTree(null, 0);
 
         return response()->json([
             'success'    => true,
