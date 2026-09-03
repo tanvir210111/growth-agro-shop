@@ -88,18 +88,27 @@ class AdminSettingsController extends Controller
         if ($rawPixel !== null && trim($rawPixel) !== '') {
             $trimmed = trim($rawPixel);
 
-            // 1. Direct 14-18 digit numeric Pixel ID
+            // Reject clearly invalid Google Tag Manager or Google Analytics container IDs
+            if (preg_match('/^(?:GTM-|G-|AW-)/i', $trimmed)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid Meta Pixel / Dataset ID format. The entered value appears to be a Google container ID, not a Meta identifier.',
+                    'errors'  => ['facebook_pixel' => ['Please enter a numeric Meta Pixel / Dataset ID or official Meta snippet, not a Google container ID.']]
+                ], 422);
+            }
+
+            // 1. Direct 14-18 digit numeric Meta Pixel / Dataset ID
             if (preg_match('/^\d{14,18}$/', $trimmed)) {
                 $normalizedPixel = $trimmed;
             }
-            // 2. Full snippet extraction (e.g. fbq('init', '1793041018387711') or ?id=1793041018387711)
-            elseif (preg_match('/(?:fbq\s*\(\s*[\'"]init[\'"]\s*,\s*[\'"]|id=|\b)(\d{14,18})\b/i', $trimmed, $matches)) {
+            // 2. Official Meta snippet extraction (e.g. fbq('init', '1615672197236009') or ?id=1615672197236009)
+            elseif (preg_match('/(?:fbq\s*\(\s*[\'"]init[\'"]\s*,\s*[\'"]|id=)(\d{14,18})/i', $trimmed, $matches)) {
                 $normalizedPixel = $matches[1];
             } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid Facebook Pixel format. Please enter a valid 14–18 digit Pixel ID or official Meta Pixel snippet.',
-                    'errors'  => ['facebook_pixel' => ['The submitted value does not contain a valid Facebook Pixel ID.']]
+                    'message' => 'Invalid Meta Pixel / Dataset ID format. Please enter a valid 14–18 digit numeric ID or official Meta snippet.',
+                    'errors'  => ['facebook_pixel' => ['The submitted value does not contain an acceptable numeric Meta Pixel / Dataset ID format.']]
                 ], 422);
             }
         }
