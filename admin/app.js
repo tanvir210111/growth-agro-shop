@@ -1846,7 +1846,7 @@ function renderCategoriesTable(categories) {
 
 function getCategoryDescendantIds(catId) {
   const descendants = [];
-  const directChildren = STORE_CATEGORIES_CACHE.filter(c => c.parent_id == catId);
+  const directChildren = STORE_CATEGORIES_CACHE.filter(c => Number(c.parent_id) === Number(catId));
   directChildren.forEach(child => {
     descendants.push(Number(child.id));
     descendants.push(...getCategoryDescendantIds(child.id));
@@ -1854,23 +1854,47 @@ function getCategoryDescendantIds(catId) {
   return descendants;
 }
 
-function populateParentCategoryDropdown(excludeId = null) {
+function renderParentCategoryOptions(excludeId = null, selectedParentId = null) {
   const catParentSelect = document.getElementById('cat_parent_id');
   if (!catParentSelect) return;
 
   const invalidIds = new Set(excludeId ? [Number(excludeId), ...getCategoryDescendantIds(excludeId)] : []);
   let opts = `<option value="">— None (Top-Level Category) —</option>`;
 
+  // Only top-level categories can be parents (parent_id is null/falsy)
   const topParents = STORE_CATEGORIES_CACHE.filter(c => !c.parent_id && !invalidIds.has(Number(c.id)));
   topParents.forEach(p => {
-    opts += `<option value="${p.id}">${p.title}</option>`;
-    const subs = STORE_CATEGORIES_CACHE.filter(c => c.parent_id == p.id && !invalidIds.has(Number(c.id)));
-    subs.forEach(s => {
-      opts += `<option value="${s.id}">&nbsp;&nbsp;&nbsp;↳ ${s.title}</option>`;
-    });
+    const isSel = (selectedParentId !== null && selectedParentId !== undefined && Number(selectedParentId) === Number(p.id)) ? ' selected' : '';
+    opts += `<option value="${p.id}"${isSel}>${p.title}</option>`;
   });
 
   catParentSelect.innerHTML = opts;
+  if (selectedParentId !== null && selectedParentId !== undefined && selectedParentId !== '') {
+    catParentSelect.value = String(selectedParentId);
+  } else {
+    catParentSelect.value = '';
+  }
+}
+
+function populateParentCategoryDropdown(excludeId = null, selectedParentId = null) {
+  // If cache already has data, render options immediately
+  renderParentCategoryOptions(excludeId, selectedParentId);
+
+  // Always fetch latest categories from DB to ensure newly created categories (like Agro) are available
+  fetch('/api/admin/categories', {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success && Array.isArray(res.categories)) {
+      STORE_CATEGORIES_CACHE = res.categories;
+      renderParentCategoryOptions(excludeId, selectedParentId);
+    }
+  })
+  .catch(err => {
+    console.error('Error fetching parent categories from database:', err);
+  });
 }
 
 function populateCategoryDropdowns(categories) {
@@ -1879,7 +1903,7 @@ function populateCategoryDropdowns(categories) {
   let optionsHtml = '';
   topParents.forEach(p => {
     optionsHtml += `<option value="${p.id}" style="font-weight:700;">${p.title}</option>`;
-    const subs = categories.filter(c => c.parent_id == p.id);
+    const subs = categories.filter(c => Number(c.parent_id) === Number(p.id));
     subs.forEach(s => {
       optionsHtml += `<option value="${s.id}">&nbsp;&nbsp;&nbsp;↳ ${s.title}</option>`;
     });
@@ -1905,7 +1929,7 @@ function populateCategoryDropdowns(categories) {
     prodModalSelect.value = curVal;
   }
 
-  populateParentCategoryDropdown();
+  renderParentCategoryOptions();
 }
 
 window.openAddCategoryModal = function() {
@@ -1918,36 +1942,57 @@ window.openAddCategoryModal = function() {
   document.getElementById('cat_sort_order').value = '0';
   document.getElementById('cat_status').checked = true;
 
-  populateParentCategoryDropdown(null);
-  const catParentSelect = document.getElementById('cat_parent_id');
-  if (catParentSelect) catParentSelect.value = '';
+  // Freshly populate parent category dropdown from database
+  populateParentCategoryDropdown(null, null);
 
   const m = document.getElementById('categoryModal');
   if (m) m.classList.add('active');
 };
 
 window.openEditCategoryModal = function(id) {
-  const cat = STORE_CATEGORIES_CACHE.find(c => c.id == id);
-  if (!cat) return;
+  // Always fetch fresh category details from database to ensure accurate parent assignment
+  fetch(`/api/admin/categories/${id}`, {
+    headers: getAdminFetchHeaders(),
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(res => {
+    const cat = (res.success && res.category) ? res.category : STORE_CATEGORIES_CACHE.find(c => c.id == id);
+    if (!cat) return;
 
-  document.getElementById('categoryModalTitle').textContent = 'Edit Category';
-  document.getElementById('cat_id').value = cat.id;
-  document.getElementById('cat_title').value = cat.title || '';
-  document.getElementById('cat_handle').value = cat.handle || '';
-  document.getElementById('cat_description').value = cat.description || '';
-  document.getElementById('cat_image').value = cat.image || '';
-  document.getElementById('cat_sort_order').value = cat.sort_order ?? 0;
-  document.getElementById('cat_status').checked = Boolean(cat.status);
+    document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+    document.getElementById('cat_id').value = cat.id;
+    document.getElementById('cat_title').value = cat.title || '';
+    document.getElementById('cat_handle').value = cat.handle || '';
+    document.getElementById('cat_description').value = cat.description || '';
+    document.getElementById('cat_image').value = cat.image || '';
+    document.getElementById('cat_sort_order').value = cat.sort_order ?? 0;
+    document.getElementById('cat_status').checked = Boolean(cat.status);
 
-  // Populate parent dropdown excluding current category and all its descendants
-  populateParentCategoryDropdown(cat.id);
-  const catParentSelect = document.getElementById('cat_parent_id');
-  if (catParentSelect) {
-    catParentSelect.value = cat.parent_id ? String(cat.parent_id) : '';
-  }
+    populateParentCategoryDropdown(cat.id, cat.parent_id);
 
-  const m = document.getElementById('categoryModal');
-  if (m) m.classList.add('active');
+    const m = document.getElementById('categoryModal');
+    if (m) m.classList.add('active');
+  })
+  .catch(err => {
+    console.error('Error loading category for edit:', err);
+    const cat = STORE_CATEGORIES_CACHE.find(c => c.id == id);
+    if (!cat) return;
+
+    document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+    document.getElementById('cat_id').value = cat.id;
+    document.getElementById('cat_title').value = cat.title || '';
+    document.getElementById('cat_handle').value = cat.handle || '';
+    document.getElementById('cat_description').value = cat.description || '';
+    document.getElementById('cat_image').value = cat.image || '';
+    document.getElementById('cat_sort_order').value = cat.sort_order ?? 0;
+    document.getElementById('cat_status').checked = Boolean(cat.status);
+
+    populateParentCategoryDropdown(cat.id, cat.parent_id);
+
+    const m = document.getElementById('categoryModal');
+    if (m) m.classList.add('active');
+  });
 };
 
 window.closeCategoryModal = function() {
@@ -1965,10 +2010,13 @@ window.autoGenCategorySlug = function() {
 
 window.saveCategoryData = function() {
   const id = document.getElementById('cat_id').value;
-  const parentIdVal = document.getElementById('cat_parent_id') ? document.getElementById('cat_parent_id').value : '';
+  const parentSelect = document.getElementById('cat_parent_id');
+  const parentIdVal = parentSelect ? parentSelect.value.trim() : '';
+
+  const parentId = (parentIdVal !== '' && parentIdVal !== 'null' && parentIdVal !== '0') ? parseInt(parentIdVal, 10) : null;
 
   const payload = {
-    parent_id: parentIdVal ? parseInt(parentIdVal, 10) : null,
+    parent_id: parentId,
     title: document.getElementById('cat_title').value.trim(),
     handle: document.getElementById('cat_handle').value.trim(),
     description: document.getElementById('cat_description').value.trim(),
@@ -1976,6 +2024,11 @@ window.saveCategoryData = function() {
     sort_order: parseInt(document.getElementById('cat_sort_order').value, 10) || 0,
     status: document.getElementById('cat_status').checked
   };
+
+  if (!payload.title) {
+    alert('Please enter a Category Name.');
+    return;
+  }
 
   const url = id ? `/api/admin/categories/${id}` : `/api/admin/categories`;
   const method = id ? 'PUT' : 'POST';
@@ -1986,14 +2039,27 @@ window.saveCategoryData = function() {
     credentials: 'same-origin',
     body: JSON.stringify(payload)
   })
-  .then(r => r.json())
+  .then(async r => {
+    let data;
+    try {
+      data = await r.json();
+    } catch(e) {
+      data = { success: false, message: 'Server returned invalid response.' };
+    }
+    return { ok: r.ok, status: r.status, data };
+  })
   .then(res => {
-    if (res.success) {
+    if (res.ok && res.data.success) {
       showToast(id ? 'Category updated successfully!' : 'Category created successfully!');
       closeCategoryModal();
       loadCategoriesCatalog();
     } else {
-      alert(res.message || 'Failed to save category.');
+      let errMsg = (res.data && res.data.message) || 'Failed to save category.';
+      if (res.data && res.data.errors) {
+        const errorList = Object.values(res.data.errors).flat().join('\n');
+        errMsg += '\n' + errorList;
+      }
+      alert(errMsg);
     }
   })
   .catch(err => {

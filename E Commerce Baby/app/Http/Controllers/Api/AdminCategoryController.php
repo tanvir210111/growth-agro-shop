@@ -53,59 +53,23 @@ class AdminCategoryController extends Controller
             ->withCount(['products', 'children'])
             ->get();
 
-        // Organize hierarchically: Top-level categories ordered by sort_order ASC, id ASC,
-        // followed immediately by their respective children ordered by sort_order ASC, id ASC.
-        $topLevel = $categories->whereNull('parent_id')->sortBy([
-            ['sort_order', 'asc'],
-            ['id', 'asc']
-        ])->values();
-
         $hierarchicalList = collect();
-        $tree = [];
 
-        foreach ($topLevel as $parent) {
-            $hierarchicalList->push($parent);
-
-            $children = $categories->where('parent_id', $parent->id)->sortBy([
+        // Recursively build hierarchical list: Top-level categories ordered by sort_order ASC, id ASC,
+        // followed immediately by their descendants ordered by sort_order ASC, id ASC.
+        $buildHierarchy = function ($parentId) use (&$buildHierarchy, $categories, &$hierarchicalList) {
+            $items = $categories->where('parent_id', $parentId)->sortBy([
                 ['sort_order', 'asc'],
                 ['id', 'asc']
             ])->values();
 
-            foreach ($children as $child) {
-                $hierarchicalList->push($child);
+            foreach ($items as $item) {
+                $hierarchicalList->push($item);
+                $buildHierarchy($item->id);
             }
+        };
 
-            $tree[] = [
-                'id'             => $parent->id,
-                'title'          => $parent->title,
-                'handle'         => $parent->handle,
-                'parent_id'      => null,
-                'description'    => $parent->description,
-                'image'          => $parent->image,
-                'banner_image'   => $parent->banner_image,
-                'sort_order'     => $parent->sort_order,
-                'status'         => (bool) $parent->status,
-                'is_active'      => (bool) $parent->status,
-                'products_count' => $parent->products_count,
-                'children_count' => $children->count(),
-                'children'       => $children->map(fn($c) => [
-                    'id'             => $c->id,
-                    'title'          => $c->title,
-                    'handle'         => $c->handle,
-                    'parent_id'      => $parent->id,
-                    'parent_title'   => $parent->title,
-                    'description'    => $c->description,
-                    'image'          => $c->image,
-                    'banner_image'   => $c->banner_image,
-                    'sort_order'     => $c->sort_order,
-                    'status'         => (bool) $c->status,
-                    'is_active'      => (bool) $c->status,
-                    'products_count' => $c->products_count,
-                    'children_count' => 0,
-                    'children'       => [],
-                ])->toArray(),
-            ];
-        }
+        $buildHierarchy(null);
 
         // Include any orphaned categories (e.g. parent_id points to non-existent category)
         $includedIds = $hierarchicalList->pluck('id')->all();
@@ -116,6 +80,36 @@ class AdminCategoryController extends Controller
         foreach ($orphaned as $orphan) {
             $hierarchicalList->push($orphan);
         }
+
+        // Build clean nested tree structure
+        $buildTree = function ($parentId) use (&$buildTree, $categories) {
+            $items = $categories->where('parent_id', $parentId)->sortBy([
+                ['sort_order', 'asc'],
+                ['id', 'asc']
+            ])->values();
+
+            return $items->map(function ($c) use ($buildTree) {
+                $subTree = $buildTree($c->id);
+                return [
+                    'id'             => $c->id,
+                    'title'          => $c->title,
+                    'handle'         => $c->handle,
+                    'parent_id'      => $c->parent_id,
+                    'parent_title'   => $c->parent ? $c->parent->title : null,
+                    'description'    => $c->description,
+                    'image'          => $c->image,
+                    'banner_image'   => $c->banner_image,
+                    'sort_order'     => $c->sort_order,
+                    'status'         => (bool) $c->status,
+                    'is_active'      => (bool) $c->status,
+                    'products_count' => $c->products_count,
+                    'children_count' => $c->children_count,
+                    'children'       => $subTree,
+                ];
+            })->toArray();
+        };
+
+        $tree = $buildTree(null);
 
         return response()->json([
             'success'    => true,
@@ -132,6 +126,16 @@ class AdminCategoryController extends Controller
     {
         if (!$this->authenticateAdmin($request)) {
             return response()->json(['success' => false, 'message' => 'Unauthorized: Admin access required.'], 401);
+        }
+
+        // Normalize parent_id: empty string, 'null', '0', or 0 become null; valid numeric ID becomes integer
+        if ($request->has('parent_id')) {
+            $rawParent = $request->input('parent_id');
+            if ($rawParent === '' || $rawParent === 'null' || $rawParent === '0' || $rawParent === 0 || $rawParent === false || $rawParent === null) {
+                $request->merge(['parent_id' => null]);
+            } else {
+                $request->merge(['parent_id' => (int)$rawParent]);
+            }
         }
 
         $validator = Validator::make($request->all(), [
@@ -227,6 +231,16 @@ class AdminCategoryController extends Controller
         $category = Category::find($id);
         if (!$category) {
             return response()->json(['success' => false, 'message' => 'Category not found.'], 404);
+        }
+
+        // Normalize parent_id: empty string, 'null', '0', or 0 become null; valid numeric ID becomes integer
+        if ($request->has('parent_id')) {
+            $rawParent = $request->input('parent_id');
+            if ($rawParent === '' || $rawParent === 'null' || $rawParent === '0' || $rawParent === 0 || $rawParent === false || $rawParent === null) {
+                $request->merge(['parent_id' => null]);
+            } else {
+                $request->merge(['parent_id' => (int)$rawParent]);
+            }
         }
 
         $validator = Validator::make($request->all(), [

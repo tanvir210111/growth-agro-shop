@@ -582,4 +582,204 @@ class CategoryHierarchyPhase17Test extends TestCase
         $this->assertCount(1, $parentInTree['children']);
         $this->assertEquals('Mobile', $parentInTree['children'][0]['title']);
     }
+
+    /**
+     * 21. User Exact Requirement: Create Agro (top-level) and Chicken Medicine (subcategory under Agro)
+     */
+    public function test_21_create_agro_as_top_level_and_chicken_medicine_under_agro()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        // 1. Create Top-level category 'Agro' with parent_id = null
+        $resAgro = $this->postJson('/api/admin/categories', [
+            'parent_id'   => null,
+            'title'       => 'Agro',
+            'handle'      => 'agro',
+            'description' => 'Agriculture and animal care',
+            'sort_order'  => 1,
+            'status'      => true,
+        ]);
+        $resAgro->assertStatus(201);
+        $agroId = $resAgro->json('category.id');
+        $this->assertNotNull($agroId);
+        $this->assertNull($resAgro->json('category.parent_id'));
+
+        // 2. Create Subcategory 'Chicken Medicine' with parent_id = Agro ID
+        $resCM = $this->postJson('/api/admin/categories', [
+            'parent_id'   => $agroId,
+            'title'       => 'Chicken Medicine',
+            'handle'      => 'chicken-medicine',
+            'description' => 'Poultry healthcare and medicine',
+            'sort_order'  => 1,
+            'status'      => true,
+        ]);
+        $resCM->assertStatus(201);
+        $cmId = $resCM->json('category.id');
+        $this->assertNotNull($cmId);
+        $this->assertEquals($agroId, $resCM->json('category.parent_id'));
+        $this->assertEquals('Agro', $resCM->json('category.parent.title'));
+
+        // 3. Verify Database contains Agro -> Chicken Medicine hierarchy
+        $this->assertDatabaseHas('categories', [
+            'id'        => $agroId,
+            'title'     => 'Agro',
+            'handle'    => 'agro',
+            'parent_id' => null,
+        ]);
+
+        $this->assertDatabaseHas('categories', [
+            'id'        => $cmId,
+            'title'     => 'Chicken Medicine',
+            'handle'    => 'chicken-medicine',
+            'parent_id' => $agroId,
+        ]);
+
+        // 4. Verify category list returns Chicken Medicine right under Agro
+        $resIndex = $this->getJson('/api/admin/categories');
+        $resIndex->assertStatus(200);
+        $cats = $resIndex->json('categories');
+
+        $foundCM = collect($cats)->firstWhere('id', $cmId);
+        $this->assertNotNull($foundCM);
+        $this->assertEquals($agroId, $foundCM['parent_id']);
+        $this->assertEquals('Agro', $foundCM['parent']['title']);
+
+        // 5. Verify tree contains Agro with Chicken Medicine child
+        $tree = $resIndex->json('tree');
+        $agroInTree = collect($tree)->firstWhere('id', $agroId);
+        $this->assertNotNull($agroInTree);
+        $this->assertEquals(1, $agroInTree['children_count']);
+        $this->assertEquals('Chicken Medicine', $agroInTree['children'][0]['title']);
+    }
+
+    /**
+     * 22. Create subcategory under another parent and verify parent_id persists across fresh reloads
+     */
+    public function test_22_create_subcategory_under_another_parent_and_persistence()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $parent = Category::create(['title' => 'Livestock Care', 'handle' => 'livestock-care', 'status' => true]);
+
+        $res = $this->postJson('/api/admin/categories', [
+            'parent_id'   => $parent->id,
+            'title'       => 'Cattle Feed',
+            'handle'      => 'cattle-feed',
+            'description' => 'Nutritional cattle feed',
+            'sort_order'  => 2,
+            'status'      => true,
+        ]);
+        $res->assertStatus(201);
+        $subId = $res->json('category.id');
+
+        // Fresh DB query (simulating page reload)
+        $subCategory = Category::with('parent')->find($subId);
+        $this->assertNotNull($subCategory);
+        $this->assertEquals($parent->id, $subCategory->parent_id);
+        $this->assertEquals('Livestock Care', $subCategory->parent->title);
+    }
+
+    /**
+     * 23. Edit subcategory parent to another parent or to top-level
+     */
+    public function test_23_edit_subcategory_parent()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $parent1 = Category::create(['title' => 'Parent One', 'handle' => 'parent-one', 'status' => true]);
+        $parent2 = Category::create(['title' => 'Parent Two', 'handle' => 'parent-two', 'status' => true]);
+
+        $sub = Category::create(['parent_id' => $parent1->id, 'title' => 'Child Category', 'handle' => 'child-category', 'status' => true]);
+
+        // Change parent from parent1 to parent2
+        $resUpdate = $this->putJson("/api/admin/categories/{$sub->id}", [
+            'parent_id' => $parent2->id,
+        ]);
+        $resUpdate->assertStatus(200);
+        $this->assertEquals($parent2->id, $resUpdate->json('category.parent_id'));
+        $this->assertDatabaseHas('categories', ['id' => $sub->id, 'parent_id' => $parent2->id]);
+
+        // Change parent to null (convert to top-level)
+        $resTop = $this->putJson("/api/admin/categories/{$sub->id}", [
+            'parent_id' => null,
+        ]);
+        $resTop->assertStatus(200);
+        $this->assertNull($resTop->json('category.parent_id'));
+        $this->assertDatabaseHas('categories', ['id' => $sub->id, 'parent_id' => null]);
+    }
+
+    /**
+     * 24. Invalid parent_id rejected with HTTP 422
+     */
+    public function test_24_invalid_parent_id_rejected()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $response = $this->postJson('/api/admin/categories', [
+            'parent_id' => 999999, // non-existent category
+            'title'     => 'Bad Child',
+            'handle'    => 'bad-child',
+            'status'    => true,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['parent_id']);
+    }
+
+    /**
+     * 25. Self-parenting and circular hierarchy rejected on update with HTTP 422
+     */
+    public function test_25_self_parenting_and_circular_hierarchy_rejected()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $parent = Category::create(['title' => 'Parent', 'handle' => 'parent-circ', 'status' => true]);
+        $child = Category::create(['parent_id' => $parent->id, 'title' => 'Child', 'handle' => 'child-circ', 'status' => true]);
+
+        // Self-parenting
+        $resSelf = $this->putJson("/api/admin/categories/{$parent->id}", [
+            'parent_id' => $parent->id,
+        ]);
+        $resSelf->assertStatus(422);
+        $resSelf->assertJsonValidationErrors(['parent_id']);
+
+        // Circular hierarchy: parent choosing its child as parent
+        $resCirc = $this->putJson("/api/admin/categories/{$parent->id}", [
+            'parent_id' => $child->id,
+        ]);
+        $resCirc->assertStatus(422);
+        $resCirc->assertJsonValidationErrors(['parent_id']);
+    }
+
+    /**
+     * 26. Products continue using correct category_id
+     */
+    public function test_26_products_continue_using_correct_category_id()
+    {
+        $this->actingAs($this->admin, 'admin');
+
+        $parent = Category::create(['title' => 'Agro Main', 'handle' => 'agro-main', 'status' => true]);
+        $sub = Category::create(['parent_id' => $parent->id, 'title' => 'Chicken Booster', 'handle' => 'chicken-booster-sub', 'status' => true]);
+
+        $product = Product::create([
+            'category_id'     => $sub->id,
+            'category_handle' => $sub->handle,
+            'title'           => 'Booster Formula 500g',
+            'slug'            => 'booster-formula-500g',
+            'regular_price'   => 850,
+            'sale_price'      => 750,
+            'stock'           => 50,
+            'status'          => true,
+        ]);
+
+        $this->assertDatabaseHas('products', [
+            'id'          => $product->id,
+            'category_id' => $sub->id,
+        ]);
+
+        $resIndex = $this->getJson('/api/admin/categories');
+        $resIndex->assertStatus(200);
+        $subInApi = collect($resIndex->json('categories'))->firstWhere('id', $sub->id);
+        $this->assertEquals(1, $subInApi['products_count']);
+    }
 }
