@@ -892,42 +892,9 @@ const server = http.createServer(async (req, res) => {
         else if (eventName === 'checkout_started') capiEventName = 'InitiateCheckout';
 
         const clientEventId = body && typeof body === 'object' ? (body.event_id || null) : null;
-        let capiDispatched = false;
 
-        if (capiEventName && clientEventId) {
-          const metaCapi = require('./server/meta-capi');
-          const cookieHeader = req.headers.cookie || '';
-          const fbpMatch = cookieHeader.match(/_fbp=([^;]+)/);
-          const fbcMatch = cookieHeader.match(/_fbc=([^;]+)/);
-
-          try {
-            const capiRes = await metaCapi.sendEvent({
-              event_name: capiEventName,
-              event_id: clientEventId,
-              event_source_url: body.url || req.headers.referer || `http://${req.headers.host}${body.page_path || '/'}`,
-              user_data: {
-                client_ip_address: clientIp,
-                client_user_agent: req.headers['user-agent'] || '',
-                fbp: fbpMatch ? fbpMatch[1] : null,
-                fbc: fbcMatch ? fbcMatch[1] : null
-              },
-              custom_data: {
-                currency: body.properties?.currency || 'BDT',
-                value: typeof body.event_value === 'number' ? body.event_value : null,
-                num_items: body.properties?.items_count || 1,
-                content_ids: body.entity_id ? [String(body.entity_id)] : null
-              }
-            });
-            if (capiRes && capiRes.success) {
-              capiDispatched = true;
-            }
-          } catch (capiErr) {
-            console.warn('[Meta CAPI] Tracking dispatch error (fail-open):', capiErr.message);
-          }
-        }
-
-        // Forward to Laravel for tracking attribution in tracking_events table
-        // Send X-CAPI-Dispatched: 1 so Laravel does not double-dispatch CAPI
+        // Forward to Laravel internal tracking bridge (authoritative attribution & MetaConversionApiService dispatch)
+        // Send X-CAPI-Dispatched: 0 so Laravel dispatches server-side CAPI via MetaConversionApiService
         const forwardPayload = JSON.stringify(body);
         const forwardReq = http.request({
           hostname: LARAVEL_HOST,
@@ -937,7 +904,7 @@ const server = http.createServer(async (req, res) => {
           headers: {
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(forwardPayload),
-            'X-CAPI-Dispatched': capiDispatched ? '1' : '0',
+            'X-CAPI-Dispatched': '0',
             'Cookie': req.headers.cookie || '',
             'User-Agent': req.headers['user-agent'] || '',
             'Referer': req.headers.referer || '',
@@ -950,7 +917,7 @@ const server = http.createServer(async (req, res) => {
 
         forwardReq.on('error', () => {
           // Fail-safe response if Laravel backend is unavailable
-          sendJson(res, 200, { success: true, event_id: clientEventId, capi_dispatched: capiDispatched });
+          sendJson(res, 200, { success: true, event_id: clientEventId, capi_dispatched: false });
         });
         forwardReq.write(forwardPayload);
         forwardReq.end();

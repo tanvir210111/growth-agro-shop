@@ -450,8 +450,7 @@ async function sendEvent(eventData = {}) {
   };
 
   const postData = {
-    data: [payloadObject],
-    access_token: accessToken
+    data: [payloadObject]
   };
 
   if (testEventCode) {
@@ -514,7 +513,8 @@ async function sendEvent(eventData = {}) {
       timeout: 5000,
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postJson)
+        'Content-Length': Buffer.byteLength(postJson),
+        'Authorization': `Bearer ${accessToken}`
       }
     }, (res) => {
       let resBody = '';

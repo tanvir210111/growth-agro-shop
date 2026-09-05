@@ -189,6 +189,67 @@ class MetaLandingNodeCapiPhase6Test extends TestCase
     }
 
     /**
+     * 5b. Regression Test: Landing AddToCart forwarded from Node bridge (X-CAPI-Dispatched: 0)
+     * verifies full chain: preservation of exact event_id, test_event_code, and meta_tracking_events sent status.
+     */
+    public function test_landing_add_to_cart_forwarded_from_node_dispatches_capi_with_exact_event_id_and_sets_sent_status()
+    {
+        Http::fake([
+            'https://graph.facebook.com/*' => Http::response([
+                'events_received' => 1,
+                'fbtrace_id'      => 'trace_atc_node_bridge_test',
+            ], 200),
+        ]);
+
+        $freshEventId = 'atc_' . time() . '_uniq9876';
+
+        $payload = [
+            'event_name'  => 'add_to_cart',
+            'event_id'    => $freshEventId,
+            'entity_type' => 'landing_page',
+            'entity_id'   => 'chicken-booster',
+            'event_value' => 1250,
+            'url'         => 'https://growthagro.shop/product/chicken-booster',
+            'properties'  => [
+                'items_count' => 1,
+                'currency'    => 'BDT',
+            ],
+        ];
+
+        // Simulate Node forwarding to Laravel with X-CAPI-Dispatched: 0
+        $res = $this->withHeaders([
+            'X-CAPI-Dispatched' => '0',
+            'X-Forwarded-For'   => '103.145.120.45',
+            'User-Agent'        => 'Mozilla/5.0 NodeBridgeTest',
+            'Referer'           => 'https://growthagro.shop/product/chicken-booster',
+        ])->postJson('/api/tracking/event', $payload);
+
+        $res->assertStatus(200)
+            ->assertJson([
+                'success'  => true,
+                'event_id' => $freshEventId,
+            ]);
+
+        // Verify Meta Graph API call
+        Http::assertSent(function ($request) use ($freshEventId) {
+            $data = $request->data();
+            $event = $data['data'][0] ?? [];
+            return $request->hasHeader('Authorization', 'Bearer EAAG_PHASE6_TEST_ACCESS_TOKEN_SECRET')
+                && ($event['event_id'] ?? null) === $freshEventId
+                && ($event['event_name'] ?? null) === 'AddToCart'
+                && ($data['test_event_code'] ?? null) === 'TEST66666';
+        });
+
+        // Verify database persistence in meta_tracking_events
+        $record = \App\Models\MetaTrackingEvent::where('event_id', $freshEventId)->first();
+        $this->assertNotNull($record, 'Tracking record must be persisted in meta_tracking_events');
+        $this->assertEquals('AddToCart', $record->event_name);
+        $this->assertEquals('tracked', $record->browser_status);
+        $this->assertEquals('sent', $record->server_status);
+        $this->assertEquals(200, $record->response_code);
+    }
+
+    /**
      * 6. Landing success view outputs exact deterministic purchase_{orderNumber} eventID
      */
     public function test_landing_success_view_outputs_deterministic_purchase_event_id()
