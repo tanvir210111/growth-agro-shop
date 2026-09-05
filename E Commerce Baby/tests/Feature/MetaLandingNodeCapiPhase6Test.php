@@ -250,6 +250,81 @@ class MetaLandingNodeCapiPhase6Test extends TestCase
     }
 
     /**
+     * 5b. Regression Test: _fbp and _fbc cookies are preserved across Laravel cookie encryption
+     * and included in outbound Meta CAPI user_data.
+     */
+    public function test_tracking_event_preserves_meta_fbp_and_fbc_cookies_in_capi_user_data()
+    {
+        Http::fake([
+            'https://graph.facebook.com/*' => Http::response([
+                'events_received' => 1,
+                'fbtrace_id'      => 'trace_cookie_preservation_test',
+            ], 200),
+        ]);
+
+        $freshEventId = 'atc_' . time() . '_cookie_test';
+        $testFbp = 'fb.1.1788600000000.987654321';
+        $testFbc = 'fb.1.1788600000000.abcdef98765';
+
+        $payload = [
+            'event_name'  => 'add_to_cart',
+            'event_id'    => $freshEventId,
+            'entity_type' => 'landing_page',
+            'entity_id'   => 'chicken-booster',
+            'event_value' => 1250,
+            'url'         => 'https://growthagro.shop/product/chicken-booster',
+            'properties'  => [
+                'items_count' => 1,
+                'currency'    => 'BDT',
+            ],
+        ];
+
+        // Send request with unencrypted _fbp and _fbc cookies (as sent by browser/Node bridge)
+        $res = $this->withCredentials()->withUnencryptedCookies([
+            '_fbp' => $testFbp,
+            '_fbc' => $testFbc,
+        ])->withHeaders([
+            'X-CAPI-Dispatched' => '0',
+            'X-Forwarded-For'   => '103.145.120.45',
+            'User-Agent'        => 'Mozilla/5.0 CookieTestAgent',
+            'Referer'           => 'https://growthagro.shop/product/chicken-booster',
+        ])->postJson('/api/tracking/event', $payload);
+
+        $res->assertStatus(200)
+            ->assertJson([
+                'success'  => true,
+                'event_id' => $freshEventId,
+            ]);
+
+        // Verify that Meta Graph API received fbp and fbc in user_data
+        Http::assertSent(function ($request) use ($freshEventId, $testFbp, $testFbc) {
+            $data = $request->data();
+            $event = $data['data'][0] ?? [];
+            $userData = $event['user_data'] ?? [];
+
+            $fbpPresent = !empty($userData['fbp']);
+            $fbcPresent = !empty($userData['fbc']);
+            $fbpMatches = ($userData['fbp'] ?? null) === $testFbp;
+            $fbcMatches = ($userData['fbc'] ?? null) === $testFbc;
+
+            return ($event['event_id'] ?? null) === $freshEventId
+                && ($event['event_name'] ?? null) === 'AddToCart'
+                && $fbpPresent
+                && $fbcPresent
+                && $fbpMatches
+                && $fbcMatches;
+        });
+
+        // Verify database record has user_data with fbp and fbc
+        $record = \App\Models\MetaTrackingEvent::where('event_id', $freshEventId)->first();
+        $this->assertNotNull($record, 'Tracking record must be persisted in meta_tracking_events');
+        $this->assertNotEmpty($record->user_data['fbp'] ?? null, 'fbp must be present in user_data');
+        $this->assertNotEmpty($record->user_data['fbc'] ?? null, 'fbc must be present in user_data');
+        $this->assertEquals($testFbp, $record->user_data['fbp']);
+        $this->assertEquals($testFbc, $record->user_data['fbc']);
+    }
+
+    /**
      * 6. Landing success view outputs exact deterministic purchase_{orderNumber} eventID
      */
     public function test_landing_success_view_outputs_deterministic_purchase_event_id()

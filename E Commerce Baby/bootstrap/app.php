@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: [
             'growth_agro_visitor_id',
             'growth_agro_session_id',
+            '_fbp',
+            '_fbc',
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\TrackVisitor::class,
