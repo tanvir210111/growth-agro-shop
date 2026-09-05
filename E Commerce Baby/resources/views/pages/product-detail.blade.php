@@ -305,6 +305,21 @@
         if (detailCheckoutStarted) return;
         detailCheckoutStarted = true;
 
+        const icEventId = 'ic_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+        if (window.GrowthAgroTracking) {
+            window.GrowthAgroTracking.track('checkout_started', {
+                event_id: icEventId,
+                entity_type: 'product',
+                entity_id: '{{ $product["slug"] }}',
+                event_value: {{ (float)$product["price"] }} * currentDetailQty,
+                properties: {
+                    items_count: currentDetailQty,
+                    currency: 'BDT'
+                }
+            });
+        }
+
         if (typeof window.fbq === 'function') {
             window.fbq('track', 'InitiateCheckout', {
                 content_ids: ['{{ $product["slug"] }}'],
@@ -313,6 +328,8 @@
                 value: {{ (float)$product["price"] }} * currentDetailQty,
                 currency: 'BDT',
                 num_items: currentDetailQty
+            }, {
+                eventID: icEventId
             });
         }
     }

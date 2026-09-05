@@ -107,9 +107,71 @@ class TrackingController extends Controller
                 request: $request
             );
 
+            // Meta Browser/Server Deduplication & Server CAPI Dispatch
+            $clientEventId = isset($payload['event_id']) ? trim((string)$payload['event_id']) : null;
+            if (!empty($clientEventId)) {
+                $eventIdService = app(\App\Services\MetaEventIdService::class);
+                if ($eventIdService->isValid($clientEventId)) {
+                    $capiMap = [
+                        'add_to_cart'      => 'AddToCart',
+                        'checkout_started' => 'InitiateCheckout',
+                        'purchase'         => 'Purchase',
+                        'page_view'        => 'PageView',
+                    ];
+
+                    $capiEventName = $capiMap[$eventName] ?? null;
+                    if ($capiEventName) {
+                        $configService = app(\App\Services\MetaTrackingConfigService::class);
+                        $pixelId = $configService->getActivePixelId();
+
+                        if ($pixelId) {
+                            // Update or record browser occurrence under the shared event_id
+                            \App\Models\MetaTrackingEvent::updateOrCreate(
+                                [
+                                    'pixel_id'   => $pixelId,
+                                    'event_name' => $capiEventName,
+                                    'event_id'   => $clientEventId,
+                                ],
+                                [
+                                    'order_id'         => ($capiEventName === 'Purchase') ? ($entityId ?: ($properties['order_id'] ?? null)) : null,
+                                    'browser_status'   => 'tracked',
+                                    'action_source'    => 'website',
+                                    'event_source_url' => $eventUrl ?: $request->fullUrl(),
+                                ]
+                            );
+
+                            // Dispatch Server CAPI if enabled for this event (AddToCart & InitiateCheckout) and not already dispatched by Node bridge
+                            $alreadyDispatched = ($request->header('X-CAPI-Dispatched') === '1');
+                            if (!$alreadyDispatched && in_array($capiEventName, ['AddToCart', 'InitiateCheckout'], true) && $configService->isServerEventEnabled($capiEventName)) {
+                                try {
+                                    $capiService = app(\App\Services\MetaConversionApiService::class);
+                                    $capiService->sendEvent([
+                                        'event_name'       => $capiEventName,
+                                        'event_id'         => $clientEventId,
+                                        'event_source_url' => $eventUrl ?: $request->fullUrl(),
+                                        'user_data'        => app(\App\Services\MetaCapiUserDataService::class)->fromRequest($request, [
+                                            'phone' => $properties['phone'] ?? null,
+                                            'email' => $properties['email'] ?? null,
+                                        ]),
+                                        'custom_data'      => array_filter([
+                                            'currency'    => $properties['currency'] ?? 'BDT',
+                                            'value'       => $eventValue,
+                                            'num_items'   => $properties['items_count'] ?? null,
+                                            'content_ids' => isset($properties['content_ids']) && is_array($properties['content_ids']) ? $properties['content_ids'] : ($entityId ? [$entityId] : null),
+                                        ]),
+                                    ]);
+                                } catch (\Throwable $ce) {
+                                    // Non-blocking CAPI dispatch failure tolerance
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             return response()->json([
                 'success' => true,
-                'event_id' => $event?->id,
+                'event_id' => $clientEventId ?: $event?->id,
             ]);
         } catch (\Throwable $e) {
             Log::warning('[TrackingController] Failed to record event: ' . $e->getMessage());

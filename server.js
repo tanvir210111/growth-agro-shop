@@ -552,6 +552,46 @@ const server = http.createServer(async (req, res) => {
           console.warn('[Bridge Error]', bridgeErr.message);
         }
 
+        // Server-Side Meta CAPI: Dispatch Purchase event with deterministic event_id = purchase_{orderNumber}
+        try {
+          const metaCapi = require('./server/meta-capi');
+          const cookieHeader = req.headers.cookie || '';
+          const fbpMatch = cookieHeader.match(/_fbp=([^;]+)/);
+          const fbcMatch = cookieHeader.match(/_fbc=([^;]+)/);
+          const purchaseEventId = 'purchase_' + newOrder.order_number;
+
+          metaCapi.sendEvent({
+            event_name: 'Purchase',
+            event_id: purchaseEventId,
+            event_source_url: req.headers.referer || `http://${req.headers.host}${newOrder.landing_page || '/'}`,
+            user_data: {
+              phone: newOrder.phone,
+              customer_name: newOrder.customer_name,
+              city: newOrder.delivery_zone === 'inside' ? 'dhaka' : null,
+              country: 'bd',
+              external_id: newOrder.order_number,
+              client_ip_address: clientIp,
+              client_user_agent: req.headers['user-agent'] || '',
+              fbp: fbpMatch ? fbpMatch[1] : null,
+              fbc: fbcMatch ? fbcMatch[1] : null
+            },
+            custom_data: {
+              currency: newOrder.currency || 'BDT',
+              value: Number(newOrder.total || 0),
+              num_items: Number(newOrder.quantity || 1),
+              content_ids: [newOrder.product_name || calculated.product.shortName || 'chicken-booster']
+            }
+          }).then((capiRes) => {
+            if (capiRes && capiRes.deferred) {
+              console.log(`[Meta CAPI] Purchase dispatch deferred for ${newOrder.order_number}: ${capiRes.reason}`);
+            }
+          }).catch((capiErr) => {
+            console.warn('[Meta CAPI] Purchase dispatch failed (fail-open):', capiErr.message);
+          });
+        } catch (capiErr) {
+          console.warn('[Meta CAPI] Error initiating purchase dispatch (fail-open):', capiErr.message);
+        }
+
         // Clean public response (no internal DB IDs, no sensitive PII exposure)
         return sendJson(res, 201, {
           success: true,
@@ -829,6 +869,94 @@ const server = http.createServer(async (req, res) => {
       } catch (err) {
         console.error('[Internal Sync Error]', err.message);
         return sendJson(res, 500, { success: false, error: 'Order sync failed: ' + err.message });
+      }
+    }
+
+    // 8b. Landing Page Tracking Ingestion & Server CAPI Bridge (POST /api/tracking/event)
+    if (reqPath === '/api/tracking/event' && method === 'POST') {
+      try {
+        const body = await parseJsonBody(req);
+        const eventName = body && typeof body === 'object' ? (body.event_name || '').trim() : '';
+
+        // Security rule: Public tracking endpoint MUST NOT allow arbitrary purchase events
+        if (eventName.toLowerCase() === 'purchase') {
+          return sendJson(res, 403, {
+            success: false,
+            error: 'Forbidden: Purchase events cannot be submitted via public tracking endpoint.'
+          });
+        }
+
+        // Map landing event names to Meta CAPI event names
+        let capiEventName = null;
+        if (eventName === 'add_to_cart') capiEventName = 'AddToCart';
+        else if (eventName === 'checkout_started') capiEventName = 'InitiateCheckout';
+
+        const clientEventId = body && typeof body === 'object' ? (body.event_id || null) : null;
+        let capiDispatched = false;
+
+        if (capiEventName && clientEventId) {
+          const metaCapi = require('./server/meta-capi');
+          const cookieHeader = req.headers.cookie || '';
+          const fbpMatch = cookieHeader.match(/_fbp=([^;]+)/);
+          const fbcMatch = cookieHeader.match(/_fbc=([^;]+)/);
+
+          try {
+            const capiRes = await metaCapi.sendEvent({
+              event_name: capiEventName,
+              event_id: clientEventId,
+              event_source_url: body.url || req.headers.referer || `http://${req.headers.host}${body.page_path || '/'}`,
+              user_data: {
+                client_ip_address: clientIp,
+                client_user_agent: req.headers['user-agent'] || '',
+                fbp: fbpMatch ? fbpMatch[1] : null,
+                fbc: fbcMatch ? fbcMatch[1] : null
+              },
+              custom_data: {
+                currency: body.properties?.currency || 'BDT',
+                value: typeof body.event_value === 'number' ? body.event_value : null,
+                num_items: body.properties?.items_count || 1,
+                content_ids: body.entity_id ? [String(body.entity_id)] : null
+              }
+            });
+            if (capiRes && capiRes.success) {
+              capiDispatched = true;
+            }
+          } catch (capiErr) {
+            console.warn('[Meta CAPI] Tracking dispatch error (fail-open):', capiErr.message);
+          }
+        }
+
+        // Forward to Laravel for tracking attribution in tracking_events table
+        // Send X-CAPI-Dispatched: 1 so Laravel does not double-dispatch CAPI
+        const forwardPayload = JSON.stringify(body);
+        const forwardReq = http.request({
+          hostname: LARAVEL_HOST,
+          port: LARAVEL_PORT,
+          path: '/api/tracking/event',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(forwardPayload),
+            'X-CAPI-Dispatched': capiDispatched ? '1' : '0',
+            'Cookie': req.headers.cookie || '',
+            'User-Agent': req.headers['user-agent'] || '',
+            'Referer': req.headers.referer || '',
+            'X-Forwarded-For': clientIp
+          }
+        }, (forwardRes) => {
+          res.writeHead(forwardRes.statusCode, forwardRes.headers);
+          forwardRes.pipe(res);
+        });
+
+        forwardReq.on('error', () => {
+          // Fail-safe response if Laravel backend is unavailable
+          sendJson(res, 200, { success: true, event_id: clientEventId, capi_dispatched: capiDispatched });
+        });
+        forwardReq.write(forwardPayload);
+        forwardReq.end();
+        return;
+      } catch (err) {
+        return sendJson(res, 400, { success: false, error: err.message });
       }
     }
 

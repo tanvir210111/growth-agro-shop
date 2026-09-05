@@ -180,6 +180,7 @@
           <div class="submenu-tree">
             <ul class="tree-list">
               <li class="tree-item"><a class="tree-link" id="subnav-marketing" onclick="switchView('marketing')">Marketing</a></li>
+              <li class="tree-item"><a class="tree-link" id="subnav-meta-tracking" onclick="switchView('meta-tracking')">Facebook / Meta</a></li>
               <li class="tree-item"><a class="tree-link" id="subnav-courier-api" onclick="switchView('courier-api')">Courier API</a></li>
               <li class="tree-item"><a class="tree-link" id="subnav-invoice-address" onclick="switchView('invoice-address')">Invoice Address</a></li>
               <li class="tree-item"><a class="tree-link" id="subnav-delivery-charge" onclick="switchView('delivery-charge')">Delivery Charge</a></li>
@@ -275,7 +276,7 @@
         </div>
 
         <div class="navbar-right">
-          <a href="http://127.0.0.1:8000" target="_blank" class="btn-primary-teal" style="background:#0284C7;text-decoration:none;padding:6px 12px;font-size:12.5px;margin-right:6px;">
+          <a href="https://growthagro.shop/" target="_blank" class="btn-primary-teal" style="background:#0284C7;text-decoration:none;padding:6px 12px;font-size:12.5px;margin-right:6px;">
             🌐 View Live Store
           </a>
           <input type="search" name="global_admin_search" autocomplete="off" id="headerSearchInput" class="order-search-box" style="width:200px;margin-right:8px;" placeholder="Search anything...">
@@ -348,8 +349,8 @@
                 </div>
               </div>
 
-              <button onclick="filterOrdersBySource('MAIN_WEBSITE'); switchView('orders');" style="width:100%;background:#E040FB;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">
-                📦 View Website Orders →
+              <button onclick="filterOrdersBySource('MAIN_WEBSITE'); switchView('main-website-orders');" style="width:100%;background:#E040FB;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">
+                🛍️ View Website Orders →
               </button>
             </div>
 
@@ -380,7 +381,7 @@
                 </div>
               </div>
 
-              <button onclick="filterOrdersBySource('landing'); switchView('orders');" style="width:100%;background:#00B4D8;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">
+              <button onclick="filterOrdersBySource('LANDING'); switchView('landing-page-orders');" style="width:100%;background:#00B4D8;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">
                 🚀 View Landing Page Orders →
               </button>
             </div>
@@ -1648,6 +1649,458 @@
               </div>
             </form>
           </div>
+        </div>
+
+        <!-- VIEW: FACEBOOK / META TRACKING CONTROL -->
+        <div id="view-meta-tracking" class="view-panel" style="display:none;">
+          <!-- Top Header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h2 style="font-size:18px;font-weight:700;color:#1A202C;margin:0 0 4px 0;">Facebook / Meta Tracking Control</h2>
+              <p style="font-size:13px;color:#718096;margin:0;">Manage Meta Pixels, Conversions API (CAPI), and event tracking for Storefront & Landing Pages.</p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button type="button" class="btn-primary-teal" onclick="openAddMetaPixelModal()" style="padding:9px 18px;font-size:13.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+                <span>+</span> Add Pixel
+              </button>
+            </div>
+          </div>
+
+          <!-- 1. GLOBAL STATUS OVERVIEW CARDS -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;margin-bottom:20px;">
+            <!-- Master Tracking Card -->
+            <div class="white-box-card" style="padding:16px 18px;margin-bottom:0;display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;color:#64748B;">Meta Tracking</div>
+                <div id="metaMasterStatusText" style="font-size:18px;font-weight:800;color:#0F172A;margin-top:4px;">Checking...</div>
+              </div>
+              <button type="button" id="metaMasterToggleBtn" onclick="toggleMetaMasterSwitch()" style="padding:6px 14px;border-radius:20px;font-weight:700;font-size:12px;cursor:pointer;border:none;background:#004D40;color:#fff;">
+                ON
+              </button>
+            </div>
+
+            <!-- Active Pixel Card -->
+            <div class="white-box-card" style="padding:16px 18px;margin-bottom:0;">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;color:#64748B;">Active Pixel</div>
+              <div id="metaActivePixelCardName" style="font-size:16px;font-weight:700;color:#0F172A;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">-</div>
+              <div id="metaActivePixelCardId" style="font-size:12px;color:#64748B;font-family:monospace;">ID: -</div>
+            </div>
+
+            <!-- Browser Pixel Status Card -->
+            <div class="white-box-card" style="padding:16px 18px;margin-bottom:0;">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;color:#64748B;">Browser Pixel</div>
+              <div style="margin-top:4px;display:flex;align-items:center;gap:6px;">
+                <span id="metaBrowserBadge" style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:#DCFCE7;color:#15803D;">Active</span>
+              </div>
+              <div style="font-size:11.5px;color:#64748B;margin-top:4px;">Main Store & Landing Pages</div>
+            </div>
+
+            <!-- Server CAPI Status Card -->
+            <div class="white-box-card" style="padding:16px 18px;margin-bottom:0;">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;color:#64748B;">Server CAPI</div>
+              <div style="margin-top:4px;display:flex;align-items:center;gap:6px;">
+                <span id="metaServerBadge" style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:#DCFCE7;color:#15803D;">Active</span>
+              </div>
+              <div style="font-size:11.5px;color:#64748B;margin-top:4px;">Laravel & Node.js Bridges</div>
+            </div>
+          </div>
+
+          <!-- 2. FB PIXEL SETTINGS & ACTIVE PIXEL SELECTION -->
+          <div class="white-box-card" style="margin-bottom:20px;">
+            <div style="border-bottom:1px solid #E2E8F0;padding-bottom:12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h3 style="font-size:15px;font-weight:700;color:#1E293B;margin:0 0 2px 0;">FB Pixel Settings</h3>
+                <p style="font-size:12px;color:#64748B;margin:0;">Select which configured Pixel receives runtime tracking events.</p>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:12px;color:#64748B;">Default Pixel:</span>
+                <span id="metaDefaultPixelDisplay" style="font-size:12px;font-weight:700;color:#0F172A;background:#F1F5F9;padding:3px 10px;border-radius:6px;">None</span>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:240px;">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:6px;">Active Pixel</label>
+                <select id="metaActivePixelSelect" class="form-control no-icon" style="width:100%;height:38px;padding:6px 12px;font-size:13px;border:1px solid #CBD5E1;border-radius:6px;background:#fff;"></select>
+              </div>
+              <div style="align-self:flex-end;">
+                <button type="button" class="btn-primary-teal" onclick="applyActiveMetaPixelSelection()" style="padding:8px 20px;height:38px;font-size:13px;font-weight:700;">
+                  Apply Active Pixel
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2.5 PURCHASE EVENT CONTROL (PHASE 8) -->
+          <div class="white-box-card" style="margin-bottom:20px;">
+            <div style="border-bottom:1px solid #E2E8F0;padding-bottom:12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h3 style="font-size:15px;font-weight:700;color:#1E293B;margin:0 0 2px 0;">Purchase Event Control (Server CAPI)</h3>
+                <p style="font-size:12px;color:#64748B;margin:0;">Control timing for Meta CAPI Purchase dispatch. Customer orders always succeed immediately fail-open.</p>
+              </div>
+              <button type="button" class="btn-primary-teal" onclick="saveMetaTrackingSettings()" style="padding:7px 20px;font-size:12.5px;font-weight:700;">
+                Save Purchase Control
+              </button>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+                <!-- Instant Option -->
+                <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;border:1px solid #CBD5E1;border-radius:8px;background:#F8FAFC;">
+                  <input type="radio" name="metaPurchaseMode" id="purchaseModeInstant" value="instant" onchange="handlePurchaseModeChange()" style="transform:scale(1.15);">
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:#0F172A;">Instant</div>
+                    <div style="font-size:11.5px;color:#64748B;">Immediate server dispatch</div>
+                  </div>
+                </label>
+
+                <!-- Delay Option -->
+                <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;border:1px solid #CBD5E1;border-radius:8px;background:#F8FAFC;">
+                  <input type="radio" name="metaPurchaseMode" id="purchaseModeDelay" value="delay" onchange="handlePurchaseModeChange()" style="transform:scale(1.15);">
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:#0F172A;">Delay</div>
+                    <div style="font-size:11.5px;color:#64748B;">Scheduled dispatch via cron</div>
+                  </div>
+                </label>
+
+                <!-- Hold Option -->
+                <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;border:1px solid #CBD5E1;border-radius:8px;background:#F8FAFC;">
+                  <input type="radio" name="metaPurchaseMode" id="purchaseModeHold" value="hold" onchange="handlePurchaseModeChange()" style="transform:scale(1.15);">
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:#0F172A;">Hold</div>
+                    <div style="font-size:11.5px;color:#64748B;">Requires manual admin release</div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Delay Minutes Input (Conditional) -->
+              <div id="metaDelayMinutesContainer" style="display:none;background:#F0FDFA;border:1px solid #99F6E4;border-radius:8px;padding:12px 16px;max-width:360px;">
+                <label style="display:block;font-size:12.5px;font-weight:700;color:#0F766E;margin-bottom:6px;">Delay Duration (Minutes)</label>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <input type="number" id="metaPurchaseDelayMinutes" min="1" max="1440" value="30" class="form-control no-icon" style="width:120px;height:36px;padding:4px 10px;font-size:13px;border:1px solid #0D9488;border-radius:6px;background:#fff;">
+                  <span style="font-size:12px;color:#0F766E;">Minutes (1–1440)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. FB PIXEL IDS TABLE -->
+          <div class="white-box-card" style="margin-bottom:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h3 style="font-size:15px;font-weight:700;color:#1E293B;margin:0 0 2px 0;">FB Pixel IDs</h3>
+                <p style="font-size:12px;color:#64748B;margin:0;">All configured Meta Pixels with credentials and status.</p>
+              </div>
+              <button type="button" class="btn-primary-teal" onclick="openAddMetaPixelModal()" style="padding:7px 16px;font-size:12.5px;font-weight:700;">
+                + Add Pixel
+              </button>
+            </div>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:40px;">#</th>
+                    <th>Pixel Name</th>
+                    <th>Pixel ID</th>
+                    <th>Status</th>
+                    <th>Default</th>
+                    <th>CAPI Token</th>
+                    <th>Test Event Code</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="metaPixelsTableBody">
+                  <tr><td colspan="8" style="text-align:center;padding:24px;color:#94A3B8;">Loading Pixels...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 4. FB CUSTOM EVENT CONTROLS -->
+          <div class="white-box-card" style="margin-bottom:20px;">
+            <div style="border-bottom:1px solid #E2E8F0;padding-bottom:12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h3 style="font-size:15px;font-weight:700;color:#1E293B;margin:0 0 2px 0;">FB Custom Events</h3>
+                <p style="font-size:12px;color:#64748B;margin:0;">Configure Browser Pixel and Server CAPI event dispatching.</p>
+              </div>
+              <button type="button" class="btn-primary-teal" onclick="saveMetaTrackingSettings()" style="padding:7px 20px;font-size:12.5px;font-weight:700;">
+                Save Event Settings
+              </button>
+            </div>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th>Event</th>
+                    <th style="text-align:center;">Browser Tracking</th>
+                    <th style="text-align:center;">Server CAPI</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- PageView -->
+                  <tr>
+                    <td style="font-weight:700;color:#0F172A;">PageView</td>
+                    <td style="text-align:center;">
+                      <input type="checkbox" id="evtBrowserPageView" style="transform:scale(1.2);cursor:pointer;" checked>
+                    </td>
+                    <td style="text-align:center;">
+                      <span style="font-size:11px;color:#94A3B8;font-style:italic;" title="Automatic every-request server PageView is prohibited for performance and safety">Disabled (Prohibited)</span>
+                    </td>
+                    <td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11.5px;font-weight:700;background:#DCFCE7;color:#15803D;">Standard</span></td>
+                    <td style="font-size:12px;color:#64748B;">Client-side page visit event on Storefront & Landing pages.</td>
+                  </tr>
+
+                  <!-- AddToCart -->
+                  <tr>
+                    <td style="font-weight:700;color:#0F172A;">AddToCart</td>
+                    <td style="text-align:center;">
+                      <input type="checkbox" id="evtBrowserAddToCart" style="transform:scale(1.2);cursor:pointer;" checked>
+                    </td>
+                    <td style="text-align:center;">
+                      <input type="checkbox" id="evtServerAddToCart" style="transform:scale(1.2);cursor:pointer;" checked>
+                    </td>
+                    <td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11.5px;font-weight:700;background:#EFF6FF;color:#1D4ED8;">Deduplicated</span></td>
+                    <td style="font-size:12px;color:#64748B;">Cart drawer and landing CTA clicks with matching event_id.</td>
+                  </tr>
+
+                  <!-- InitiateCheckout -->
+                  <tr>
+                    <td style="font-weight:700;color:#0F172A;">InitiateCheckout</td>
+                    <td style="text-align:center;">
+                      <input type="checkbox" id="evtBrowserInitiateCheckout" style="transform:scale(1.2);cursor:pointer;" checked>
+                    </td>
+                    <td style="text-align:center;">
+                      <input type="checkbox" id="evtServerInitiateCheckout" style="transform:scale(1.2);cursor:pointer;" checked>
+                    </td>
+                    <td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11.5px;font-weight:700;background:#EFF6FF;color:#1D4ED8;">Deduplicated</span></td>
+                    <td style="font-size:12px;color:#64748B;">Checkout page visits & landing direct-order scroll with matching event_id.</td>
+                  </tr>
+
+                  <!-- Purchase -->
+                  <tr>
+                    <td style="font-weight:700;color:#0F172A;">Purchase</td>
+                    <td style="text-align:center;">
+                      <input type="checkbox" id="evtBrowserPurchase" style="transform:scale(1.2);cursor:pointer;" checked>
+                    </td>
+                    <td style="text-align:center;">
+                      <input type="checkbox" id="evtServerPurchase" style="transform:scale(1.2);cursor:pointer;" checked>
+                    </td>
+                    <td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11.5px;font-weight:700;background:#FEF3C7;color:#B45309;">Authoritative Deduplication</span></td>
+                    <td style="font-size:12px;color:#64748B;">Authoritative order confirmation using purchase_{orderNumber} event_id.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="margin-top:16px;text-align:right;">
+              <button type="button" class="btn-primary-teal" onclick="saveMetaTrackingSettings()" style="padding:8px 24px;font-size:13px;font-weight:700;">
+                Save Event Settings
+              </button>
+            </div>
+          </div>
+
+          <!-- 5. FB PURCHASE EVENTS QUEUE (PHASE 8) -->
+          <div class="white-box-card" style="margin-bottom:20px;">
+            <div style="border-bottom:1px solid #E2E8F0;padding-bottom:12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h3 style="font-size:15px;font-weight:700;color:#1E293B;margin:0 0 2px 0;">Purchase Events Queue (CAPI Events)</h3>
+                <p style="font-size:12px;color:#64748B;margin:0;">Authoritative log of server-side purchase events, delays, holds, and dispatches.</p>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <button type="button" class="btn-primary-teal" id="btnProcessDelayedPurchases" onclick="triggerProcessDelayedPurchases()" style="padding:7px 16px;font-size:12px;font-weight:700;background:#0F766E;" title="Process due delayed purchases now (Manual Fallback / Emergency)">
+                  ⚡ Process Delayed Now
+                </button>
+                <button type="button" class="btn-lp-draft" onclick="loadMetaPurchaseQueue(1)" style="padding:7px 14px;font-size:12px;font-weight:600;">
+                  🔄 Refresh
+                </button>
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+              <input type="text" id="metaQueueSearchInput" placeholder="Search Order # or Event ID..." class="form-control no-icon" style="height:34px;padding:4px 10px;font-size:12.5px;border:1px solid #CBD5E1;border-radius:6px;width:220px;" onkeydown="if(event.key==='Enter') loadMetaPurchaseQueue(1)">
+              <select id="metaQueueFilterStatus" class="form-control no-icon" style="height:34px;padding:4px 10px;font-size:12.5px;border:1px solid #CBD5E1;border-radius:6px;width:150px;" onchange="loadMetaPurchaseQueue(1)">
+                <option value="">All Statuses</option>
+                <option value="sent">Sent</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="held">Held</option>
+                <option value="failed">Failed</option>
+                <option value="skipped">Skipped</option>
+              </select>
+              <select id="metaQueueFilterMode" class="form-control no-icon" style="height:34px;padding:4px 10px;font-size:12.5px;border:1px solid #CBD5E1;border-radius:6px;width:140px;" onchange="loadMetaPurchaseQueue(1)">
+                <option value="">All Modes</option>
+                <option value="instant">Instant</option>
+                <option value="delay">Delay</option>
+                <option value="hold">Hold</option>
+              </select>
+              <button type="button" class="btn-primary-teal" onclick="loadMetaPurchaseQueue(1)" style="padding:6px 14px;font-size:12px;font-weight:600;height:34px;">
+                Filter
+              </button>
+            </div>
+
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th>Order #</th>
+                    <th>Source</th>
+                    <th>Event ID</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Scheduled At</th>
+                    <th>Sent At</th>
+                    <th style="text-align:center;">Attempts</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="metaPurchasesTableBody">
+                  <tr><td colspan="9" style="text-align:center;padding:24px;color:#94A3B8;">Loading Purchase Queue...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+          <!-- 6. PURCHASE RULE ENGINE (PHASE 9) -->
+          <div class="white-box-card" style="margin-bottom:20px;">
+            <div style="border-bottom:1px solid #E2E8F0;padding-bottom:12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h3 style="font-size:15px;font-weight:700;color:#1E293B;margin:0 0 2px 0;">Purchase Rule Engine (Phase 9)</h3>
+                <p style="font-size:12px;color:#64748B;margin:0;">Auto-determine Purchase dispatch mode based on customer order history. Rules only control Meta dispatch timing — never affect order creation or payment.</p>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:7px 14px;border:1px solid #CBD5E1;border-radius:8px;background:#F8FAFC;font-size:13px;font-weight:600;">
+                  <input type="checkbox" id="autoRulesEnabledToggle" onchange="saveAutoRulesEnabled()" style="transform:scale(1.2);">
+                  <span id="autoRulesEnabledLabel">Auto Rules: OFF</span>
+                </label>
+                <button type="button" class="btn-primary-teal" onclick="openAddRuleModal()" style="padding:7px 16px;font-size:12.5px;font-weight:700;">
+                  + Add Rule
+                </button>
+                <button type="button" class="btn-lp-draft" onclick="loadMetaRules()" style="padding:7px 14px;font-size:12px;font-weight:600;">
+                  🔄 Refresh
+                </button>
+              </div>
+            </div>
+
+            <!-- Rule Engine Info Box -->
+            <div id="autoRulesInfoBox" style="display:none;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+              <span style="font-size:12.5px;color:#B45309;font-weight:600;">⚡ Auto Rules: ACTIVE — Customer order history rules will override the global Purchase Control mode for incoming orders. Fail-open: if no rule matches, global mode is used.</span>
+            </div>
+
+            <!-- Rules Table -->
+            <div class="orders-table-container">
+              <table class="orders-table">
+                <thead>
+                  <tr style="background:#F8FAFC;">
+                    <th style="width:32px;">#</th>
+                    <th>Rule Name</th>
+                    <th>Priority</th>
+                    <th>Condition</th>
+                    <th>Action</th>
+                    <th style="text-align:center;">Active</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="metaRulesTableBody">
+                  <tr><td colspan="7" style="text-align:center;padding:24px;color:#94A3B8;">Loading Rules...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ADD / EDIT RULE MODAL -->
+          <div id="metaRuleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:12px;padding:28px 28px 22px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                <h3 id="ruleModalTitle" style="font-size:16px;font-weight:700;color:#0F172A;margin:0;">Add Purchase Rule</h3>
+                <button type="button" onclick="closeRuleModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94A3B8;">&times;</button>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Rule Name *</label>
+                  <input type="text" id="ruleFieldName" class="form-control no-icon" placeholder="e.g. High Return Rate - Hold" style="height:36px;font-size:13px;">
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div class="form-group" style="margin:0;">
+                    <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Priority (lower = higher)</label>
+                    <input type="number" id="ruleFieldPriority" class="form-control no-icon" value="0" min="0" max="999" style="height:36px;font-size:13px;">
+                  </div>
+                  <div class="form-group" style="margin:0;">
+                    <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Active</label>
+                    <select id="ruleFieldIsActive" class="form-control no-icon" style="height:36px;font-size:13px;">
+                      <option value="1">Yes (Active)</option>
+                      <option value="0">No (Inactive)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:14px;">
+                  <div style="font-size:12px;font-weight:700;color:#64748B;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Condition</div>
+                  <div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:10px;align-items:end;">
+                    <div class="form-group" style="margin:0;">
+                      <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Field</label>
+                      <select id="ruleFieldConditionField" class="form-control no-icon" onchange="updateRuleOperators()" style="height:36px;font-size:12.5px;">
+                        <option value="customer_order_count">customer_order_count</option>
+                        <option value="customer_delivered_count">customer_delivered_count</option>
+                        <option value="customer_return_count">customer_return_count</option>
+                        <option value="customer_cancelled_count">customer_cancelled_count</option>
+                        <option value="customer_completed_count">customer_completed_count</option>
+                        <option value="customer_return_ratio">customer_return_ratio</option>
+                        <option value="customer_has_previous_order">customer_has_previous_order</option>
+                        <option value="order_source">order_source</option>
+                        <option value="order_total">order_total</option>
+                      </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                      <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Operator</label>
+                      <select id="ruleFieldOperator" class="form-control no-icon" onchange="handleRuleOperatorChange()" style="height:36px;font-size:12.5px;">
+                        <option value="<">&lt;</option>
+                        <option value="<=">&lt;=</option>
+                        <option value=">">&gt;</option>
+                        <option value=">=">&gt;=</option>
+                        <option value="=">=</option>
+                        <option value="!=">!=</option>
+                      </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                      <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Value</label>
+                      <input type="text" id="ruleFieldConditionValue" class="form-control no-icon" placeholder="e.g. 3 or LANDING" style="height:36px;font-size:12.5px;">
+                    </div>
+                  </div>
+                  <div style="margin-top:8px;font-size:11.5px;color:#94A3B8;" id="ruleFieldHint">Counts &amp; ratios: use integers or decimals (e.g. 3, 0.30). customer_return_ratio: 0.0–1.0. customer_has_previous_order: 1=yes, 0=no. order_source: LANDING or MAIN_WEBSITE.</div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div class="form-group" style="margin:0;">
+                    <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Action Mode *</label>
+                    <select id="ruleFieldActionMode" class="form-control no-icon" onchange="handleRuleActionModeChange()" style="height:36px;font-size:13px;">
+                      <option value="instant">Instant</option>
+                      <option value="delay">Delay</option>
+                      <option value="hold">Hold</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin:0;" id="ruleDelayMinutesContainer">
+                    <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Delay Minutes (if delay mode)</label>
+                    <input type="number" id="ruleFieldDelayMinutes" class="form-control no-icon" value="0" min="0" max="1440" style="height:36px;font-size:13px;">
+                  </div>
+                </div>
+              </div>
+
+              <div id="ruleModalError" style="display:none;margin-top:14px;padding:10px 14px;border-radius:6px;background:#FEE2E2;border:1px solid #F87171;color:#B91C1C;font-size:12.5px;font-weight:600;"></div>
+
+              <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+                <button type="button" class="btn-lp-draft" onclick="closeRuleModal()" style="padding:8px 18px;font-size:13px;">Cancel</button>
+                <button type="button" class="btn-primary-teal" onclick="submitRuleModal()" id="ruleModalSubmitBtn" style="padding:8px 22px;font-size:13px;font-weight:700;">Save Rule</button>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- VIEW 11: COURIER API SETUP (Exact Match: Pathao, Steadfast, RedX) -->
@@ -4042,6 +4495,74 @@
             <button type="submit" class="btn-primary-teal" style="padding:8px 24px;font-weight:700;">Save Slider</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT META PIXEL MODAL -->
+  <div id="metaPixelModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:560px;width:94%;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);">
+      <button type="button" onclick="closeMetaPixelModal()" style="position:absolute;top:14px;right:16px;border:none;background:none;font-size:22px;cursor:pointer;color:#718096;">&times;</button>
+      <h3 style="font-size:17px;font-weight:700;color:#1A202C;margin-bottom:18px;" id="metaPixelModalTitle">Add Meta Pixel</h3>
+
+      <input type="hidden" id="metaPixelModalId" value="">
+
+      <div id="metaPixelModalAlert" style="display:none;padding:10px 14px;margin-bottom:16px;border-radius:6px;font-size:13px;font-weight:600;"></div>
+
+      <form id="metaPixelForm" onsubmit="event.preventDefault(); saveMetaPixelForm();">
+        <div class="form-group" style="margin-bottom:14px;">
+          <label style="display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:4px;">Pixel Name <span style="color:#EF4444;">*</span></label>
+          <input type="text" id="metaInputPixelName" class="form-control no-icon" placeholder="e.g. Main Facebook Pixel" required style="width:100%;height:38px;padding:6px 12px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px;">
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px;">
+          <label style="display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:4px;">Meta Pixel ID <span style="color:#EF4444;">*</span></label>
+          <input type="text" id="metaInputPixelId" class="form-control no-icon" placeholder="e.g. 1793041018387711" required pattern="\d+" style="width:100%;height:38px;padding:6px 12px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px;font-family:monospace;">
+          <small style="color:#64748B;font-size:11.5px;margin-top:2px;display:block;">Numeric Dataset / Pixel ID (typically 14-18 digits).</small>
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px;">
+          <label style="display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:4px;">CAPI Access Token</label>
+          <input type="password" id="metaInputAccessToken" class="form-control no-icon" placeholder="Leave blank to keep existing token" autocomplete="new-password" style="width:100%;height:38px;padding:6px 12px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px;">
+          <small id="metaTokenHelpText" style="color:#64748B;font-size:11.5px;margin-top:2px;display:block;">Leave blank to keep current token. Token is securely encrypted and never revealed.</small>
+        </div>
+
+        <div class="form-group" style="margin-bottom:18px;">
+          <label style="display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:4px;">Test Event Code</label>
+          <input type="text" id="metaInputTestEventCode" class="form-control no-icon" placeholder="e.g. TEST12345 (Optional)" style="width:100%;height:38px;padding:6px 12px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px;font-family:monospace;">
+          <small style="color:#64748B;font-size:11.5px;margin-top:2px;display:block;">Use Meta Events Manager Test Events tab code for live diagnostics.</small>
+        </div>
+
+        <div style="display:flex;gap:20px;margin-bottom:20px;background:#F8FAFC;padding:12px 16px;border-radius:8px;border:1px solid #E2E8F0;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#1E293B;font-weight:600;">
+            <input type="checkbox" id="metaInputIsActive" style="transform:scale(1.2);"> Active Pixel
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#1E293B;font-weight:600;">
+            <input type="checkbox" id="metaInputIsDefault" style="transform:scale(1.2);"> Default Pixel
+          </label>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" class="btn-create-order btn-close-modal" onclick="closeMetaPixelModal()" style="padding:8px 18px;font-size:13px;">Cancel</button>
+          <button type="submit" id="metaPixelModalSubmitBtn" class="btn-primary-teal" style="padding:8px 22px;font-size:13px;font-weight:700;">Save Pixel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div id="metaDeleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:24px 28px;max-width:440px;width:92%;text-align:center;position:relative;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);">
+      <div style="font-size:36px;margin-bottom:10px;">⚠️</div>
+      <h3 style="font-size:17px;font-weight:700;color:#1A202C;margin-bottom:8px;">Delete Meta Pixel?</h3>
+      <p style="font-size:13px;color:#64748B;margin-bottom:16px;" id="metaDeleteConfirmMsg">
+        Are you sure you want to delete this pixel? This action cannot be undone.
+      </p>
+      <input type="hidden" id="metaDeletePixelId" value="">
+      <div id="metaDeleteAlert" style="display:none;padding:8px 12px;margin-bottom:14px;border-radius:6px;font-size:12.5px;font-weight:600;background:#FEE2E2;color:#B91C1C;"></div>
+      <div style="display:flex;justify-content:center;gap:12px;">
+        <button type="button" class="btn-create-order btn-close-modal" onclick="closeMetaDeleteModal()" style="padding:8px 18px;font-size:13px;">Cancel</button>
+        <button type="button" class="action-btn-orange-del" onclick="executeDeleteMetaPixel()" style="padding:8px 20px;font-size:13px;font-weight:700;border-radius:6px;background:#EF4444;color:#fff;border:none;cursor:pointer;">Delete Pixel</button>
       </div>
     </div>
   </div>

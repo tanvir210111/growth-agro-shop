@@ -237,7 +237,34 @@ Route::match(['put', 'patch'], '/api/admin/admins/{id}', [AdminManagementControl
 Route::post('/api/admin/admins/{id}/reset-password', [AdminManagementController::class, 'resetPassword'])->name('api.admin.admins.reset-password');
 Route::delete('/api/admin/admins/{id}', [AdminManagementController::class, 'destroy'])->name('api.admin.admins.destroy');
 
+// Phase 7: Central Admin Meta Pixel & Server-Side Tracking Management Endpoints
+use App\Http\Controllers\Api\AdminMetaTrackingController;
+Route::get('/api/admin/meta/pixels', [AdminMetaTrackingController::class, 'getPixels'])->name('api.admin.meta.pixels.index');
+Route::post('/api/admin/meta/pixels', [AdminMetaTrackingController::class, 'storePixel'])->name('api.admin.meta.pixels.store');
+Route::match(['put', 'patch'], '/api/admin/meta/pixels/{id}', [AdminMetaTrackingController::class, 'updatePixel'])->name('api.admin.meta.pixels.update');
+Route::post('/api/admin/meta/pixels/{id}/set-active', [AdminMetaTrackingController::class, 'setActivePixel'])->name('api.admin.meta.pixels.set-active');
+Route::post('/api/admin/meta/pixels/{id}/set-default', [AdminMetaTrackingController::class, 'setDefaultPixel'])->name('api.admin.meta.pixels.set-default');
+Route::delete('/api/admin/meta/pixels/{id}', [AdminMetaTrackingController::class, 'deletePixel'])->name('api.admin.meta.pixels.destroy');
+
+Route::get('/api/admin/meta/tracking-settings', [AdminMetaTrackingController::class, 'getSettings'])->name('api.admin.meta.tracking-settings.get');
+Route::match(['put', 'patch', 'post'], '/api/admin/meta/tracking-settings', [AdminMetaTrackingController::class, 'updateSettings'])->name('api.admin.meta.tracking-settings.update');
+
+// Phase 8: Purchase Event Control & Queue Endpoints
+Route::get('/api/admin/meta/purchases', [AdminMetaTrackingController::class, 'getPurchases'])->name('api.admin.meta.purchases.index');
+Route::post('/api/admin/meta/purchases/{id}/release', [AdminMetaTrackingController::class, 'releasePurchase'])->name('api.admin.meta.purchases.release');
+Route::post('/api/admin/meta/purchases/{id}/retry', [AdminMetaTrackingController::class, 'retryPurchase'])->name('api.admin.meta.purchases.retry');
+Route::post('/api/admin/meta/purchases/process-delayed', [AdminMetaTrackingController::class, 'processDelayedPurchases'])->name('api.admin.meta.purchases.process-delayed');
+
+// Phase 9: Customer/Order History Based Purchase Rule Engine
+Route::get('/api/admin/meta/rules', [AdminMetaTrackingController::class, 'getRules'])->name('api.admin.meta.rules.index');
+Route::post('/api/admin/meta/rules', [AdminMetaTrackingController::class, 'storeRule'])->name('api.admin.meta.rules.store');
+Route::match(['put', 'patch'], '/api/admin/meta/rules/{id}', [AdminMetaTrackingController::class, 'updateRule'])->name('api.admin.meta.rules.update');
+Route::delete('/api/admin/meta/rules/{id}', [AdminMetaTrackingController::class, 'deleteRule'])->name('api.admin.meta.rules.destroy');
+Route::get('/api/admin/meta/rules/schema', [AdminMetaTrackingController::class, 'getRuleSchema'])->name('api.admin.meta.rules.schema');
+
+
 // Internal Node.js to Laravel Landing Order Sync Bridge & Config Lookup
 use App\Http\Controllers\Api\InternalSyncController;
 Route::post('/api/internal/sync-landing-order', [InternalSyncController::class, 'syncLandingOrder'])->name('api.internal.sync-landing-order');
 Route::get('/api/internal/landing-page-config/{slug}', [InternalSyncController::class, 'getLandingPageConfig'])->name('api.internal.landing-page-config');
+Route::get('/api/internal/meta-tracking-config', [InternalSyncController::class, 'getMetaTrackingConfig'])->name('api.internal.meta-tracking-config');

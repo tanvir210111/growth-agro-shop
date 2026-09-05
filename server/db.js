@@ -76,6 +76,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
   CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
   CREATE INDEX IF NOT EXISTS idx_orders_idempotency ON orders(idempotency_key);
+
+  CREATE TABLE IF NOT EXISTS meta_capi_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pixel_id TEXT NOT NULL,
+    event_name TEXT NOT NULL,
+    event_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    error_message TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_meta_capi_unique ON meta_capi_events(pixel_id, event_name, event_id);
 `);
 
 console.log(`[Database] SQLite connected & initialized at: ${dbPath}`);
@@ -516,6 +529,42 @@ function deleteOrder(orderNumber) {
   }
 }
 
+/**
+ * Find a recorded Meta CAPI event by unique composite key (pixel_id, event_name, event_id)
+ */
+function findMetaCapiEvent(pixelId, eventName, eventId) {
+  if (!pixelId || !eventName || !eventId) return null;
+  return db.prepare(`
+    SELECT * FROM meta_capi_events
+    WHERE pixel_id = ? AND event_name = ? AND event_id = ?
+    LIMIT 1
+  `).get(String(pixelId), String(eventName), String(eventId));
+}
+
+/**
+ * Record or update a Meta CAPI event for persistent idempotency across restarts
+ */
+function recordMetaCapiEvent(pixelId, eventName, eventId, status, errorMessage = null) {
+  if (!pixelId || !eventName || !eventId) return null;
+  const now = new Date().toISOString();
+  const existing = findMetaCapiEvent(pixelId, eventName, eventId);
+
+  if (existing) {
+    db.prepare(`
+      UPDATE meta_capi_events
+      SET status = ?, error_message = ?, updated_at = ?
+      WHERE id = ?
+    `).run(String(status), errorMessage ? String(errorMessage).slice(0, 500) : null, now, existing.id);
+    return findMetaCapiEvent(pixelId, eventName, eventId);
+  } else {
+    db.prepare(`
+      INSERT INTO meta_capi_events (pixel_id, event_name, event_id, status, error_message, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(String(pixelId), String(eventName), String(eventId), String(status), errorMessage ? String(errorMessage).slice(0, 500) : null, now, now);
+    return findMetaCapiEvent(pixelId, eventName, eventId);
+  }
+}
+
 module.exports = {
   db,
   generateOrderNumber,
@@ -528,6 +577,8 @@ module.exports = {
   updateOrderCourier,
   deleteOrder,
   addOrderTimelineEvent,
+  findMetaCapiEvent,
+  recordMetaCapiEvent,
   ALLOWED_ORDER_STATUSES
 };
 

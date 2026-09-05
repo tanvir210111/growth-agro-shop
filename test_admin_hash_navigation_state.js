@@ -59,9 +59,17 @@ function createDomEnvironment(initialHash = '', htmlContent = html1) {
       this.children = [];
       this.parentElement = null;
       this.listeners = {};
-      this.innerHTML = '';
+      this._innerHTML = '';
       this.textContent = '';
       this.value = '';
+    }
+
+    get innerHTML() { return this._innerHTML; }
+    set innerHTML(val) {
+      this._innerHTML = val;
+      if (!val) {
+        this.children = [];
+      }
     }
 
     getContext(type) {
@@ -353,6 +361,8 @@ function createDomEnvironment(initialHash = '', htmlContent = html1) {
     parseFloat: global.parseFloat,
     encodeURIComponent: global.encodeURIComponent,
     decodeURIComponent: global.decodeURIComponent,
+    URLSearchParams: global.URLSearchParams,
+    URL: global.URL,
     console: { log: () => {}, warn: () => {}, error: () => {} },
     navigator: { clipboard: { writeText: async () => {} } }
   };
@@ -649,6 +659,275 @@ console.log('\n--- Test 16: Browser Back/Forward (popstate) ---');
   console.log('✅ popstate restores active view correctly');
 }
 
+// -----------------------------------------------------------------------------
+// Test 18: "🌐 View Live Store" button verification
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 18: View Live Store button verification ---');
+{
+  [
+    { name: 'admin/index.html', content: html1 },
+    { name: 'E Commerce Baby/public/admin/index.html', content: html2 }
+  ].forEach(({ name, content }) => {
+    const liveStoreMatch = content.match(/<a\b[^>]*>[\s\S]*?🌐\s*View Live Store[\s\S]*?<\/a>/i);
+    assert.ok(liveStoreMatch, `${name} must contain the "View Live Store" link`);
+    const tag = liveStoreMatch[0];
+    assert.ok(tag.includes('href="https://growthagro.shop/"'), `${name} View Live Store must have href="https://growthagro.shop/"`);
+    assert.ok(tag.includes('target="_blank"'), `${name} View Live Store must have target="_blank"`);
+    assert.ok(!tag.includes('127.0.0.1:8000'), `${name} View Live Store must not point to 127.0.0.1:8000`);
+    assert.ok(!tag.includes('localhost'), `${name} View Live Store must not point to localhost`);
+    assert.ok(!tag.includes('href="/"'), `${name} View Live Store must not have href="/"`);
+  });
+  console.log('✅ "🌐 View Live Store" points to https://growthagro.shop/ with target="_blank" in both HTML files');
+}
+
+// -----------------------------------------------------------------------------
+// Test 19: "🛍️ View Website Orders →" button verification
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 19: View Website Orders button verification ---');
+{
+  [
+    { name: 'admin/index.html', content: html1 },
+    { name: 'E Commerce Baby/public/admin/index.html', content: html2 }
+  ].forEach(({ name, content }) => {
+    const btnMatch = content.match(/<button\b[^>]*>[\s\S]*?View Website Orders[\s\S]*?<\/button>/i);
+    assert.ok(btnMatch, `${name} must contain the "View Website Orders" button`);
+    const btnTag = btnMatch[0];
+    assert.ok(btnTag.includes("filterOrdersBySource('MAIN_WEBSITE')"), `${name} button must call filterOrdersBySource('MAIN_WEBSITE')`);
+    assert.ok(btnTag.includes("switchView('main-website-orders')"), `${name} button must call switchView('main-website-orders')`);
+  });
+
+  const env = createDomEnvironment();
+  env.triggerDOMContentLoaded();
+  assert.strictEqual(env.getAppState().activeView, 'dashboard');
+
+  // Simulate clicking the dashboard button
+  env.sandbox.window.filterOrdersBySource('MAIN_WEBSITE');
+  env.sandbox.window.switchView('main-website-orders');
+
+  assert.strictEqual(env.getAppState().activeView, 'main-website-orders');
+  assert.strictEqual(env.getAppState().sourceFilter, 'MAIN_WEBSITE');
+  assert.strictEqual(env.document.getElementById('view-orders').style.display, 'block');
+  assert.strictEqual(env.document.getElementById('subnav-website-orders').classList.contains('active'), true);
+  assert.strictEqual(env.document.getElementById('nav-group-orders').classList.contains('open'), true);
+  assert.strictEqual(env.location.hash, '#main-website-orders');
+  console.log('✅ "🛍️ View Website Orders →" opens Orders view with activeView=main-website-orders and sourceFilter=MAIN_WEBSITE');
+}
+
+// -----------------------------------------------------------------------------
+// Test 20: "🚀 View Landing Page Orders →" button verification
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 20: View Landing Page Orders button verification ---');
+{
+  [
+    { name: 'admin/index.html', content: html1 },
+    { name: 'E Commerce Baby/public/admin/index.html', content: html2 }
+  ].forEach(({ name, content }) => {
+    const btnMatch = content.match(/<button\b[^>]*>[\s\S]*?View Landing Page Orders[\s\S]*?<\/button>/i);
+    assert.ok(btnMatch, `${name} must contain the "View Landing Page Orders" button`);
+    const btnTag = btnMatch[0];
+    assert.ok(btnTag.includes("filterOrdersBySource('LANDING')"), `${name} button must call filterOrdersBySource('LANDING')`);
+    assert.ok(btnTag.includes("switchView('landing-page-orders')"), `${name} button must call switchView('landing-page-orders')`);
+  });
+
+  const env = createDomEnvironment();
+  env.triggerDOMContentLoaded();
+  assert.strictEqual(env.getAppState().activeView, 'dashboard');
+
+  // Simulate clicking the dashboard button
+  env.sandbox.window.filterOrdersBySource('LANDING');
+  env.sandbox.window.switchView('landing-page-orders');
+
+  assert.strictEqual(env.getAppState().activeView, 'landing-page-orders');
+  assert.strictEqual(env.getAppState().sourceFilter, 'LANDING');
+  assert.strictEqual(env.document.getElementById('view-orders').style.display, 'block');
+  assert.strictEqual(env.document.getElementById('subnav-landing-orders').classList.contains('active'), true);
+  assert.strictEqual(env.document.getElementById('nav-group-orders').classList.contains('open'), true);
+  assert.strictEqual(env.location.hash, '#landing-page-orders');
+  console.log('✅ "🚀 View Landing Page Orders →" opens Orders view with activeView=landing-page-orders and sourceFilter=LANDING');
+}
+
+// -----------------------------------------------------------------------------
+// Test 21: Source normalization & filterOrdersBySource decoupling
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 21: Source normalization & decoupling ---');
+{
+  const env = createDomEnvironment();
+  env.triggerDOMContentLoaded();
+
+  // Ensure filterOrdersBySource does NOT perform navigation itself
+  assert.strictEqual(env.getAppState().activeView, 'dashboard');
+  env.sandbox.window.filterOrdersBySource('MAIN_WEBSITE');
+  assert.strictEqual(env.getAppState().sourceFilter, 'MAIN_WEBSITE');
+  assert.strictEqual(env.getAppState().activeView, 'dashboard', 'filterOrdersBySource must not change activeView directly');
+
+  // Aliases for LANDING
+  ['LANDING', 'LANDING_PAGE', 'landing', 'landing-orders', 'landing-page'].forEach(alias => {
+    env.sandbox.window.filterOrdersBySource(alias);
+    assert.strictEqual(env.getAppState().sourceFilter, 'LANDING', `Alias "${alias}" must normalize to LANDING`);
+  });
+
+  // Aliases for MAIN_WEBSITE
+  ['MAIN_WEBSITE', 'main-website', 'storefront', 'baby-fashion-storefront', 'website'].forEach(alias => {
+    env.sandbox.window.filterOrdersBySource(alias);
+    assert.strictEqual(env.getAppState().sourceFilter, 'MAIN_WEBSITE', `Alias "${alias}" must normalize to MAIN_WEBSITE`);
+  });
+
+  // Clearing / Null / All
+  [null, undefined, '', 'all', 'ALL', 'unknown-val'].forEach(val => {
+    env.sandbox.window.filterOrdersBySource(val);
+    assert.strictEqual(env.getAppState().sourceFilter, null, `Value "${val}" must clear sourceFilter to null`);
+  });
+
+  console.log('✅ Source normalization correctly handles all canonical values and aliases without auto-navigating');
+}
+
+// -----------------------------------------------------------------------------
+// Test 22: Direct URL / Hash navigation support
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 22: Direct URL / Hash navigation support ---');
+{
+  // #main-website-orders
+  {
+    const env = createDomEnvironment('#main-website-orders');
+    env.triggerDOMContentLoaded();
+    assert.strictEqual(env.getAppState().activeView, 'main-website-orders');
+    assert.strictEqual(env.getAppState().sourceFilter, 'MAIN_WEBSITE');
+    assert.strictEqual(env.document.getElementById('view-orders').style.display, 'block');
+  }
+
+  // #landing-page-orders
+  {
+    const env = createDomEnvironment('#landing-page-orders');
+    env.triggerDOMContentLoaded();
+    assert.strictEqual(env.getAppState().activeView, 'landing-page-orders');
+    assert.strictEqual(env.getAppState().sourceFilter, 'LANDING');
+    assert.strictEqual(env.document.getElementById('view-orders').style.display, 'block');
+  }
+
+  // #orders?source=MAIN_WEBSITE
+  {
+    const env = createDomEnvironment('#orders?source=MAIN_WEBSITE');
+    env.triggerDOMContentLoaded();
+    assert.strictEqual(env.getAppState().activeView, 'main-website-orders');
+    assert.strictEqual(env.getAppState().sourceFilter, 'MAIN_WEBSITE');
+  }
+
+  // #orders?source=LANDING
+  {
+    const env = createDomEnvironment('#orders?source=LANDING');
+    env.triggerDOMContentLoaded();
+    assert.strictEqual(env.getAppState().activeView, 'landing-page-orders');
+    assert.strictEqual(env.getAppState().sourceFilter, 'LANDING');
+  }
+
+  // ?source=MAIN_WEBSITE query
+  {
+    const env = createDomEnvironment('');
+    env.location.search = '?source=MAIN_WEBSITE';
+    env.triggerDOMContentLoaded();
+    assert.strictEqual(env.getAppState().activeView, 'main-website-orders');
+    assert.strictEqual(env.getAppState().sourceFilter, 'MAIN_WEBSITE');
+  }
+
+  // ?source=LANDING query
+  {
+    const env = createDomEnvironment('');
+    env.location.search = '?source=LANDING';
+    env.triggerDOMContentLoaded();
+    assert.strictEqual(env.getAppState().activeView, 'landing-page-orders');
+    assert.strictEqual(env.getAppState().sourceFilter, 'LANDING');
+  }
+
+  console.log('✅ Direct URL hash and search query navigation correctly apply view and sourceFilter');
+}
+
+// -----------------------------------------------------------------------------
+// Test 23: Generic "All Orders" view clears source filter
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 23: Generic All Orders resets sourceFilter ---');
+{
+  const env = createDomEnvironment('#main-website-orders');
+  env.triggerDOMContentLoaded();
+  assert.strictEqual(env.getAppState().activeView, 'main-website-orders');
+  assert.strictEqual(env.getAppState().sourceFilter, 'MAIN_WEBSITE');
+
+  // Switch to normal generic orders
+  env.sandbox.window.switchView('orders');
+  assert.strictEqual(env.getAppState().activeView, 'orders');
+  assert.strictEqual(env.getAppState().sourceFilter, null);
+  assert.strictEqual(env.location.hash, '#orders');
+  assert.strictEqual(env.document.getElementById('subnav-manage-order').classList.contains('active'), true);
+
+  // From landing-page-orders to orders
+  env.sandbox.window.switchView('landing-page-orders');
+  assert.strictEqual(env.getAppState().activeView, 'landing-page-orders');
+  assert.strictEqual(env.getAppState().sourceFilter, 'LANDING');
+
+  env.sandbox.window.switchView('orders');
+  assert.strictEqual(env.getAppState().activeView, 'orders');
+  assert.strictEqual(env.getAppState().sourceFilter, null);
+  console.log('✅ Switching to generic All Orders view reliably clears sourceFilter to null');
+}
+
+// -----------------------------------------------------------------------------
+// Test 24: Orders table source filtering logic
+// -----------------------------------------------------------------------------
+console.log('\n--- Test 24: Orders table source filtering logic ---');
+{
+  const env = createDomEnvironment('#dashboard');
+  env.triggerDOMContentLoaded();
+
+  const state = env.getAppState();
+  state.orders = [
+    { invoice: 'ORD-001', source: 'MAIN_WEBSITE' },
+    { invoice: 'ORD-002', source: 'LANDING' },
+    { invoice: 'ORD-003', source: 'LANDING_PAGE' },
+    { invoice: 'ORD-004', source: 'landing-orders' },
+    { invoice: 'ORD-005', source: 'main-website' }
+  ];
+
+  // When sourceFilter is MAIN_WEBSITE
+  state.sourceFilter = 'MAIN_WEBSITE';
+  state.activeView = 'main-website-orders';
+  const tableBody = env.document.getElementById('ordersTableBody');
+  const getRenderedHtml = () => tableBody.children.map(tr => tr.innerHTML).join('');
+
+  // When sourceFilter is MAIN_WEBSITE
+  state.sourceFilter = 'MAIN_WEBSITE';
+  state.activeView = 'main-website-orders';
+  env.sandbox.window.renderOrdersTable();
+  let rendered = getRenderedHtml();
+  assert.ok(rendered.includes('ORD-001'), 'ORD-001 must be shown for MAIN_WEBSITE');
+  assert.ok(rendered.includes('ORD-005'), 'ORD-005 must be shown for MAIN_WEBSITE');
+  assert.ok(!rendered.includes('ORD-002'), 'ORD-002 must be excluded for MAIN_WEBSITE');
+  assert.ok(!rendered.includes('ORD-003'), 'ORD-003 must be excluded for MAIN_WEBSITE');
+  assert.ok(!rendered.includes('ORD-004'), 'ORD-004 must be excluded for MAIN_WEBSITE');
+
+  // When sourceFilter is LANDING
+  state.sourceFilter = 'LANDING';
+  state.activeView = 'landing-page-orders';
+  env.sandbox.window.renderOrdersTable();
+  rendered = getRenderedHtml();
+  assert.ok(rendered.includes('ORD-002'), 'ORD-002 must be shown for LANDING');
+  assert.ok(rendered.includes('ORD-003'), 'ORD-003 must be shown for LANDING');
+  assert.ok(rendered.includes('ORD-004'), 'ORD-004 must be shown for LANDING');
+  assert.ok(!rendered.includes('ORD-001'), 'ORD-001 must be excluded for LANDING');
+  assert.ok(!rendered.includes('ORD-005'), 'ORD-005 must be excluded for LANDING');
+
+  // When sourceFilter is null (All Orders)
+  state.sourceFilter = null;
+  state.activeView = 'orders';
+  env.sandbox.window.renderOrdersTable();
+  rendered = getRenderedHtml();
+  assert.ok(rendered.includes('ORD-001'), 'ORD-001 must be shown for All Orders');
+  assert.ok(rendered.includes('ORD-002'), 'ORD-002 must be shown for All Orders');
+  assert.ok(rendered.includes('ORD-003'), 'ORD-003 must be shown for All Orders');
+  assert.ok(rendered.includes('ORD-004'), 'ORD-004 must be shown for All Orders');
+  assert.ok(rendered.includes('ORD-005'), 'ORD-005 must be shown for All Orders');
+
+  console.log('✅ Table rendering displays exactly the orders corresponding to active sourceFilter');
+}
+
 console.log('\n======================================================');
-console.log('🎉 ALL 17 AUTOMATED TESTS PASSED SUCCESSFULLY!');
+console.log('🎉 ALL 24 AUTOMATED TESTS PASSED SUCCESSFULLY!');
 console.log('======================================================\n');

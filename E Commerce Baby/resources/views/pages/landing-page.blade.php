@@ -1496,6 +1496,8 @@
         return;
       }
 
+      const atcEventId = 'atc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
       if (META_ADD_TO_CART_ENABLED && typeof window.fbq === 'function') {
         addToCartFired = true;
         sessionStorage.setItem(dedupeKey, '1');
@@ -1523,7 +1525,22 @@
           @endif
           currency: 'BDT',
           num_items: totalItems > 0 ? totalItems : 1
+        }, {
+          eventID: atcEventId
         });
+
+        if (window.GrowthAgroTracking) {
+          window.GrowthAgroTracking.track('add_to_cart', {
+            event_id: atcEventId,
+            entity_type: 'landing_page',
+            entity_id: LANDING_PAGE_SLUG,
+            event_value: orderValue > 0 ? orderValue : fallbackPrice,
+            properties: {
+              items_count: totalItems > 0 ? totalItems : 1,
+              currency: 'BDT'
+            }
+          });
+        }
       }
     }
 
@@ -1532,10 +1549,19 @@
     function fireInitiateCheckoutOnce() {
       if (checkoutStartedFired) return;
 
+      const dedupeKey = 'meta_tracked_initiatecheckout_' + LANDING_PAGE_SLUG;
+      if (sessionStorage.getItem(dedupeKey)) {
+        checkoutStartedFired = true;
+        return;
+      }
+
+      const icEventId = 'ic_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
       // 1. First-Party Tracking (Once per page lifetime)
       if (!window._ga_checkout_started_tracked && window.GrowthAgroTracking) {
         window._ga_checkout_started_tracked = true;
         window.GrowthAgroTracking.track('checkout_started', {
+          event_id: icEventId,
           entity_type: 'landing_page',
           entity_id: LANDING_PAGE_SLUG,
           page_path: window.location.pathname
@@ -1543,12 +1569,6 @@
       }
 
       // 2. Meta Pixel: InitiateCheckout Event
-      const dedupeKey = 'meta_tracked_initiatecheckout_' + LANDING_PAGE_SLUG;
-      if (sessionStorage.getItem(dedupeKey)) {
-        checkoutStartedFired = true;
-        return;
-      }
-
       if (META_INITIATE_CHECKOUT_ENABLED && typeof window.fbq === 'function') {
         checkoutStartedFired = true;
         sessionStorage.setItem(dedupeKey, '1');
@@ -1576,6 +1596,8 @@
           @endif
           currency: 'BDT',
           num_items: totalItems > 0 ? totalItems : 1
+        }, {
+          eventID: icEventId
         });
       }
     }

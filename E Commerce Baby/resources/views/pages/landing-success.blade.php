@@ -478,11 +478,13 @@
       const orderNo = "{{ $order['order_number'] }}";
       const totalVal = {{ (float)($order['total'] ?? 0) }};
       const itemsCount = {{ count($order['items'] ?? []) }};
+      const purchaseEventId = 'purchase_' + orderNo;
       const dedupeKey = 'ga_tracked_order_' + orderNo;
 
       if (!sessionStorage.getItem(dedupeKey) && window.GrowthAgroTracking) {
         sessionStorage.setItem(dedupeKey, '1');
         window.GrowthAgroTracking.track('purchase', {
+          event_id: purchaseEventId,
           entity_type: 'order',
           entity_id: orderNo,
           event_value: totalVal,
@@ -505,6 +507,8 @@
           value: totalVal,
           currency: 'BDT',
           num_items: {{ array_sum(array_column($order['items'] ?? [], 'quantity')) ?: 1 }}
+        }, {
+          eventID: purchaseEventId
         });
       }
     })();

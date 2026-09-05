@@ -143,6 +143,21 @@ class CheckoutService
                     'total' => ($it['price'] ?? 0) * ($it['quantity'] ?? 1),
                 ]);
             }
+
+            // Meta Conversions API (Server-Side Purchase Event Control: Instant / Delay / Hold)
+            try {
+                app(\App\Services\MetaPurchaseControlService::class)->handleMainWebsiteOrder(
+                    $dbOrder,
+                    $order,
+                    $items,
+                    (float) $total,
+                    (float) $shipping,
+                    request()
+                );
+            } catch (\Throwable $ce) {
+                // Guaranteed fail-open: customer order creation is never interrupted or rolled back
+                \Illuminate\Support\Facades\Log::warning('[CheckoutService] Meta Purchase control fail-open: ' . $ce->getMessage());
+            }
         } catch (\Exception $e) {
             // log error
         }

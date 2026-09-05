@@ -146,9 +146,13 @@
         document.getElementById('summaryTotal').textContent = `৳ ${(subtotal + shipping).toLocaleString()}`;
     }
 
+    // Shared Event ID for InitiateCheckout deduplication
+    const icEventId = 'ic_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
     // Growth Agro Unified Checkout Started Tracking
     if (window.GrowthAgroTracking) {
         window.GrowthAgroTracking.track('checkout_started', {
+            event_id: icEventId,
             entity_type: 'checkout',
             event_value: {{ (float)($subtotal ?? 0) }},
             properties: {
@@ -166,6 +170,8 @@
             value: {{ (float)($subtotal ?? 0) }},
             currency: 'BDT',
             num_items: {{ (int)($cartSummary['item_count'] ?? count($cartSummary['items'] ?? [])) }}
+        }, {
+            eventID: icEventId
         });
     }
 </script>

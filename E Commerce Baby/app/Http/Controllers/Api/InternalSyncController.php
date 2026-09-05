@@ -167,6 +167,13 @@ class InternalSyncController extends Controller
 
             DB::commit();
 
+            // 7. Coordinate Server-Side Purchase Event Control (Single Authoritative Queue in Laravel)
+            try {
+                app(\App\Services\MetaPurchaseControlService::class)->handleLandingOrderSync($order, $request);
+            } catch (\Throwable $mpe) {
+                Log::warning('[InternalSync] Failed to coordinate Meta Purchase control: ' . $mpe->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'order_id' => $order->id,
@@ -215,6 +222,38 @@ class InternalSyncController extends Controller
                 'content' => $landingPage->content,
                 'delivery_config' => $landingPage->delivery_config,
             ]
+        ]);
+    }
+
+    /**
+     * Internal endpoint: Fetch authoritative Meta Tracking runtime configuration for Node.js.
+     * Authenticated via X-Internal-Secret (constant-time comparison).
+     */
+    public function getMetaTrackingConfig(Request $request): JsonResponse
+    {
+        $expectedSecret = env('INTERNAL_API_SECRET', 'baby-fashion-internal-2024-secret');
+        $incomingSecret = $request->header('X-Internal-Secret');
+
+        if (!$incomingSecret || !hash_equals($expectedSecret, $incomingSecret)) {
+            return response()->json(['success' => false, 'error' => 'Forbidden: Invalid internal secret.'], 403);
+        }
+
+        $configService = app(\App\Services\MetaTrackingConfigService::class);
+
+        return response()->json([
+            'success'                => true,
+            'is_enabled'             => $configService->isTrackingEnabled(),
+            'active_pixel_id'        => $configService->getActivePixelId(),
+            'access_token'           => $configService->getCapiAccessToken(),
+            'test_event_code'        => $configService->getTestEventCode(),
+            'purchase_event_mode'    => $configService->getPurchaseEventMode(),
+            'purchase_delay_minutes' => $configService->getPurchaseDelayMinutes(),
+            'server_events'          => [
+                'pageview'          => $configService->isServerEventEnabled('pageview'),
+                'add_to_cart'       => $configService->isServerEventEnabled('add_to_cart'),
+                'initiate_checkout' => $configService->isServerEventEnabled('initiate_checkout'),
+                'purchase'          => $configService->isServerEventEnabled('purchase'),
+            ],
         ]);
     }
 }

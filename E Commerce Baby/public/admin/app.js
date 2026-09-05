@@ -6,6 +6,7 @@
 const APP_STATE = {
   currentUser: JSON.parse(localStorage.getItem('admin_user')) || null,
   activeFilter: 'All',
+  sourceFilter: null,
   riskFilter: 'all',
   activeView: 'dashboard',
   searchQuery: '',
@@ -353,13 +354,13 @@ function loadServerOrders() {
 
 function isStorefrontOrder(o) {
   if (!o) return false;
-  const s = String(o.source || '').toUpperCase();
-  return s === 'MAIN_WEBSITE' || s.includes('BABY-FASHION') || s.includes('STOREFRONT');
+  const s = String(o.source || '').toUpperCase().replace(/-/g, '_');
+  return s === 'MAIN_WEBSITE' || s.includes('BABY_FASHION') || s.includes('STOREFRONT') || s.includes('WEBSITE');
 }
 
 function isLandingOrder(o) {
   if (!o) return false;
-  const s = String(o.source || '').toUpperCase();
+  const s = String(o.source || '').toUpperCase().replace(/-/g, '_');
   return s === 'LANDING' || s === 'LANDING_PAGE' || s.includes('LANDING');
 }
 
@@ -526,18 +527,28 @@ function renderDashboardData() {
 
 /**
  * Filter orders table by source type.
- * @param {string} type - 'MAIN_WEBSITE', 'LANDING_PAGE', or null (all)
+ * Sets/normalizes APP_STATE.sourceFilter only (does NOT perform navigation).
+ * @param {string|null} type - 'MAIN_WEBSITE', 'LANDING', or aliases / null (all)
  */
 window.filterOrdersBySource = function(type) {
-  if (type === 'MAIN_WEBSITE' || type === 'baby-fashion-storefront' || type === 'storefront') {
-    APP_STATE.sourceFilter = 'MAIN_WEBSITE';
-  } else if (type === 'LANDING_PAGE' || type === 'landing' || type === 'LANDING') {
-    APP_STATE.sourceFilter = 'LANDING_PAGE';
-  } else {
+  if (!type || type === 'all' || type === 'ALL') {
     APP_STATE.sourceFilter = null;
+  } else {
+    const s = String(type).trim().toUpperCase().replace(/-/g, '_');
+    if (s === 'MAIN_WEBSITE' || s.includes('BABY_FASHION') || s.includes('STOREFRONT') || s.includes('WEBSITE')) {
+      APP_STATE.sourceFilter = 'MAIN_WEBSITE';
+    } else if (s === 'LANDING' || s === 'LANDING_PAGE' || s.includes('LANDING')) {
+      APP_STATE.sourceFilter = 'LANDING';
+    } else {
+      APP_STATE.sourceFilter = null;
+    }
   }
   APP_STATE.activeFilter = 'All';
-  renderOrdersTable();
+  if (APP_STATE.activeView === 'orders' || APP_STATE.activeView === 'main-website-orders' || APP_STATE.activeView === 'landing-page-orders') {
+    if (typeof renderOrdersTable === 'function') {
+      renderOrdersTable();
+    }
+  }
 };
 
 // Monthly Activities Chart (HTML5 Canvas)
@@ -663,7 +674,7 @@ function renderOrdersTable() {
   if (APP_STATE.sourceFilter) {
     if (APP_STATE.sourceFilter === 'MAIN_WEBSITE') {
       filtered = filtered.filter(isStorefrontOrder);
-    } else if (APP_STATE.sourceFilter === 'LANDING_PAGE') {
+    } else if (APP_STATE.sourceFilter === 'LANDING' || APP_STATE.sourceFilter === 'LANDING_PAGE') {
       filtered = filtered.filter(isLandingOrder);
     }
 
@@ -675,7 +686,7 @@ function renderOrdersTable() {
         const b = document.createElement('div');
         b.id = 'sourceFilterBanner';
         b.style.cssText = 'background:#E0F2FE;border:1px solid #BAE6FD;border-radius:8px;padding:8px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:13px;';
-        b.innerHTML = `<span>🔍 Showing: <strong>${APP_STATE.sourceFilter === 'MAIN_WEBSITE' ? '🛍️ Main Website Orders' : '🚀 Landing Page Orders'}</strong> only</span><button onclick="filterOrdersBySource(null);" style="margin-left:auto;background:#EF4444;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;">✕ Clear Filter</button>`;
+        b.innerHTML = `<span>🔍 Showing: <strong>${APP_STATE.sourceFilter === 'MAIN_WEBSITE' ? '🛍️ Main Website Orders' : '🚀 Landing Page Orders'}</strong> only</span><button onclick="filterOrdersBySource(null); switchView('orders');" style="margin-left:auto;background:#EF4444;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;">✕ Clear Filter</button>`;
         ordersTopRow.insertAdjacentElement('afterend', b);
       }
     } else {
@@ -5055,8 +5066,11 @@ const VIEW_ALIASES = {
   'order': 'orders',
   'main-website-orders': 'main-website-orders',
   'website-orders': 'main-website-orders',
+  'main-website': 'main-website-orders',
+  'main_website': 'main-website-orders',
   'landing-page-orders': 'landing-page-orders',
   'landing-orders': 'landing-page-orders',
+  'landing': 'landing-page-orders',
   'admin': 'manage-admin',
   'admins': 'manage-admin',
   'admin-users': 'manage-admin',
@@ -5087,10 +5101,10 @@ function normalizeViewName(name) {
   const cleaned = name.trim().toLowerCase().replace(/^#/, '');
   if (!cleaned) return null;
 
-  if (cleaned === 'main-website-orders' || cleaned === 'website-orders') {
+  if (cleaned === 'main-website-orders' || cleaned === 'website-orders' || cleaned === 'main-website' || cleaned === 'main_website') {
     return 'main-website-orders';
   }
-  if (cleaned === 'landing-page-orders' || cleaned === 'landing-orders') {
+  if (cleaned === 'landing-page-orders' || cleaned === 'landing-orders' || cleaned === 'landing') {
     return 'landing-page-orders';
   }
 
@@ -5112,8 +5126,62 @@ function normalizeViewName(name) {
 window.normalizeViewName = normalizeViewName;
 
 function getViewFromHash() {
-  if (typeof window === 'undefined' || !window.location || !window.location.hash) return null;
-  return normalizeViewName(window.location.hash);
+  if (typeof window === 'undefined' || !window.location) return null;
+  if (window.location.hash) {
+    const rawHash = window.location.hash.replace(/^#/, '');
+    if (rawHash.includes('?')) {
+      const [hView, hQuery] = rawHash.split('?');
+      let src = null;
+      try {
+        if (typeof URLSearchParams !== 'undefined') {
+          const params = new URLSearchParams(hQuery);
+          src = params.get('source');
+        }
+      } catch (e) {}
+      if (!src && hQuery) {
+        const m = hQuery.match(/(?:^|&)source=([^&]+)/i);
+        if (m) src = decodeURIComponent(m[1]);
+      }
+      if (src) {
+        const s = src.toUpperCase().replace(/-/g, '_');
+        if (s === 'MAIN_WEBSITE' || s.includes('BABY_FASHION') || s.includes('STOREFRONT') || s.includes('WEBSITE')) return 'main-website-orders';
+        if (s === 'LANDING' || s === 'LANDING_PAGE' || s.includes('LANDING')) return 'landing-page-orders';
+      }
+      const parsedView = normalizeViewName(hView);
+      if (parsedView) return parsedView;
+    }
+    const viewFromHash = normalizeViewName(window.location.hash);
+    if (viewFromHash) return viewFromHash;
+  }
+  if (window.location.search) {
+    let src = null;
+    let viewParam = null;
+    try {
+      if (typeof URLSearchParams !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        src = params.get('source');
+        viewParam = params.get('view');
+      }
+    } catch (e) {}
+    if (!src && window.location.search) {
+      const m = window.location.search.match(/(?:^|[?&])source=([^&]+)/i);
+      if (m) src = decodeURIComponent(m[1]);
+    }
+    if (!viewParam && window.location.search) {
+      const m = window.location.search.match(/(?:^|[?&])view=([^&]+)/i);
+      if (m) viewParam = decodeURIComponent(m[1]);
+    }
+    if (src) {
+      const s = src.toUpperCase().replace(/-/g, '_');
+      if (s === 'MAIN_WEBSITE' || s.includes('BABY_FASHION') || s.includes('STOREFRONT') || s.includes('WEBSITE')) return 'main-website-orders';
+      if (s === 'LANDING' || s === 'LANDING_PAGE' || s.includes('LANDING')) return 'landing-page-orders';
+    }
+    if (viewParam) {
+      const parsed = normalizeViewName(viewParam);
+      if (parsed) return parsed;
+    }
+  }
+  return null;
 }
 window.getViewFromHash = getViewFromHash;
 
@@ -5149,7 +5217,7 @@ function doSwitchView(viewName, updateHash = true) {
     if (targetView === 'main-website-orders') {
       APP_STATE.sourceFilter = 'MAIN_WEBSITE';
     } else if (targetView === 'landing-page-orders') {
-      APP_STATE.sourceFilter = 'LANDING_PAGE';
+      APP_STATE.sourceFilter = 'LANDING';
     }
   } else if (targetView === 'orders') {
     APP_STATE.sourceFilter = null;
@@ -5266,6 +5334,7 @@ function doSwitchView(viewName, updateHash = true) {
       'header-setting': 'Header Configuration',
       'theme-setting': 'Theme Settings',
       'marketing': 'Marketing & Meta Pixel',
+      'meta-tracking': 'Facebook / Meta Tracking',
       'courier-api': 'Courier API Setup',
       'invoice-address': 'Invoice Address',
       'delivery-charge': 'Delivery Charges',
@@ -5316,6 +5385,7 @@ function doSwitchView(viewName, updateHash = true) {
   if (targetView === 'profit-report') renderProfitReport();
   if (targetView === 'cities') renderCitiesTable();
   if (targetView === 'marketing') loadMarketingSettings();
+  if (targetView === 'meta-tracking') loadMetaTrackingData();
   if (targetView === 'manage-admin') {
     const sInput = document.getElementById('adminSearchInput');
     if (sInput) {
@@ -5538,6 +5608,1187 @@ window.setMarketingToggleState = setMarketingToggleState;
 window.toggleMarketingSwitch = toggleMarketingSwitch;
 window.loadMarketingSettings = loadMarketingSettings;
 window.saveMarketingSettings = saveMarketingSettings;
+
+// =========================================================================
+// FACEBOOK / META TRACKING CONTROL (Phase 7)
+// =========================================================================
+
+let META_TRACKING_STATE = {
+  settings: null,
+  pixels: [],
+  activePixelId: null,
+  isLoading: false
+};
+
+function getAdminAuthHeaders() {
+  const token = localStorage.getItem('admin_token') || localStorage.getItem('adminToken') || 'adm_session';
+  return {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token
+  };
+}
+
+function loadMetaTrackingData() {
+  META_TRACKING_STATE.isLoading = true;
+  const headers = getAdminAuthHeaders();
+
+  Promise.all([
+    fetch('/api/admin/meta/tracking-settings', { headers }).then(r => r.json()),
+    fetch('/api/admin/meta/pixels', { headers }).then(r => r.json())
+  ])
+  .then(([settingsRes, pixelsRes]) => {
+    META_TRACKING_STATE.isLoading = false;
+
+    if (settingsRes && settingsRes.success && settingsRes.settings) {
+      META_TRACKING_STATE.settings = settingsRes.settings;
+      META_TRACKING_STATE.activePixelId = settingsRes.settings.active_pixel_id;
+    }
+
+    if (pixelsRes && pixelsRes.success && Array.isArray(pixelsRes.pixels)) {
+      META_TRACKING_STATE.pixels = pixelsRes.pixels;
+    }
+
+    renderMetaTrackingUI();
+    loadMetaPurchaseQueue(1);
+    // Phase 9: Load purchase rules and sync auto_rules toggle
+    loadMetaRules();
+    if (settingsRes && settingsRes.settings && typeof syncAutoRulesToggle === 'function') {
+      syncAutoRulesToggle(settingsRes.settings);
+    }
+  })
+  .catch(err => {
+    META_TRACKING_STATE.isLoading = false;
+    console.warn('Failed to load Meta Tracking data:', err);
+    if (typeof showToast === 'function') {
+      showToast('Failed to load Meta Tracking data.');
+    }
+  });
+}
+
+function renderMetaTrackingUI() {
+  const settings = META_TRACKING_STATE.settings || {};
+  const pixels = META_TRACKING_STATE.pixels || [];
+
+  // 1. Global Status Overview Cards
+  const isMasterEnabled = settings.is_enabled !== false;
+  const masterTextEl = document.getElementById('metaMasterStatusText');
+  const masterBtnEl = document.getElementById('metaMasterToggleBtn');
+  if (masterTextEl && masterBtnEl) {
+    if (isMasterEnabled) {
+      masterTextEl.textContent = 'Active (ON)';
+      masterTextEl.style.color = '#15803D';
+      masterBtnEl.textContent = 'ON';
+      masterBtnEl.style.background = '#004D40';
+      masterBtnEl.style.color = '#FFFFFF';
+    } else {
+      masterTextEl.textContent = 'Disabled (OFF)';
+      masterTextEl.style.color = '#DC2626';
+      masterBtnEl.textContent = 'OFF';
+      masterBtnEl.style.background = '#EF4444';
+      masterBtnEl.style.color = '#FFFFFF';
+    }
+  }
+
+  // Active Pixel Card
+  const activePixel = pixels.find(p => p.id === settings.active_pixel_id) || (settings.active_pixel ? settings.active_pixel : null);
+  const activeCardName = document.getElementById('metaActivePixelCardName');
+  const activeCardId = document.getElementById('metaActivePixelCardId');
+  if (activeCardName && activeCardId) {
+    if (activePixel) {
+      activeCardName.textContent = activePixel.pixel_name || 'Active Pixel';
+      activeCardId.textContent = 'ID: ' + (activePixel.pixel_id || '-');
+    } else {
+      activeCardName.textContent = 'No Active Pixel';
+      activeCardId.textContent = 'ID: -';
+    }
+  }
+
+  // Badges for Browser & Server
+  const browserBadge = document.getElementById('metaBrowserBadge');
+  if (browserBadge) {
+    const isBrowserOn = isMasterEnabled && Boolean(settings.browser_events && (settings.browser_events.pageview || settings.browser_events.add_to_cart || settings.browser_events.purchase));
+    if (isBrowserOn) {
+      browserBadge.textContent = 'Active';
+      browserBadge.style.background = '#DCFCE7';
+      browserBadge.style.color = '#15803D';
+    } else {
+      browserBadge.textContent = 'Disabled';
+      browserBadge.style.background = '#FEE2E2';
+      browserBadge.style.color = '#B91C1C';
+    }
+  }
+
+  const serverBadge = document.getElementById('metaServerBadge');
+  if (serverBadge) {
+    const hasToken = activePixel && activePixel.has_token;
+    const isServerOn = isMasterEnabled && hasToken && Boolean(settings.server_events && (settings.server_events.add_to_cart || settings.server_events.purchase));
+    if (isServerOn) {
+      serverBadge.textContent = 'Active';
+      serverBadge.style.background = '#DCFCE7';
+      serverBadge.style.color = '#15803D';
+    } else if (!hasToken) {
+      serverBadge.textContent = 'No Token Configured';
+      serverBadge.style.background = '#FEF3C7';
+      serverBadge.style.color = '#B45309';
+    } else {
+      serverBadge.textContent = 'Disabled';
+      serverBadge.style.background = '#FEE2E2';
+      serverBadge.style.color = '#B91C1C';
+    }
+  }
+
+  // 2. FB Pixel Settings & Active Select
+  const defaultPixel = pixels.find(p => p.is_default);
+  const defaultDisplay = document.getElementById('metaDefaultPixelDisplay');
+  if (defaultDisplay) {
+    if (defaultPixel) {
+      defaultDisplay.textContent = `${defaultPixel.pixel_name} (${defaultPixel.pixel_id})`;
+    } else {
+      defaultDisplay.textContent = 'None';
+    }
+  }
+
+  const activeSelect = document.getElementById('metaActivePixelSelect');
+  if (activeSelect) {
+    activeSelect.innerHTML = '';
+    if (pixels.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'No pixels configured yet';
+      activeSelect.appendChild(opt);
+    } else {
+      pixels.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.pixel_name} — ${p.pixel_id}${p.is_default ? ' [Default]' : ''}`;
+        if (p.id === settings.active_pixel_id || p.is_active) {
+          opt.selected = true;
+        }
+        activeSelect.appendChild(opt);
+      });
+    }
+  }
+
+  // 3. FB Pixel IDs Table
+  const tableBody = document.getElementById('metaPixelsTableBody');
+  if (tableBody) {
+    if (pixels.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#94A3B8;">No Meta Pixels configured. Click "+ Add Pixel" to configure one.</td></tr>';
+    } else {
+      tableBody.innerHTML = pixels.map((p, idx) => {
+        const isActive = (p.id === settings.active_pixel_id) || Boolean(p.is_active);
+        const isDefault = Boolean(p.is_default);
+        const hasToken = Boolean(p.has_token);
+        const testCode = p.test_event_code ? p.test_event_code : null;
+
+        const statusBadge = isActive
+          ? '<span style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:700;background:#DCFCE7;color:#15803D;">● Active</span>'
+          : '<span style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:600;background:#F1F5F9;color:#64748B;">Inactive</span>';
+
+        const defaultBadge = isDefault
+          ? '<span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#FEF3C7;color:#B45309;">⭐ Default</span>'
+          : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
+
+        // Critical: Only display "Configured" or "Not Configured". NEVER token!
+        const tokenBadge = hasToken
+          ? '<span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:700;background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;">Configured</span>'
+          : '<span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:600;background:#F8FAFC;color:#94A3B8;border:1px solid #E2E8F0;">Not Configured</span>';
+
+        const testCodeBadge = testCode
+          ? `<span style="font-family:monospace;font-size:12px;color:#2563EB;background:#EFF6FF;padding:2px 6px;border-radius:4px;" title="Test Event Code">${escapeHtml(testCode)}</span>`
+          : '<span style="color:#CBD5E1;font-size:12px;">None</span>';
+
+        const activateBtn = isActive
+          ? ''
+          : `<button type="button" class="btn-primary-teal" onclick="setActiveMetaPixel(${p.id})" style="padding:4px 9px;font-size:11.5px;font-weight:600;background:#0F766E;" title="Set as Active Pixel">⚡ Activate</button>`;
+
+        const defaultBtn = isDefault
+          ? ''
+          : `<button type="button" class="btn-lp-draft" onclick="setDefaultMetaPixel(${p.id})" style="padding:4px 9px;font-size:11.5px;font-weight:600;" title="Set as Default Pixel">⭐ Set Default</button>`;
+
+        const deleteDisabled = (isActive || pixels.length <= 1);
+        const deleteBtn = `<button type="button" class="action-btn-orange-del" onclick="promptDeleteMetaPixel(${p.id}, '${escapeJsQuotes(p.pixel_name)}', '${p.pixel_id}')" style="padding:4px 8px;font-size:12px;border-radius:4px;cursor:${deleteDisabled ? 'not-allowed' : 'pointer'};opacity:${deleteDisabled ? '0.35' : '1'};" ${deleteDisabled ? 'disabled title="Cannot delete active or sole pixel"' : 'title="Delete Pixel"'}>🗑️</button>`;
+
+        return `
+          <tr>
+            <td style="color:#64748B;font-size:12.5px;">${idx + 1}</td>
+            <td style="font-weight:700;color:#1E293B;">${escapeHtml(p.pixel_name)}</td>
+            <td style="font-family:monospace;color:#0F172A;font-weight:600;">${escapeHtml(p.pixel_id)}</td>
+            <td>${statusBadge}</td>
+            <td>${defaultBadge}</td>
+            <td>${tokenBadge}</td>
+            <td>${testCodeBadge}</td>
+            <td style="text-align:right;">
+              <div style="display:inline-flex;gap:6px;align-items:center;justify-content:flex-end;">
+                <button type="button" class="action-btn-square-teal" onclick="openEditMetaPixelModal(${p.id})" style="padding:4px 8px;font-size:12px;" title="Edit Pixel">✏️</button>
+                ${activateBtn}
+                ${defaultBtn}
+                ${deleteBtn}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+
+  // 4. Custom Events Toggles
+  const bEvents = settings.browser_events || {};
+  const sEvents = settings.server_events || {};
+
+  const chkBrowserPageView = document.getElementById('evtBrowserPageView');
+  if (chkBrowserPageView) chkBrowserPageView.checked = bEvents.pageview !== false;
+
+  const chkBrowserAddToCart = document.getElementById('evtBrowserAddToCart');
+  if (chkBrowserAddToCart) chkBrowserAddToCart.checked = bEvents.add_to_cart !== false;
+
+  const chkServerAddToCart = document.getElementById('evtServerAddToCart');
+  if (chkServerAddToCart) chkServerAddToCart.checked = sEvents.add_to_cart !== false;
+
+  const chkBrowserInitiateCheckout = document.getElementById('evtBrowserInitiateCheckout');
+  if (chkBrowserInitiateCheckout) chkBrowserInitiateCheckout.checked = bEvents.initiate_checkout !== false;
+
+  const chkServerInitiateCheckout = document.getElementById('evtServerInitiateCheckout');
+  if (chkServerInitiateCheckout) chkServerInitiateCheckout.checked = sEvents.initiate_checkout !== false;
+
+  const chkBrowserPurchase = document.getElementById('evtBrowserPurchase');
+  if (chkBrowserPurchase) chkBrowserPurchase.checked = bEvents.purchase !== false;
+
+  const chkServerPurchase = document.getElementById('evtServerPurchase');
+  if (chkServerPurchase) chkServerPurchase.checked = sEvents.purchase !== false;
+
+  // 5. Purchase Event Control (Phase 8: Instant / Delay / Hold)
+  const purchaseControl = settings.purchase_control || {};
+  const currentPurchaseMode = purchaseControl.mode || 'instant';
+  const delayMinutes = purchaseControl.delay_minutes || 30;
+
+  const radInstant = document.getElementById('purchaseModeInstant');
+  const radDelay = document.getElementById('purchaseModeDelay');
+  const radHold = document.getElementById('purchaseModeHold');
+  const delayInput = document.getElementById('metaPurchaseDelayMinutes');
+  const delayContainer = document.getElementById('metaDelayMinutesContainer');
+
+  if (radInstant && radDelay && radHold) {
+    radInstant.checked = (currentPurchaseMode === 'instant');
+    radDelay.checked = (currentPurchaseMode === 'delay');
+    radHold.checked = (currentPurchaseMode === 'hold');
+  }
+
+  if (delayInput) {
+    delayInput.value = delayMinutes;
+  }
+  if (delayContainer) {
+    delayContainer.style.display = (currentPurchaseMode === 'delay') ? 'block' : 'none';
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeJsQuotes(str) {
+  if (!str) return '';
+  return String(str).replace(/'/g, "\\'");
+}
+
+function openAddMetaPixelModal() {
+  document.getElementById('metaPixelModalId').value = '';
+  document.getElementById('metaPixelModalTitle').textContent = 'Add Meta Pixel';
+  document.getElementById('metaInputPixelName').value = '';
+  document.getElementById('metaInputPixelId').value = '';
+  const tokenInput = document.getElementById('metaInputAccessToken');
+  tokenInput.value = '';
+  tokenInput.placeholder = 'Enter CAPI Access Token (Optional)';
+  document.getElementById('metaTokenHelpText').textContent = 'Leave blank if not using CAPI. Token is stored encrypted.';
+  document.getElementById('metaInputTestEventCode').value = '';
+  document.getElementById('metaInputIsActive').checked = (META_TRACKING_STATE.pixels.length === 0);
+  document.getElementById('metaInputIsDefault').checked = (META_TRACKING_STATE.pixels.length === 0);
+
+  const alertBox = document.getElementById('metaPixelModalAlert');
+  if (alertBox) alertBox.style.display = 'none';
+
+  const modal = document.getElementById('metaPixelModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function openEditMetaPixelModal(pixelId) {
+  const pixel = META_TRACKING_STATE.pixels.find(p => p.id === pixelId);
+  if (!pixel) return;
+
+  document.getElementById('metaPixelModalId').value = pixel.id;
+  document.getElementById('metaPixelModalTitle').textContent = 'Edit Meta Pixel';
+  document.getElementById('metaInputPixelName').value = pixel.pixel_name || '';
+  document.getElementById('metaInputPixelId').value = pixel.pixel_id || '';
+
+  // CRITICAL: Token input starts completely blank!
+  const tokenInput = document.getElementById('metaInputAccessToken');
+  tokenInput.value = '';
+  tokenInput.placeholder = pixel.has_token ? 'Leave blank to keep existing token' : 'Enter CAPI Access Token (Optional)';
+  document.getElementById('metaTokenHelpText').textContent = pixel.has_token
+    ? 'Status: Configured. Leave blank to keep existing encrypted token. Enter new value only to change.'
+    : 'Leave blank if not using CAPI. Token is securely encrypted.';
+
+  document.getElementById('metaInputTestEventCode').value = pixel.test_event_code || '';
+  document.getElementById('metaInputIsActive').checked = Boolean(pixel.is_active);
+  document.getElementById('metaInputIsDefault').checked = Boolean(pixel.is_default);
+
+  const alertBox = document.getElementById('metaPixelModalAlert');
+  if (alertBox) alertBox.style.display = 'none';
+
+  const modal = document.getElementById('metaPixelModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeMetaPixelModal() {
+  const modal = document.getElementById('metaPixelModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveMetaPixelForm() {
+  const modalId = document.getElementById('metaPixelModalId').value;
+  const pixelName = document.getElementById('metaInputPixelName').value.trim();
+  const pixelId = document.getElementById('metaInputPixelId').value.trim();
+  const rawToken = document.getElementById('metaInputAccessToken').value.trim();
+  const testCode = document.getElementById('metaInputTestEventCode').value.trim();
+  const isActive = document.getElementById('metaInputIsActive').checked;
+  const isDefault = document.getElementById('metaInputIsDefault').checked;
+  const alertBox = document.getElementById('metaPixelModalAlert');
+  const submitBtn = document.getElementById('metaPixelModalSubmitBtn');
+
+  if (!pixelName) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#FEE2E2';
+      alertBox.style.color = '#B91C1C';
+      alertBox.textContent = 'Please enter a valid Pixel Name.';
+    }
+    return;
+  }
+
+  if (!pixelId || !/^\d+$/.test(pixelId)) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#FEE2E2';
+      alertBox.style.color = '#B91C1C';
+      alertBox.textContent = 'Please enter a valid numeric Meta Pixel / Dataset ID.';
+    }
+    return;
+  }
+
+  const payload = {
+    pixel_name: pixelName,
+    pixel_id: pixelId,
+    test_event_code: testCode || null,
+    is_active: isActive,
+    is_default: isDefault
+  };
+
+  if (rawToken) {
+    payload.access_token = rawToken;
+  }
+
+  const isEdit = Boolean(modalId);
+  const url = isEdit ? `/api/admin/meta/pixels/${modalId}` : '/api/admin/meta/pixels';
+  const method = isEdit ? 'PUT' : 'POST';
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+  }
+  if (alertBox) alertBox.style.display = 'none';
+
+  fetch(url, {
+    method: method,
+    headers: getAdminAuthHeaders(),
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !data.success) {
+      const errMsg = (data && (data.message || (data.errors && Object.values(data.errors)[0] && Object.values(data.errors)[0][0])))
+        || 'Failed to save Meta Pixel.';
+      throw new Error(errMsg);
+    }
+    return data;
+  })
+  .then(() => {
+    closeMetaPixelModal();
+    if (typeof showToast === 'function') {
+      showToast(isEdit ? 'Meta Pixel updated successfully!' : 'Meta Pixel created successfully!');
+    }
+    loadMetaTrackingData();
+  })
+  .catch(err => {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#FEE2E2';
+      alertBox.style.color = '#B91C1C';
+      alertBox.textContent = '⚠️ ' + err.message;
+    }
+  })
+  .finally(() => {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save Pixel';
+    }
+  });
+}
+
+function applyActiveMetaPixelSelection() {
+  const select = document.getElementById('metaActivePixelSelect');
+  if (!select || !select.value) return;
+  setActiveMetaPixel(select.value);
+}
+
+function setActiveMetaPixel(pixelId) {
+  fetch(`/api/admin/meta/pixels/${pixelId}/set-active`, {
+    method: 'POST',
+    headers: getAdminAuthHeaders()
+  })
+  .then(async r => {
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !data.success) {
+      throw new Error((data && data.message) || 'Failed to switch active pixel.');
+    }
+    return data;
+  })
+  .then(() => {
+    if (typeof showToast === 'function') {
+      showToast('Active Meta Pixel switched successfully!');
+    }
+    loadMetaTrackingData();
+  })
+  .catch(err => {
+    alert('Error: ' + err.message);
+  });
+}
+
+function setDefaultMetaPixel(pixelId) {
+  fetch(`/api/admin/meta/pixels/${pixelId}/set-default`, {
+    method: 'POST',
+    headers: getAdminAuthHeaders()
+  })
+  .then(async r => {
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !data.success) {
+      throw new Error((data && data.message) || 'Failed to set default pixel.');
+    }
+    return data;
+  })
+  .then(() => {
+    if (typeof showToast === 'function') {
+      showToast('Default Meta Pixel updated successfully!');
+    }
+    loadMetaTrackingData();
+  })
+  .catch(err => {
+    alert('Error: ' + err.message);
+  });
+}
+
+function promptDeleteMetaPixel(pixelId, pixelName, pixelIdCode) {
+  const modal = document.getElementById('metaDeleteModal');
+  const idInput = document.getElementById('metaDeletePixelId');
+  const msg = document.getElementById('metaDeleteConfirmMsg');
+  const alertBox = document.getElementById('metaDeleteAlert');
+
+  if (idInput) idInput.value = pixelId;
+  if (msg) msg.textContent = `Are you sure you want to delete pixel "${pixelName}" (ID: ${pixelIdCode})? This action cannot be undone.`;
+  if (alertBox) alertBox.style.display = 'none';
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeMetaDeleteModal() {
+  const modal = document.getElementById('metaDeleteModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function executeDeleteMetaPixel() {
+  const idInput = document.getElementById('metaDeletePixelId');
+  if (!idInput || !idInput.value) return;
+
+  const pixelId = idInput.value;
+  const alertBox = document.getElementById('metaDeleteAlert');
+
+  fetch(`/api/admin/meta/pixels/${pixelId}`, {
+    method: 'DELETE',
+    headers: getAdminAuthHeaders()
+  })
+  .then(async r => {
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !data.success) {
+      throw new Error((data && data.message) || 'Failed to delete pixel.');
+    }
+    return data;
+  })
+  .then(() => {
+    closeMetaDeleteModal();
+    if (typeof showToast === 'function') {
+      showToast('Meta Pixel deleted successfully!');
+    }
+    loadMetaTrackingData();
+  })
+  .catch(err => {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.textContent = '⚠️ ' + err.message;
+    } else {
+      alert('Error: ' + err.message);
+    }
+  });
+}
+
+function toggleMetaMasterSwitch() {
+  const currentSettings = META_TRACKING_STATE.settings;
+  const currentEnabled = currentSettings ? (currentSettings.is_enabled !== false) : true;
+  const newEnabled = !currentEnabled;
+
+  fetch('/api/admin/meta/tracking-settings', {
+    method: 'PUT',
+    headers: getAdminAuthHeaders(),
+    body: JSON.stringify({ is_enabled: newEnabled })
+  })
+  .then(async r => {
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !data.success) {
+      throw new Error((data && data.message) || 'Failed to update Meta tracking state.');
+    }
+    return data;
+  })
+  .then(() => {
+    if (typeof showToast === 'function') {
+      showToast(newEnabled ? 'Meta Tracking master switch ENABLED!' : 'Meta Tracking master switch DISABLED!');
+    }
+    loadMetaTrackingData();
+  })
+  .catch(err => {
+    alert('Error: ' + err.message);
+  });
+}
+
+function saveMetaTrackingSettings() {
+  const selectedModeEl = document.querySelector('input[name="metaPurchaseMode"]:checked');
+  const selectedMode = selectedModeEl ? selectedModeEl.value : 'instant';
+  const delayMinutesVal = parseInt(document.getElementById('metaPurchaseDelayMinutes')?.value || '30', 10);
+
+  const payload = {
+    browser_pageview_enabled: document.getElementById('evtBrowserPageView')?.checked ?? true,
+    browser_add_to_cart_enabled: document.getElementById('evtBrowserAddToCart')?.checked ?? true,
+    browser_initiate_checkout_enabled: document.getElementById('evtBrowserInitiateCheckout')?.checked ?? true,
+    browser_purchase_enabled: document.getElementById('evtBrowserPurchase')?.checked ?? true,
+    server_add_to_cart_enabled: document.getElementById('evtServerAddToCart')?.checked ?? true,
+    server_initiate_checkout_enabled: document.getElementById('evtServerInitiateCheckout')?.checked ?? true,
+    server_purchase_enabled: document.getElementById('evtServerPurchase')?.checked ?? true,
+    purchase_event_mode: selectedMode,
+    purchase_delay_minutes: Math.max(1, Math.min(1440, isNaN(delayMinutesVal) ? 30 : delayMinutesVal))
+  };
+
+  fetch('/api/admin/meta/tracking-settings', {
+    method: 'PUT',
+    headers: getAdminAuthHeaders(),
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !data.success) {
+      throw new Error((data && data.message) || 'Failed to save event settings.');
+    }
+    return data;
+  })
+  .then(() => {
+    if (typeof showToast === 'function') {
+      showToast('Meta event tracking settings saved successfully!');
+    }
+    loadMetaTrackingData();
+  })
+  .catch(err => {
+    alert('Error: ' + err.message);
+  });
+}
+
+window.loadMetaTrackingData = loadMetaTrackingData;
+window.renderMetaTrackingUI = renderMetaTrackingUI;
+window.openAddMetaPixelModal = openAddMetaPixelModal;
+window.openEditMetaPixelModal = openEditMetaPixelModal;
+window.closeMetaPixelModal = closeMetaPixelModal;
+window.saveMetaPixelForm = saveMetaPixelForm;
+window.applyActiveMetaPixelSelection = applyActiveMetaPixelSelection;
+window.setActiveMetaPixel = setActiveMetaPixel;
+window.setDefaultMetaPixel = setDefaultMetaPixel;
+window.promptDeleteMetaPixel = promptDeleteMetaPixel;
+window.closeMetaDeleteModal = closeMetaDeleteModal;
+window.executeDeleteMetaPixel = executeDeleteMetaPixel;
+window.toggleMetaMasterSwitch = toggleMetaMasterSwitch;
+window.saveMetaTrackingSettings = saveMetaTrackingSettings;
+
+// =========================================================================
+// PHASE 8: PURCHASE EVENT CONTROL & QUEUE JAVASCRIPT HANDLERS
+// =========================================================================
+
+function handlePurchaseModeChange() {
+  const selectedModeEl = document.querySelector('input[name="metaPurchaseMode"]:checked');
+  const mode = selectedModeEl ? selectedModeEl.value : 'instant';
+  const delayContainer = document.getElementById('metaDelayMinutesContainer');
+  if (delayContainer) {
+    delayContainer.style.display = (mode === 'delay') ? 'block' : 'none';
+  }
+}
+
+let META_PURCHASE_QUEUE_STATE = {
+  page: 1,
+  isLoading: false,
+};
+
+function loadMetaPurchaseQueue(page = 1) {
+  META_PURCHASE_QUEUE_STATE.page = page;
+  META_PURCHASE_QUEUE_STATE.isLoading = true;
+
+  const status = document.getElementById('metaQueueFilterStatus')?.value || '';
+  const mode = document.getElementById('metaQueueFilterMode')?.value || '';
+  const search = document.getElementById('metaQueueSearchInput')?.value || '';
+
+  const params = new URLSearchParams({
+    page: String(page),
+    per_page: '25'
+  });
+  if (status) params.append('status', status);
+  if (mode) params.append('mode', mode);
+  if (search) params.append('search', search);
+
+  const tbody = document.getElementById('metaPurchasesTableBody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#94A3B8;">Loading purchase queue...</td></tr>';
+  }
+
+  fetch('/api/admin/meta/purchases?' + params.toString(), {
+    headers: getAdminAuthHeaders()
+  })
+  .then(r => r.json())
+  .then(res => {
+    META_PURCHASE_QUEUE_STATE.isLoading = false;
+    if (!res || !res.success || !Array.isArray(res.data)) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#DC2626;">Failed to load purchase events.</td></tr>';
+      return;
+    }
+    renderMetaPurchaseQueueTable(res.data, res.pagination);
+  })
+  .catch(err => {
+    META_PURCHASE_QUEUE_STATE.isLoading = false;
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#DC2626;">Error: ' + escapeHtml(err.message) + '</td></tr>';
+  });
+}
+
+function renderMetaPurchaseQueueTable(items, pagination) {
+  const tbody = document.getElementById('metaPurchasesTableBody');
+  if (!tbody) return;
+
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:#94A3B8;">No Purchase events found matching criteria.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = items.map((it, idx) => {
+    const isSent = it.server_status === 'sent';
+    const isHeld = it.server_status === 'held';
+    const isScheduled = it.server_status === 'scheduled';
+    const isFailed = it.server_status === 'failed';
+
+    let statusBadge = '<span style="display:inline-block;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#F1F5F9;color:#64748B;">' + escapeHtml(it.server_status) + '</span>';
+    if (isSent) {
+      statusBadge = '<span style="display:inline-block;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#DCFCE7;color:#15803D;">● Sent</span>';
+    } else if (isHeld) {
+      statusBadge = '<span style="display:inline-block;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#FEF3C7;color:#B45309;">⏸ Held</span>';
+    } else if (isScheduled) {
+      statusBadge = '<span style="display:inline-block;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#EFF6FF;color:#1D4ED8;">⏰ Scheduled</span>';
+    } else if (isFailed) {
+      statusBadge = '<span style="display:inline-block;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#FEE2E2;color:#B91C1C;">✕ Failed</span>';
+    }
+
+    const sourceBadge = (it.order_source === 'LANDING')
+      ? '<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;background:#F3E8FF;color:#7E22CE;">LANDING</span>'
+      : '<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;background:#E0F2FE;color:#0369A1;">STORE</span>';
+
+    const modeBadge = '<span style="text-transform:capitalize;font-size:12px;font-weight:600;color:#334155;">' + escapeHtml(it.purchase_mode || 'instant') + '</span>';
+
+    const orderNo = it.order_id || '-';
+    const eventId = it.event_id || '-';
+    const scheduledTime = it.scheduled_at ? new Date(it.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : '—';
+    const sentTime = it.sent_at ? new Date(it.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : '—';
+    const attempts = (it.attempt_count !== undefined && it.attempt_count !== null) ? it.attempt_count : 0;
+
+    let actions = '<span style="color:#CBD5E1;font-size:12px;">—</span>';
+    if (isHeld) {
+      actions = `<button type="button" class="btn-primary-teal" onclick="releaseMetaPurchase(${it.id})" style="padding:4px 10px;font-size:11.5px;font-weight:700;background:#004D40;" title="Release Held Purchase to Meta CAPI">🚀 Release</button>`;
+    } else if (isFailed || (isScheduled && it.is_due)) {
+      const canRetry = attempts < 5;
+      actions = `<button type="button" class="btn-primary-teal" onclick="retryMetaPurchase(${it.id})" style="padding:4px 10px;font-size:11.5px;font-weight:700;background:#D97706;cursor:${canRetry ? 'pointer' : 'not-allowed'};opacity:${canRetry ? '1' : '0.5'};" ${canRetry ? '' : 'disabled title="Max attempts reached"'} title="Retry dispatch to Meta CAPI">🔄 Retry</button>`;
+    }
+
+    return `
+      <tr>
+        <td style="font-weight:700;color:#0F172A;font-size:12.5px;">${escapeHtml(orderNo)}</td>
+        <td>${sourceBadge}</td>
+        <td style="font-family:monospace;font-size:11.5px;color:#475569;">${escapeHtml(eventId)}</td>
+        <td>${modeBadge}</td>
+        <td>${statusBadge}</td>
+        <td style="font-size:12px;color:#64748B;">${scheduledTime}</td>
+        <td style="font-size:12px;color:#64748B;">${sentTime}</td>
+        <td style="text-align:center;font-size:12px;font-weight:600;color:#334155;">${attempts}</td>
+        <td style="text-align:right;">${actions}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function releaseMetaPurchase(id) {
+  if (!confirm('Are you sure you want to release this held Purchase event to Meta CAPI?')) return;
+
+  fetch(`/api/admin/meta/purchases/${id}/release`, {
+    method: 'POST',
+    headers: getAdminAuthHeaders()
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res && res.success) {
+      if (typeof showToast === 'function') showToast('Held Purchase event released to Meta CAPI!');
+      loadMetaPurchaseQueue(META_PURCHASE_QUEUE_STATE.page);
+    } else {
+      alert('Failed to release purchase event: ' + ((res && res.message) || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    alert('Network error while releasing purchase: ' + err.message);
+  });
+}
+
+function retryMetaPurchase(id) {
+  fetch(`/api/admin/meta/purchases/${id}/retry`, {
+    method: 'POST',
+    headers: getAdminAuthHeaders()
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res && res.success) {
+      if (typeof showToast === 'function') showToast('Purchase event successfully retried and sent to Meta!');
+      loadMetaPurchaseQueue(META_PURCHASE_QUEUE_STATE.page);
+    } else {
+      alert('Retry failed: ' + ((res && res.message) || 'Unknown error'));
+      loadMetaPurchaseQueue(META_PURCHASE_QUEUE_STATE.page);
+    }
+  })
+  .catch(err => {
+    alert('Network error while retrying purchase: ' + err.message);
+  });
+}
+
+function triggerProcessDelayedPurchases() {
+  const btn = document.getElementById('btnProcessDelayedPurchases');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+  }
+
+  fetch('/api/admin/meta/purchases/process-delayed', {
+    method: 'POST',
+    headers: getAdminAuthHeaders(),
+    body: JSON.stringify({ limit: 50 })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '⚡ Process Delayed Now';
+    }
+    if (res && res.success) {
+      if (typeof showToast === 'function') {
+        showToast(res.message || 'Delayed purchases processed successfully!');
+      }
+      loadMetaPurchaseQueue(1);
+    } else {
+      alert('Error processing delayed purchases: ' + ((res && res.message) || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '⚡ Process Delayed Now';
+    }
+    alert('Network error while processing delayed purchases: ' + err.message);
+  });
+}
+
+window.handlePurchaseModeChange = handlePurchaseModeChange;
+window.loadMetaPurchaseQueue = loadMetaPurchaseQueue;
+window.releaseMetaPurchase = releaseMetaPurchase;
+window.retryMetaPurchase = retryMetaPurchase;
+window.triggerProcessDelayedPurchases = triggerProcessDelayedPurchases;
+
+// =========================================================================
+// PHASE 9: PURCHASE RULE ENGINE JAVASCRIPT HANDLERS
+// =========================================================================
+
+let META_RULE_EDIT_ID = null; // null = Add mode, number = Edit mode
+
+/**
+ * Load all meta purchase rules from the API and render the table.
+ * Also syncs the auto_rules_enabled toggle from settings.
+ */
+function loadMetaRules() {
+  const tbody = document.getElementById('metaRulesTableBody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#94A3B8;">Loading rules...</td></tr>';
+  }
+
+  fetch('/api/admin/meta/rules', {
+    headers: getAdminAuthHeaders()
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (!res || !res.success) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#DC2626;">Failed to load rules.</td></tr>';
+      return;
+    }
+    renderMetaRulesTable(res.rules || []);
+  })
+  .catch(err => {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:#DC2626;">Error: ${escapeHtml(err.message)}</td></tr>`;
+  });
+}
+
+/**
+ * Render the purchase rules table.
+ */
+function renderMetaRulesTable(rules) {
+  const tbody = document.getElementById('metaRulesTableBody');
+  if (!tbody) return;
+
+  if (!rules || rules.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#94A3B8;">No purchase rules configured. Click "+ Add Rule" to create one.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rules.map((rule, idx) => {
+    const isActive = rule.is_active;
+    const activeBadge = isActive
+      ? '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#DCFCE7;color:#15803D;">Active</span>'
+      : '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#F1F5F9;color:#64748B;">Inactive</span>';
+
+    const modeBadge = {
+      instant: '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11.5px;font-weight:700;background:#DCFCE7;color:#15803D;">Instant</span>',
+      delay:   '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11.5px;font-weight:700;background:#EFF6FF;color:#1D4ED8;">Delay ' + (rule.delay_minutes > 0 ? rule.delay_minutes + 'min' : '') + '</span>',
+      hold:    '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11.5px;font-weight:700;background:#FEF3C7;color:#B45309;">Hold</span>',
+    }[rule.action_mode] || escapeHtml(rule.action_mode);
+
+    const conditionText = `${escapeHtml(rule.condition_field)} ${escapeHtml(rule.operator)} ${escapeHtml(rule.condition_value)}`;
+
+    return `
+      <tr>
+        <td style="font-size:12px;color:#94A3B8;">${rule.priority}</td>
+        <td style="font-weight:600;color:#0F172A;font-size:13px;">${escapeHtml(rule.rule_name)}</td>
+        <td style="font-size:12px;color:#475569;">${rule.priority}</td>
+        <td style="font-family:monospace;font-size:12px;color:#334155;">${conditionText}</td>
+        <td>${modeBadge}</td>
+        <td style="text-align:center;">${activeBadge}</td>
+        <td style="text-align:right;">
+          <div style="display:flex;gap:6px;justify-content:flex-end;">
+            <button type="button" class="btn-lp-draft" onclick="openEditRuleModal(${rule.id})" style="padding:4px 10px;font-size:11.5px;font-weight:700;" title="Edit Rule">✏ Edit</button>
+            <button type="button" onclick="deleteMetaRule(${rule.id})" style="padding:4px 10px;font-size:11.5px;font-weight:700;background:#FEE2E2;border:none;border-radius:6px;color:#DC2626;cursor:pointer;" title="Delete Rule">✕ Delete</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/**
+ * Sync the auto_rules_enabled toggle with current settings.
+ */
+function syncAutoRulesToggle(settings) {
+  const toggle = document.getElementById('autoRulesEnabledToggle');
+  const label = document.getElementById('autoRulesEnabledLabel');
+  const infoBox = document.getElementById('autoRulesInfoBox');
+  const enabled = !!(settings && settings.auto_rules_enabled);
+
+  if (toggle) toggle.checked = enabled;
+  if (label) label.textContent = enabled ? 'Auto Rules: ON' : 'Auto Rules: OFF';
+  if (infoBox) infoBox.style.display = enabled ? 'block' : 'none';
+}
+
+/**
+ * Save the auto_rules_enabled toggle value.
+ */
+function saveAutoRulesEnabled() {
+  const toggle = document.getElementById('autoRulesEnabledToggle');
+  const enabled = toggle ? toggle.checked : false;
+
+  const label = document.getElementById('autoRulesEnabledLabel');
+  const infoBox = document.getElementById('autoRulesInfoBox');
+  if (label) label.textContent = enabled ? 'Auto Rules: ON' : 'Auto Rules: OFF';
+  if (infoBox) infoBox.style.display = enabled ? 'block' : 'none';
+
+  fetch('/api/admin/meta/tracking-settings', {
+    method: 'POST',
+    headers: { ...getAdminAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ auto_rules_enabled: enabled })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res && res.success) {
+      if (typeof showToast === 'function') {
+        showToast(enabled ? 'Auto Rules enabled! Rules will now override global Purchase mode.' : 'Auto Rules disabled. Global Purchase mode applies.');
+      }
+    } else {
+      alert('Failed to save Auto Rules setting: ' + ((res && res.message) || 'Unknown error'));
+      // Revert toggle
+      if (toggle) toggle.checked = !enabled;
+      if (label) label.textContent = !enabled ? 'Auto Rules: ON' : 'Auto Rules: OFF';
+      if (infoBox) infoBox.style.display = !enabled ? 'block' : 'none';
+    }
+  })
+  .catch(err => {
+    alert('Network error saving Auto Rules: ' + err.message);
+    if (toggle) toggle.checked = !enabled;
+    if (label) label.textContent = !enabled ? 'Auto Rules: ON' : 'Auto Rules: OFF';
+    if (infoBox) infoBox.style.display = !enabled ? 'block' : 'none';
+  });
+}
+
+/**
+ * Open the Add Rule modal.
+ */
+function openAddRuleModal() {
+  META_RULE_EDIT_ID = null;
+  const titleEl = document.getElementById('ruleModalTitle');
+  const submitBtn = document.getElementById('ruleModalSubmitBtn');
+  if (titleEl) titleEl.textContent = 'Add Purchase Rule';
+  if (submitBtn) submitBtn.textContent = 'Save Rule';
+
+  // Reset all fields
+  ['ruleFieldName', 'ruleFieldPriority', 'ruleFieldConditionValue', 'ruleFieldDelayMinutes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = id === 'ruleFieldPriority' ? '0' : id === 'ruleFieldDelayMinutes' ? '0' : '';
+  });
+  const fieldSel = document.getElementById('ruleFieldConditionField');
+  if (fieldSel) fieldSel.value = 'customer_order_count';
+  const opSel = document.getElementById('ruleFieldOperator');
+  if (opSel) opSel.value = '>=';
+  const modeSel = document.getElementById('ruleFieldActionMode');
+  if (modeSel) modeSel.value = 'instant';
+  const activeSel = document.getElementById('ruleFieldIsActive') || document.getElementById('ruleFieldActive');
+  if (activeSel) activeSel.value = '1';
+
+  const errDiv = document.getElementById('ruleModalError');
+  if (errDiv) { errDiv.style.display = 'none'; errDiv.textContent = ''; }
+
+  handleRuleOperatorChange();
+  handleRuleActionModeChange();
+
+  const modal = document.getElementById('metaRuleModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+/**
+ * Open the Edit Rule modal populated with existing rule data.
+ */
+function openEditRuleModal(ruleId) {
+  fetch('/api/admin/meta/rules', {
+    headers: getAdminAuthHeaders()
+  })
+  .then(r => r.json())
+  .then(res => {
+    const rule = res.rules && res.rules.find(r => r.id === ruleId);
+    if (!rule) { alert('Rule not found.'); return; }
+
+    META_RULE_EDIT_ID = ruleId;
+    const titleEl = document.getElementById('ruleModalTitle');
+    const submitBtn = document.getElementById('ruleModalSubmitBtn');
+    if (titleEl) titleEl.textContent = 'Edit Purchase Rule';
+    if (submitBtn) submitBtn.textContent = 'Update Rule';
+
+    const nameEl = document.getElementById('ruleFieldName');
+    if (nameEl) nameEl.value = rule.rule_name || '';
+    const prioEl = document.getElementById('ruleFieldPriority');
+    if (prioEl) prioEl.value = rule.priority || 0;
+    const activeEl = document.getElementById('ruleFieldIsActive') || document.getElementById('ruleFieldActive');
+    if (activeEl) activeEl.value = rule.is_active ? '1' : '0';
+
+    const fieldEl = document.getElementById('ruleFieldConditionField');
+    if (fieldEl) fieldEl.value = rule.condition_field || 'customer_order_count';
+    const opEl = document.getElementById('ruleFieldOperator');
+    if (opEl) opEl.value = rule.operator || '>=';
+    const valEl = document.getElementById('ruleFieldConditionValue');
+    if (valEl) valEl.value = rule.condition_value || '';
+    const modeEl = document.getElementById('ruleFieldActionMode');
+    if (modeEl) modeEl.value = rule.action_mode || 'instant';
+    const delayEl = document.getElementById('ruleFieldDelayMinutes');
+    if (delayEl) delayEl.value = rule.delay_minutes || 0;
+
+    const errDiv = document.getElementById('ruleModalError');
+    if (errDiv) { errDiv.style.display = 'none'; errDiv.textContent = ''; }
+
+    handleRuleOperatorChange();
+    handleRuleActionModeChange();
+
+    const modal = document.getElementById('metaRuleModal');
+    if (modal) modal.style.display = 'flex';
+  })
+  .catch(err => {
+    alert('Failed to load rule for editing: ' + err.message);
+  });
+}
+
+/**
+ * Close the rule modal.
+ */
+function closeRuleModal() {
+  const modal = document.getElementById('metaRuleModal');
+  if (modal) modal.style.display = 'none';
+  META_RULE_EDIT_ID = null;
+}
+
+/**
+ * Handle operator change.
+ */
+function handleRuleOperatorChange() {
+  // Operator updated
+}
+
+/**
+ * Show/hide the delay minutes field based on action mode selection.
+ */
+function handleRuleActionModeChange() {
+  const mode = document.getElementById('ruleFieldActionMode')?.value;
+  const delayContainer = document.getElementById('ruleDelayMinutesContainer');
+  if (delayContainer) delayContainer.style.opacity = (mode === 'delay') ? '1' : '0.4';
+}
+
+/**
+ * Placeholder: update operators hint based on selected field (extensibility).
+ */
+function updateRuleOperators() {
+  // No dynamic update needed — approved operators valid across numeric/string fields.
+}
+
+/**
+ * Submit the Add or Edit rule form.
+ */
+function submitRuleModal() {
+  const submitBtn = document.getElementById('ruleModalSubmitBtn');
+  const errDiv = document.getElementById('ruleModalError');
+  if (errDiv) { errDiv.style.display = 'none'; errDiv.textContent = ''; }
+
+  const ruleName     = document.getElementById('ruleFieldName')?.value.trim();
+  const priority     = parseInt(document.getElementById('ruleFieldPriority')?.value || '0', 10);
+  const activeEl     = document.getElementById('ruleFieldIsActive') || document.getElementById('ruleFieldActive');
+  const isActive     = activeEl ? (activeEl.value === '1') : true;
+  const field        = document.getElementById('ruleFieldConditionField')?.value;
+  const operator     = document.getElementById('ruleFieldOperator')?.value;
+  const condVal      = document.getElementById('ruleFieldConditionValue')?.value.trim();
+  const actionMode   = document.getElementById('ruleFieldActionMode')?.value;
+  const delayMinutes = parseInt(document.getElementById('ruleFieldDelayMinutes')?.value || '0', 10);
+
+  // Basic client-side validation
+  if (!ruleName || ruleName.length < 2) {
+    if (errDiv) { errDiv.textContent = 'Rule Name is required (minimum 2 characters).'; errDiv.style.display = 'block'; }
+    return;
+  }
+  if (!condVal) {
+    if (errDiv) { errDiv.textContent = 'Condition Value is required.'; errDiv.style.display = 'block'; }
+    return;
+  }
+  if (field !== 'order_source' && isNaN(parseFloat(condVal))) {
+    if (errDiv) { errDiv.textContent = 'Condition Value must be a valid number.'; errDiv.style.display = 'block'; }
+    return;
+  }
+
+  const payload = {
+    rule_name:             ruleName,
+    priority:              priority,
+    is_active:             isActive,
+    condition_field:       field,
+    operator:              operator,
+    condition_value:       condVal,
+    action_mode:           actionMode,
+    delay_minutes:         delayMinutes,
+  };
+
+  const isEdit = META_RULE_EDIT_ID !== null;
+  const url = isEdit ? `/api/admin/meta/rules/${META_RULE_EDIT_ID}` : '/api/admin/meta/rules';
+  const method = isEdit ? 'PUT' : 'POST';
+
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
+
+  fetch(url, {
+    method: method,
+    headers: { ...getAdminAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = isEdit ? 'Update Rule' : 'Save Rule'; }
+    if (res && res.success) {
+      closeRuleModal();
+      loadMetaRules();
+      if (typeof showToast === 'function') {
+        showToast(isEdit ? 'Purchase rule updated successfully!' : 'Purchase rule created successfully!');
+      }
+    } else {
+      const errorMsg = (res && res.errors)
+        ? (Array.isArray(res.errors) ? res.errors.join('; ') : JSON.stringify(res.errors))
+        : ((res && res.message) || 'Unknown error');
+      if (errDiv) { errDiv.textContent = errorMsg; errDiv.style.display = 'block'; }
+    }
+  })
+  .catch(err => {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = isEdit ? 'Update Rule' : 'Save Rule'; }
+    if (errDiv) { errDiv.textContent = 'Network error: ' + err.message; errDiv.style.display = 'block'; }
+  });
+}
+
+/**
+ * Delete a purchase rule by ID.
+ */
+function deleteMetaRule(id) {
+  if (!confirm('Are you sure you want to delete this purchase rule? This cannot be undone.')) return;
+
+  fetch(`/api/admin/meta/rules/${id}`, {
+    method: 'DELETE',
+    headers: getAdminAuthHeaders()
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res && res.success) {
+      loadMetaRules();
+      if (typeof showToast === 'function') showToast('Purchase rule deleted.');
+    } else {
+      alert('Failed to delete rule: ' + ((res && res.message) || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    alert('Network error deleting rule: ' + err.message);
+  });
+}
+
+window.loadMetaRules = loadMetaRules;
+window.openAddRuleModal = openAddRuleModal;
+window.openEditRuleModal = openEditRuleModal;
+window.closeRuleModal = closeRuleModal;
+window.submitRuleModal = submitRuleModal;
+window.deleteMetaRule = deleteMetaRule;
+window.saveAutoRulesEnabled = saveAutoRulesEnabled;
+window.syncAutoRulesToggle = syncAutoRulesToggle;
+window.handleRuleOperatorChange = handleRuleOperatorChange;
+window.handleRuleActionModeChange = handleRuleActionModeChange;
+window.updateRuleOperators = updateRuleOperators;
 
 // Bangladesh Cities
 const BD_CITIES = [

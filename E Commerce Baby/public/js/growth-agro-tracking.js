@@ -35,6 +35,7 @@
 
       var payload = {
         event_name: eventName,
+        event_id: data.event_id ? String(data.event_id) : null,
         entity_type: data.entity_type || null,
         entity_id: data.entity_id ? String(data.entity_id) : null,
         cta_identifier: data.cta_identifier || null,

@@ -1,5 +1,5 @@
 @php
-  $pixelId = trim(\App\Models\Setting::get('facebook_pixel', '') ?? '');
+  $pixelId = trim(app(\App\Services\MetaTrackingConfigService::class)->getActivePixelId() ?? '');
   $isLandingSuccess = request()->is('product/*/success/*') || request()->routeIs('landing.order.success');
   $lpSlug = isset($landingPage) && is_object($landingPage) && !empty($landingPage->slug) ? $landingPage->slug : ($landingPageSlug ?? null);
   $orderNumber = isset($order) && is_array($order) && !empty($order['order_number']) ? $order['order_number'] : (request()->route('orderNumber') ?? null);
