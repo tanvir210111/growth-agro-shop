@@ -1593,7 +1593,7 @@
         if (this.completedPurchases.has(order.order_number)) {
           return this.purchaseEvents.get(order.order_number) || null;
         }
-        const eventId = order.event_id || ('evt_pur_' + String(order.order_number).replace(/[^A-Za-z0-9]/g, '_'));
+        const eventId = order.event_id || ('evt_pur_' + String(order.order_number).replace(/[^A-Za-z0-9_]/g, '_'));
         const eventTime = order.event_time || (order.created_at ? new Date(order.created_at).toISOString() : new Date().toISOString());
         const eventObj = {
           event: "purchase",
@@ -1605,7 +1605,17 @@
             transaction_id: order.order_number,
             value: order.total,
             currency: order.currency || "BDT",
-            shipping: order.delivery_charge || 0
+            shipping: order.delivery_charge || 0,
+            items: [
+              {
+                item_id: order.product_id || "chicken-booster",
+                item_name: order.product || "Chicken Booster",
+                item_variant: order.variant_id || "variant-2",
+                variant_name: order.variant || "",
+                price: order.subtotal || order.total,
+                quantity: order.quantity || 1
+              }
+            ]
           }
         };
         this.completedPurchases.add(order.order_number);
