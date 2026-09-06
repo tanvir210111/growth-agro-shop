@@ -1515,18 +1515,9 @@
     }
 
     let addToCartFired = false;
-    // AddToCart Event (Fires ONLY when user clicks order CTA buttons, once per session)
+    // AddToCart Event (Fires on user CTA clicks; Meta Pixel deduplicated once per session)
     function fireAddToCartOnce() {
-      if (addToCartFired) return;
-      const dedupeKey = 'meta_tracked_addtocart_' + LANDING_PAGE_SLUG;
-      if (sessionStorage.getItem(dedupeKey)) {
-        addToCartFired = true;
-        return;
-      }
-
       const atcEventId = 'atc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-      addToCartFired = true;
-      sessionStorage.setItem(dedupeKey, '1');
 
       let subtotalVal = 0;
       let totalItems = 0;
@@ -1543,34 +1534,43 @@
       const fallbackPrice = {{ (float)($firstPkgPrice ?? 0) }};
       const orderValue = subtotalVal > 0 ? subtotalVal : fallbackPrice;
 
-      if (META_ADD_TO_CART_ENABLED && typeof window.fbq === 'function') {
-        window.fbq('track', 'AddToCart', {
-          content_ids: ['{{ addslashes($landingPage->product_id ?: $landingPage->slug) }}'],
-          content_name: '{{ addslashes($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name)) }}',
-          content_type: 'product',
-          @if(!empty($firstPkgPrice) && $firstPkgPrice > 0)
-          value: orderValue > 0 ? orderValue : fallbackPrice,
-          @endif
-          currency: 'BDT',
-          num_items: totalItems > 0 ? totalItems : 1
-        }, {
-          eventID: atcEventId
-        });
+      // Meta Pixel & Internal Tracking: guarded once per session
+      const dedupeKey = 'meta_tracked_addtocart_' + LANDING_PAGE_SLUG;
+      if (!sessionStorage.getItem(dedupeKey)) {
+        if (addToCartFired) return;
+        addToCartFired = true;
+        sessionStorage.setItem(dedupeKey, '1');
+
+        if (META_ADD_TO_CART_ENABLED && typeof window.fbq === 'function') {
+          window.fbq('track', 'AddToCart', {
+            content_ids: ['{{ addslashes($landingPage->product_id ?: $landingPage->slug) }}'],
+            content_name: '{{ addslashes($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name)) }}',
+            content_type: 'product',
+            @if(!empty($firstPkgPrice) && $firstPkgPrice > 0)
+            value: orderValue > 0 ? orderValue : fallbackPrice,
+            @endif
+            currency: 'BDT',
+            num_items: totalItems > 0 ? totalItems : 1
+          }, {
+            eventID: atcEventId
+          });
+        }
+
+        if (window.GrowthAgroTracking) {
+          window.GrowthAgroTracking.track('add_to_cart', {
+            event_id: atcEventId,
+            entity_type: 'landing_page',
+            entity_id: LANDING_PAGE_SLUG,
+            event_value: orderValue > 0 ? orderValue : fallbackPrice,
+            properties: {
+              items_count: totalItems > 0 ? totalItems : 1,
+              currency: 'BDT'
+            }
+          });
+        }
       }
 
-      if (window.GrowthAgroTracking) {
-        window.GrowthAgroTracking.track('add_to_cart', {
-          event_id: atcEventId,
-          entity_type: 'landing_page',
-          entity_id: LANDING_PAGE_SLUG,
-          event_value: orderValue > 0 ? orderValue : fallbackPrice,
-          properties: {
-            items_count: totalItems > 0 ? totalItems : 1,
-            currency: 'BDT'
-          }
-        });
-      }
-
+      // Web GTM DataLayer Push: always emitted for Tag Assistant and GTM triggers
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
         event: 'add_to_cart',
