@@ -1594,6 +1594,29 @@
       });
     }
 
+    // Deduplication guard for browser Meta Pixel InitiateCheckout to prevent dual execution between Blade & Web GTM
+    (function() {
+      if (typeof window.fbq !== 'function' || window._fbq_initiate_checkout_proxy_installed) return;
+      window._fbq_initiate_checkout_proxy_installed = true;
+      var _trackedIcEvents = {};
+      var _rawFbq = window.fbq;
+      window.fbq = new Proxy(_rawFbq, {
+        apply: function(target, thisArg, args) {
+          if (args[0] === 'track' && args[1] === 'InitiateCheckout') {
+            var opts = args[3];
+            var eid = (opts && typeof opts === 'object') ? (opts.eventID || opts.eventId) : null;
+            if (eid) {
+              if (_trackedIcEvents[eid]) {
+                return;
+              }
+              _trackedIcEvents[eid] = true;
+            }
+          }
+          return Reflect.apply(target, thisArg, args);
+        }
+      });
+    })();
+
     let checkoutStartedFired = false;
     // InitiateCheckout Event (Fires at most ONCE per landing-page session via CTA click OR direct scroll)
     function fireInitiateCheckoutOnce() {
