@@ -8,11 +8,15 @@
   <meta name="robots" content="index, follow">
 
   <!-- Favicon & Social Meta -->
-  <link rel="icon" type="image/png" href="../../assets/images/chicken-booster-logo.png">
+  <link rel="icon" type="image/webp" href="../../assets/images/chicken-booster-logo.webp">
   <meta property="og:title" content="চিকেন বুস্টার (Broiler & Layer Booster) — Growth Agro">
   <meta property="og:description" content="রোগমুক্ত, দ্রুত মোটাতাজা ও সুস্থ মুরগি পেতে চান? জানুন প্রাকৃতিক সমাধান।">
-  <meta property="og:image" content="../../assets/images/chicken-booster-product.png">
+  <meta property="og:image" content="../../assets/images/chicken-booster-product.webp">
   <meta property="og:type" content="product">
+
+  <!-- Preload Critical Above-The-Fold Hero Product Images -->
+  <link rel="preload" as="image" href="../../assets/images/layer-booster-product.webp" type="image/webp">
+  <link rel="preload" as="image" href="../../assets/images/broiler-booster-product.webp" type="image/webp">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -177,10 +181,11 @@
       justify-content: center;
     }
     .brand-logo-img {
-      height: 48px;
+      height: 65px;
       width: auto;
-      max-width: 180px;
+      max-width: 220px;
       object-fit: contain;
+      transition: transform 0.2s ease;
     }
 
     .btn-header-order {
@@ -208,7 +213,7 @@
     @media (max-width: 600px) {
       .btn-hotline span.phone-text { display: none; }
       .btn-hotline { padding: 8px 12px; min-width: 40px; min-height: 40px; }
-      .brand-logo-img { height: 40px; }
+      .brand-logo-img { height: 56px; max-width: 170px; }
       .btn-header-order { padding: 8px 14px; font-size: 13px; }
     }
 
@@ -285,21 +290,21 @@
     /* Left Card: Layer Farm Background (Sharp & Natural, no blur) */
     .hero-card.card-layer {
       background: linear-gradient(180deg, rgba(3, 54, 61, 0.22) 0%, rgba(3, 54, 61, 0.42) 55%, rgba(0, 0, 0, 0.38) 100%),
-                  url('../../assets/images/layer-farm-bg.jpg') center bottom / cover no-repeat;
+                  url('../../assets/images/layer-farm-bg.webp') center bottom / cover no-repeat;
     }
     .hero-card.card-layer:hover {
       background: linear-gradient(180deg, rgba(3, 54, 61, 0.12) 0%, rgba(3, 54, 61, 0.32) 55%, rgba(0, 0, 0, 0.28) 100%),
-                  url('../../assets/images/layer-farm-bg.jpg') center bottom / cover no-repeat;
+                  url('../../assets/images/layer-farm-bg.webp') center bottom / cover no-repeat;
     }
 
     /* Right Card: Broiler Farm Background (Sharp & Natural, no blur) */
     .hero-card.card-broiler {
       background: linear-gradient(180deg, rgba(3, 54, 61, 0.22) 0%, rgba(3, 54, 61, 0.42) 55%, rgba(0, 0, 0, 0.38) 100%),
-                  url('../../assets/images/broiler-farm-bg.jpg') center bottom / cover no-repeat;
+                  url('../../assets/images/broiler-farm-bg.webp') center bottom / cover no-repeat;
     }
     .hero-card.card-broiler:hover {
       background: linear-gradient(180deg, rgba(3, 54, 61, 0.12) 0%, rgba(3, 54, 61, 0.32) 55%, rgba(0, 0, 0, 0.28) 100%),
-                  url('../../assets/images/broiler-farm-bg.jpg') center bottom / cover no-repeat;
+                  url('../../assets/images/broiler-farm-bg.webp') center bottom / cover no-repeat;
     }
 
     /* Product Jar (Layer.png / Broiler.png) placed firmly on the ground */
@@ -1100,7 +1105,7 @@
       </a>
 
       <a href="./" class="brand-logo-wrap">
-        <img src="../../assets/images/chicken-booster-logo.png" alt="Growth Agro Logo" class="brand-logo-img" onerror="this.src='../../pic/Untitled design.png'">
+        <img src="../../assets/images/chicken-booster-logo.webp" alt="Growth Agro Logo" class="brand-logo-img" width="220" height="65" loading="eager" fetchpriority="high">
       </a>
 
       <a href="#checkout-form-section" class="btn-header-order">
@@ -1117,15 +1122,15 @@
       <h2 class="hero-alert-hook">"মুরগি দুর্বল? রোগে আক্রান্ত? উৎপাদনে ক্ষতি?"</h2>
       <h1 class="hero-main-title">"রোগমুক্ত, দ্রুত মোটাতাজা ও সুস্থ মুরগি পেতে চান? জানুন প্রাকৃতিক সমাধান"</h1>
 
-      <!-- Dual Product Visuals (Left: Layer.png, Right: Broiler.png on Farm Ground) -->
+      <!-- Dual Product Visuals (Left: Layer Booster, Right: Broiler Booster on Farm Ground) -->
       <div class="hero-dual-grid">
         <div class="hero-card card-layer" onclick="selectAndScroll('layer-1kg')" title="Layer Booster — ক্লিক করে অর্ডার করুন">
           <span class="hero-card-tag">Layer Booster (১ কেজি)</span>
-          <img src="../../pic/Layer.png" alt="Layer Booster" class="hero-prod-img" loading="eager" onerror="this.src='../../assets/images/layer-booster-product.png'">
+          <img src="../../assets/images/layer-booster-product.webp" alt="Layer Booster" class="hero-prod-img" width="300" height="450" loading="eager" fetchpriority="high">
         </div>
         <div class="hero-card card-broiler" onclick="selectAndScroll('broiler-1kg')" title="Broiler Booster — ক্লিক করে অর্ডার করুন">
           <span class="hero-card-tag">Broiler Booster (১ কেজি)</span>
-          <img src="../../pic/Broiler.png" alt="Broiler Booster" class="hero-prod-img" loading="eager" onerror="this.src='../../assets/images/broiler-booster-product.png'">
+          <img src="../../assets/images/broiler-booster-product.webp" alt="Broiler Booster" class="hero-prod-img" width="300" height="450" loading="eager" fetchpriority="high">
         </div>
       </div>
 
@@ -1157,7 +1162,7 @@
         <!-- Review 1: Broiler Booster Experience -->
         <div class="video-card" onclick="document.getElementById('checkout-form-section').scrollIntoView({behavior: 'smooth'})">
           <div class="video-thumb-wrap">
-            <img src="../../assets/images/review-broiler.jpg" alt="Broiler Booster Farmer Testimonial" loading="lazy">
+            <img src="../../assets/images/review-broiler.webp" alt="Broiler Booster Farmer Testimonial" width="400" height="223" loading="lazy" decoding="async">
             <div class="play-btn-overlay"></div>
           </div>
           <div class="video-card-info">
@@ -1168,7 +1173,7 @@
         <!-- Review 2: Layer Booster Experience -->
         <div class="video-card" onclick="document.getElementById('checkout-form-section').scrollIntoView({behavior: 'smooth'})">
           <div class="video-thumb-wrap">
-            <img src="../../assets/images/review-layer.jpg" alt="Layer Booster Hen Farm Review" loading="lazy">
+            <img src="../../assets/images/review-layer.webp" alt="Layer Booster Hen Farm Review" width="400" height="223" loading="lazy" decoding="async">
             <div class="play-btn-overlay"></div>
           </div>
           <div class="video-card-info">
@@ -1303,7 +1308,7 @@
       <h3 class="section-pill-title">ব্যবহার বিধিঃ</h3>
 
       <div class="usage-card">
-        <img src="../../assets/images/chicks-feeder.jpg" alt="Poultry Feeder and Chicks Drinking" class="usage-card-img" loading="lazy">
+        <img src="../../assets/images/chicks-feeder.webp" alt="Poultry Feeder and Chicks Drinking" class="usage-card-img" width="800" height="447" loading="lazy" decoding="async">
         <div class="usage-instruction-text">
           ১০০০ মুরগির জন্য ১০০ গ্রাম পাউডার পানির সাথে মিশিয়ে ব্যবহার করতে হবে। পরবর্তী দিন থেকে ৫ গ্রাম হারে বেশি ব্যবহার করতে হবে।
         </div>
@@ -1352,6 +1357,7 @@
                 <label class="form-label" for="customer-phone">আপনার মোবাইল নাম্বারটি লিখুন <span class="req">*</span></label>
                 <input type="tel" id="customer-phone" class="form-control" placeholder="01XXXXXXXXX (১১ ডিজিট)" required maxlength="11" pattern="^01[3-9]\d{8}$">
                 <div class="field-error">সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন (যেমন: 017XXXXXXXX)</div>
+                <div id="courier-risk-badge" style="display:none; margin-top:8px;"></div>
               </div>
 
               <!-- Product Selection Cards -->
@@ -1361,7 +1367,7 @@
                 <!-- Option 1: Broiler Booster -->
                 <div class="product-option-card selected" data-variant="broiler-1kg" data-product="broiler-booster" data-price="2300" data-name="Broiler Booster (১ কেজি)">
                   <input type="checkbox" name="product-select-cb" value="broiler-1kg" class="prod-radio" checked style="accent-color: var(--btn-red);">
-                  <img src="../../pic/Broiler.png" alt="Broiler Booster" class="prod-thumb" onerror="this.src='../../assets/images/broiler-booster-product.png'">
+                  <img src="../../assets/images/broiler-booster-product.webp" alt="Broiler Booster" class="prod-thumb" width="50" height="75" loading="lazy" decoding="async">
                   <div class="prod-meta">
                     <div class="prod-title">Broiler Booster (১ কেজি)</div>
                     <div class="prod-price">৳২,৩০০</div>
@@ -1378,7 +1384,7 @@
                 <!-- Option 2: Layer Booster -->
                 <div class="product-option-card" data-variant="layer-1kg" data-product="layer-booster" data-price="2300" data-name="Layer Booster (১ কেজি)">
                   <input type="checkbox" name="product-select-cb" value="layer-1kg" class="prod-radio" style="accent-color: var(--btn-red);">
-                  <img src="../../pic/Layer.png" alt="Layer Booster" class="prod-thumb" onerror="this.src='../../assets/images/layer-booster-product.png'">
+                  <img src="../../assets/images/layer-booster-product.webp" alt="Layer Booster" class="prod-thumb" width="50" height="75" loading="lazy" decoding="async">
                   <div class="prod-meta">
                     <div class="prod-title">Layer Booster (১ কেজি)</div>
                     <div class="prod-price">৳২,৩০০</div>
@@ -1435,18 +1441,23 @@
                     </td>
                     <td class="text-right" id="review-delivery-charge" style="vertical-align: top; padding-top: 14px; color: #16a34a; font-weight: bold;">ফ্রি ডেলিভারি</td>
                   </tr>
+                  <tr id="review-advance-row" style="display:none; color:#be123c; font-weight:700; background:#fff1f2;">
+                    <td style="padding:8px 4px;">অগ্রিম ডেলিভারি চার্জ (বিকাশ/নগদ)</td>
+                    <td class="text-right" id="review-advance-amount" style="padding:8px 4px;">৳ 0.00</td>
+                  </tr>
                   <tr class="total-row">
-                    <td>সর্বমোট</td>
+                    <td>সর্বমোট বিল</td>
                     <td class="text-right" id="review-grand-total">৳ 0.00</td>
                   </tr>
                 </tfoot>
               </table>
 
-              <!-- Cash On Delivery Notice -->
-              <div class="payment-badge-box">
+              <!-- Cash On Delivery & Dynamic Risk Payment Notice -->
+              <div class="payment-badge-box" id="payment-badge-box">
                 <b>ক্যাশ অন ডেলিভারি (Cash on delivery)</b><br>
                 পণ্য হাতে পেয়ে চেক করে সম্পূর্ণ মূল্য পরিশোধ করুন। অগ্রিম কোনো টাকা দিতে হবে না।
               </div>
+
 
               <!-- Google and Gemini Privacy Standards Compliance Notice -->
               <div class="privacy-standard-badge">
@@ -1521,9 +1532,19 @@
   <!-- ==========================================================================
        10. CLIENT-SIDE EVENT DISPATCHER & PRIVACY-COMPLIANT ORDER ENGINE
        ========================================================================== -->
+  <script src="/js/growth-agro-tracking.js"></script>
   <script>
   (function() {
     "use strict";
+
+    // Initialize Growth Agro Unified Landing Page Tracking
+    if (window.GrowthAgroTracking) {
+      window.GrowthAgroTracking.track('page_view', {
+        entity_type: 'landing_page',
+        entity_id: 'chicken-booster',
+        page_path: '/products/chicken-booster/'
+      });
+    }
 
     const CATALOG = {
       "broiler-1kg": { productId: "chicken-booster", variantId: "broiler-1kg", sku: "CB-AGRO-01", name: "Broiler Booster (১ কেজি)", price: 2300 },
@@ -1565,15 +1586,88 @@
 
     const TrackingBus = {
       completedPurchases: new Set(),
+      purchaseEvents: new Map(),
       trackPurchase: function(order) {
-        if (!order || this.completedPurchases.has(order.order_number)) return;
+        if (!order || !order.order_number) return;
+        if (this.completedPurchases.has(order.order_number)) {
+          return this.purchaseEvents.get(order.order_number) || null;
+        }
+        const eventId = order.event_id || ('evt_pur_' + String(order.order_number).replace(/[^A-Za-z0-9]/g, '_'));
+        const eventTime = order.event_time || (order.created_at ? new Date(order.created_at).toISOString() : new Date().toISOString());
+        const eventObj = {
+          event: "purchase",
+          event_id: eventId,
+          event_time: eventTime,
+          transaction_id: order.order_number,
+          order_number: order.order_number,
+          ecommerce: {
+            transaction_id: order.order_number,
+            value: order.total,
+            currency: order.currency || "BDT",
+            shipping: order.delivery_charge || 0
+          }
+        };
         this.completedPurchases.add(order.order_number);
-        emitDataLayerEvent("purchase", { ecommerce: { transaction_id: order.order_number, value: order.total } });
+        this.purchaseEvents.set(order.order_number, eventObj);
+        emitDataLayerEvent("purchase", eventObj);
+        return eventObj;
       }
     };
+    window.trackingEvents = TrackingBus;
+
+    let phoneCheckTimer = null;
+    let customerRiskData = null;
+
+    async function checkPhoneRisk() {
+      const raw = phoneInput.value.trim().replace(/[^0-9]/g, '');
+      const badge = document.getElementById('courier-risk-badge');
+      if (!/^01[3-9]\d{8}$/.test(raw)) {
+        if (badge) badge.style.display = 'none';
+        customerRiskData = null;
+        recalculate();
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/checkout/courier-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: raw, deliveryZone: currentDeliveryZone })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          customerRiskData = data;
+          if (badge) {
+            badge.style.display = 'block';
+            if (data.requires_advance) {
+              badge.innerHTML = '<div style="padding: 10px 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; font-size: 13px; color: #9f1239; line-height: 1.5;">' +
+                '⚠️ <b>ডেলিভারি চার্জ অগ্রিম প্রযোজ্য:</b> কুরিয়ার হিস্ট্রি অনুযায়ী আপনার ডেলিভারি সাকসেস রেট <b>' + data.success_rate + '% (≤ ৮০%)</b>। অর্ডারটি নিশ্চিত করতে ডেলিভারি চার্জ (ঢাকা: ৳৮০ / ঢাকার বাইরে: ৳১৫০) অগ্রিম বিকাশ/নগদে পরিশোধ করতে হবে। প্রোডাক্টের পুরো মূল্য ক্যাশ অন ডেলিভারি।' +
+                '</div>';
+            } else {
+              badge.innerHTML = '<div style="padding: 8px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 13px; color: #166534; line-height: 1.4;">' +
+                '✅ <b>১০০% ক্যাশ অন ডেলিভারি প্রযোজ্য:</b> আপনার জন্য কোনো অগ্রিম পেমেন্টের প্রয়োজন নেই। সম্পূর্ণ মূল্য পণ্য পেয়ে পরিশোধ করুন।' +
+                '</div>';
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Courier risk check note:', e.message);
+      } finally {
+        recalculate();
+      }
+    }
+
+    phoneInput.addEventListener('input', function() {
+      clearTimeout(phoneCheckTimer);
+      phoneCheckTimer = setTimeout(checkPhoneRisk, 500);
+    });
+    phoneInput.addEventListener('blur', checkPhoneRisk);
 
     function recalculate() {
       const itemsBody = document.getElementById('review-items-body');
+      const advanceRow = document.getElementById('review-advance-row');
+      const advanceAmountEl = document.getElementById('review-advance-amount');
+      const paymentBadgeBox = document.getElementById('payment-badge-box');
       let subtotalVal = 0;
       let totalQty = 0;
       let rowsHtml = '';
@@ -1615,10 +1709,45 @@
         }
       });
 
+      const requiresAdvance = customerRiskData && customerRiskData.requires_advance;
+      const isInsideDhaka = currentDeliveryZone === 'inside';
+      const advanceAmount = requiresAdvance ? (isInsideDhaka ? 80 : 150) : 0;
+
       if (itemsBody) itemsBody.innerHTML = rowsHtml;
       if (reviewSubtotalRow) reviewSubtotalRow.textContent = "৳ " + subtotalVal.toLocaleString('en-US') + ".00";
-      if (reviewGrandTotal) reviewGrandTotal.textContent = "৳ " + subtotalVal.toLocaleString('en-US') + ".00";
-      if (btnOrderText) btnOrderText.textContent = "অর্ডার করুন ৳ " + subtotalVal.toLocaleString('en-US') + ".00";
+
+      if (advanceRow && advanceAmountEl) {
+        if (requiresAdvance) {
+          advanceRow.style.display = 'table-row';
+          advanceAmountEl.textContent = "৳ " + advanceAmount + ".00 (অগ্রিম)";
+        } else {
+          advanceRow.style.display = 'none';
+        }
+      }
+
+      if (paymentBadgeBox) {
+        if (requiresAdvance) {
+          paymentBadgeBox.innerHTML = '<b>অগ্রিম ডেলিভারি চার্জ: ৳' + advanceAmount + ' (বিকাশ/নগদ)</b><br>' +
+            'আপনার পূর্ববর্তী কুরিয়ার রিটার্ন রেটের কারণে ডেলিভারি চার্জ অগ্রিম প্রযোজ্য। <b>পণ্যের সম্পূর্ণ মূল্য ৳' + subtotalVal.toLocaleString('en-US') + ' ক্যাশ অন ডেলিভারিতে</b> পণ্য হাতে পেয়ে পরিশোধ করবেন।';
+          paymentBadgeBox.style.background = '#fff1f2';
+          paymentBadgeBox.style.borderColor = '#fecdd3';
+          paymentBadgeBox.style.color = '#9f1239';
+        } else {
+          paymentBadgeBox.innerHTML = '<b>ক্যাশ অন ডেলিভারি (Cash on delivery)</b><br>' +
+            'পণ্য হাতে পেয়ে চেক করে সম্পূর্ণ মূল্য পরিশোধ করুন। অগ্রিম কোনো টাকা দিতে হবে না।';
+          paymentBadgeBox.style.background = '#f8fafc';
+          paymentBadgeBox.style.borderColor = '#e2e8f0';
+          paymentBadgeBox.style.color = '#334155';
+        }
+      }
+
+      const grandTotal = subtotalVal + advanceAmount;
+      if (reviewGrandTotal) reviewGrandTotal.textContent = "৳ " + grandTotal.toLocaleString('en-US') + ".00";
+      if (btnOrderText) {
+        btnOrderText.textContent = requiresAdvance
+          ? "অর্ডার কনফার্ম করুন (অগ্রিম ডেলিভারি ৳" + advanceAmount + ")"
+          : "অর্ডার করুন ৳ " + subtotalVal.toLocaleString('en-US') + ".00";
+      }
     }
 
     function setVariantQuantity(variantKey, newQty) {
@@ -1665,7 +1794,11 @@
     deliveryRadios.forEach(radio => {
       radio.addEventListener('change', function() {
         currentDeliveryZone = this.value;
-        recalculate();
+        if (customerRiskData) {
+          checkPhoneRisk();
+        } else {
+          recalculate();
+        }
       });
     });
 
@@ -1755,7 +1888,7 @@
       orderSpinner.style.display = 'inline-block';
       btnOrderText.textContent = "অর্ডার প্রসেস হচ্ছে...";
 
-      // Authoritative payload
+      // Authoritative payload with source & campaign tagging
       const orderPayload = {
         productId: "chicken-booster",
         product_id: "chicken-booster",
@@ -1772,6 +1905,8 @@
         customer_phone: customerPhone,
         address: customerAddress,
         shipping_address: customerAddress,
+        source: "LANDING_PAGE",
+        advance_paid: 0,
         customer: {
           name: customerName,
           phone: customerPhone,
@@ -1779,7 +1914,7 @@
           delivery_zone: currentDeliveryZone
         },
         paymentMethod: "Cash on Delivery",
-        notes: "Growth Agro Cloned Landing Page"
+        notes: "Growth Agro Dedicated Campaign Landing Page (/products/chicken-booster/)"
       };
 
       try {
@@ -1798,14 +1933,40 @@
 
           TrackingBus.trackPurchase(order);
 
+          // Growth Agro Unified Purchase Event Tracking
+          if (window.GrowthAgroTracking) {
+            window.GrowthAgroTracking.track('purchase', {
+              entity_type: 'order',
+              entity_id: orderNo,
+              event_id: order.event_id || ('evt_pur_' + orderNo.replace(/[^A-Za-z0-9]/g, '_')),
+              event_time: order.event_time,
+              event_value: totalVal,
+              properties: {
+                transaction_id: orderNo,
+                order_number: orderNo,
+                items_count: totalQuantity,
+                currency: 'BDT',
+                landing_page: '/products/chicken-booster/'
+              }
+            });
+          }
+
           // Show Success Modal
           modalOrderNumber.textContent = orderNo;
           modalProductName.textContent = primaryName;
-          modalTotalAmount.textContent = "৳" + totalVal.toLocaleString('en-US') + " (ক্যাশ অন ডেলিভারি)";
+          
+          if (order.advance_amount && order.advance_amount > 0) {
+            modalTotalAmount.textContent = "৳" + totalVal.toLocaleString('en-US') + " (অগ্রিম ডেলিভারি: ৳" + order.advance_amount + ", পণ্য মূল্য: ক্যাশ অন ডেলিভারি)";
+          } else {
+            modalTotalAmount.textContent = "৳" + totalVal.toLocaleString('en-US') + " (১০০% ক্যাশ অন ডেলিভারি)";
+          }
           successModal.classList.add('active');
 
           // Reset Form
           form.reset();
+          customerRiskData = null;
+          const badge = document.getElementById('courier-risk-badge');
+          if (badge) badge.style.display = 'none';
           variantQuantities = { "broiler-1kg": 1, "layer-1kg": 0 };
           recalculate();
         } else {
@@ -1821,15 +1982,71 @@
       }
     });
 
+
     // Select and scroll helper for interactive hero cards
     window.selectAndScroll = function(variantKey) {
       if (variantKey) {
         variantQuantities[variantKey] = Math.max(1, variantQuantities[variantKey] || 0);
+        if (window.GrowthAgroTracking) {
+          window.GrowthAgroTracking.trackCta('hero-card-' + variantKey, 'chicken-booster');
+        }
       }
       recalculate();
       const checkout = document.getElementById('checkout-form-section');
       if (checkout) checkout.scrollIntoView({ behavior: 'smooth' });
     };
+
+    // Growth Agro Unified CTA Click Tracking
+    document.querySelectorAll('.btn-header-order, .btn-red-cta, a[href="#checkout-form-section"]').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        if (this.getAttribute('href') === '#checkout-form-section' || (this.hash && this.hash === '#checkout-form-section')) {
+          e.preventDefault();
+          var targetEl = document.getElementById('checkout-form-section');
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+        if (window.GrowthAgroTracking) window.GrowthAgroTracking.trackCta('btn-hero-order', 'chicken-booster');
+      });
+    });
+
+    if (btnSubmit) {
+      btnSubmit.addEventListener('click', function() {
+        if (window.GrowthAgroTracking) window.GrowthAgroTracking.trackCta('btn-checkout-submit', 'chicken-booster');
+      }, { passive: true });
+    }
+
+    // Checkout Started tracking (fired once upon interacting with checkout form)
+    var checkoutStartedFired = false;
+    function fireCheckoutStarted() {
+      if (!checkoutStartedFired) {
+        checkoutStartedFired = true;
+        if (window.GrowthAgroTracking) {
+          window.GrowthAgroTracking.track('checkout_started', {
+            entity_type: 'landing_page',
+            entity_id: 'chicken-booster',
+            page_path: '/products/chicken-booster/',
+            properties: {
+              landing_page: '/products/chicken-booster/'
+            }
+          });
+        }
+      }
+    }
+
+    if (form) {
+      form.addEventListener('focusin', fireCheckoutStarted, { once: true, passive: true });
+    }
+    var checkoutSectionEl = document.getElementById('checkout-form-section');
+    if (checkoutSectionEl && window.IntersectionObserver) {
+      var observer = new IntersectionObserver(function(entries) {
+        if (entries[0].isIntersecting) {
+          fireCheckoutStarted();
+          observer.disconnect();
+        }
+      }, { threshold: 0.2 });
+      observer.observe(checkoutSectionEl);
+    }
 
     // Initial calculation
     recalculate();

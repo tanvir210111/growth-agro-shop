@@ -1586,12 +1586,34 @@
 
     const TrackingBus = {
       completedPurchases: new Set(),
+      purchaseEvents: new Map(),
       trackPurchase: function(order) {
-        if (!order || this.completedPurchases.has(order.order_number)) return;
+        if (!order || !order.order_number) return;
+        if (this.completedPurchases.has(order.order_number)) {
+          return this.purchaseEvents.get(order.order_number) || null;
+        }
+        const eventId = order.event_id || ('evt_pur_' + String(order.order_number).replace(/[^A-Za-z0-9]/g, '_'));
+        const eventTime = order.event_time || (order.created_at ? new Date(order.created_at).toISOString() : new Date().toISOString());
+        const eventObj = {
+          event: "purchase",
+          event_id: eventId,
+          event_time: eventTime,
+          transaction_id: order.order_number,
+          order_number: order.order_number,
+          ecommerce: {
+            transaction_id: order.order_number,
+            value: order.total,
+            currency: order.currency || "BDT",
+            shipping: order.delivery_charge || 0
+          }
+        };
         this.completedPurchases.add(order.order_number);
-        emitDataLayerEvent("purchase", { ecommerce: { transaction_id: order.order_number, value: order.total } });
+        this.purchaseEvents.set(order.order_number, eventObj);
+        emitDataLayerEvent("purchase", eventObj);
+        return eventObj;
       }
     };
+    window.trackingEvents = TrackingBus;
 
     let phoneCheckTimer = null;
     let customerRiskData = null;
@@ -1916,8 +1938,12 @@
             window.GrowthAgroTracking.track('purchase', {
               entity_type: 'order',
               entity_id: orderNo,
+              event_id: order.event_id || ('evt_pur_' + orderNo.replace(/[^A-Za-z0-9]/g, '_')),
+              event_time: order.event_time,
               event_value: totalVal,
               properties: {
+                transaction_id: orderNo,
+                order_number: orderNo,
                 items_count: totalQuantity,
                 currency: 'BDT',
                 landing_page: '/products/chicken-booster/'

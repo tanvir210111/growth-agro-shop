@@ -484,21 +484,20 @@ async function calculateOrderTotals(productId, variantId, quantity, deliveryZone
       });
     });
 
-    // Merge legacy aliases if this slug exists in PRODUCTS (e.g. chicken-booster legacy variant aliases)
+    // Merge explicit catalogue variants if this slug exists in PRODUCTS (explicit catalogue variants take precedence)
     if (PRODUCTS[lp.slug] && PRODUCTS[lp.slug].variants) {
       for (const [vKey, vObj] of Object.entries(PRODUCTS[lp.slug].variants)) {
-        if (!packageMap[vKey]) {
-          const lObj = {
-            id: vKey,
-            name: vObj.name,
-            price: vObj.price,
-            regularPrice: vObj.regularPrice || vObj.price,
-            weight: vObj.weight || '',
-            image: ''
-          };
-          packageMap[vKey] = lObj;
-          packageMap[vKey.toLowerCase()] = lObj;
-        }
+        const lObj = {
+          id: vKey,
+          name: vObj.name,
+          price: vObj.price,
+          regularPrice: vObj.regularPrice || vObj.price,
+          weight: vObj.weight || '',
+          freeDelivery: vObj.freeDelivery !== undefined ? vObj.freeDelivery : true,
+          image: ''
+        };
+        packageMap[vKey] = lObj;
+        packageMap[vKey.toLowerCase()] = lObj;
       }
     }
 
@@ -624,7 +623,9 @@ async function calculateOrderTotals(productId, variantId, quantity, deliveryZone
     const chargeOutside = parseFloat(dConfig.charge_outside_dhaka) || 0;
 
     let deliveryCharge = 0;
-    if (dType !== 'free') {
+    if (authPkg.freeDelivery === false) {
+      deliveryCharge = isInside ? (chargeInside || 60) : (chargeOutside || 120);
+    } else if (dType !== 'free') {
       if (isSame) {
         deliveryCharge = chargeInside;
       } else if (isInside) {

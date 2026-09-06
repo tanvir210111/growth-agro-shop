@@ -31,7 +31,7 @@ const { execSync } = require('child_process');
 const { validateBdPhone, calculateHeuristicTrustScore, normalizeCourierResponse, maskPhone } = require('./server/courier');
 
 let passedTests = 0;
-let totalTests = 27;
+let totalTests = 28;
 
 function pass(num, msg) {
   console.log(`✓ [PASS] ${num}. ${msg}`);
@@ -391,6 +391,15 @@ async function runPhase10Tests() {
     pass(27, 'Landing page JSON flow audit (node audit_all.js)');
   } catch (err) {
     fail(27, 'audit_all.js audit', err);
+  }
+
+  // Step 28: Phase 10 Tracking Time & Event ID Consistency Verification
+  try {
+    const p10Output = execSync('node test_phase10_tracking_consistency.js', { encoding: 'utf8' });
+    console.log(p10Output);
+    pass(28, 'Phase 10 Tracking Time & Event ID Consistency Verification Suite');
+  } catch (err) {
+    fail(28, 'test_phase10_tracking_consistency.js', err);
   }
 
   console.log(`\n========================================`);

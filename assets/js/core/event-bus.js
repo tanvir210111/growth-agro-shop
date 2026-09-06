@@ -31,8 +31,19 @@ class EventDispatcher {
     this.listeners = new Map();
     this.isDebug = false;
     this.completedPurchases = new Set();
+    this.purchaseEvents = new Map();
     this.hasInitiatedCheckout = false;
     this.hasViewedContent = false;
+
+    // Support ?debug_tracking=1 in URL
+    if (typeof window !== 'undefined' && window.location && window.location.search) {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('debug_tracking') === '1') {
+          this.isDebug = true;
+        }
+      } catch (e) {}
+    }
   }
 
   /**
@@ -75,7 +86,7 @@ class EventDispatcher {
    */
   emit(eventName, payload = {}) {
     const eventId = payload.event_id || generateEventId();
-    const eventTime = new Date().toISOString();
+    const eventTime = payload.event_time || new Date().toISOString();
 
     const pageInfo = typeof window !== 'undefined' ? {
       url: window.location.href,
@@ -91,8 +102,9 @@ class EventDispatcher {
       ...payload
     };
 
-    // Ensure event_id is preserved
+    // Ensure event_id and event_time are preserved canonically
     eventObject.event_id = eventId;
+    eventObject.event_time = eventTime;
 
     // Push clean object into window.dataLayer
     if (typeof window !== 'undefined' && Array.isArray(window.dataLayer)) {
@@ -112,7 +124,13 @@ class EventDispatcher {
 
     // Debug logging without PII
     if (this.isDebug) {
-      console.log(`%c[DataLayer Event: ${eventName}]`, 'color: #10b981; font-weight: bold;', eventObject);
+      console.log(`%c[DataLayer Event: ${eventName}]`, 'color: #10b981; font-weight: bold;', {
+        event: eventObject.event,
+        event_id: eventObject.event_id,
+        event_time: eventObject.event_time,
+        transaction_id: eventObject.transaction_id || eventObject.order_number,
+        ecommerce: eventObject.ecommerce
+      });
     }
 
     return eventObject;
@@ -220,6 +238,7 @@ class EventDispatcher {
   /**
    * 6. purchase - Triggered strictly ONLY after successful server order confirmation
    * Contains authoritative server-confirmed order values. Zero customer PII in dataLayer.
+   * Preserves canonical server event_id and canonical server event_time.
    */
   trackPurchase(orderResult) {
     if (!orderResult || !orderResult.order_number) {
@@ -229,16 +248,33 @@ class EventDispatcher {
 
     const orderNumber = orderResult.order_number;
 
-    // Prevent duplicate purchase event firing for same order ID
+    // Prevent duplicate purchase event firing for same order ID; return null to signal deduplication
     if (this.completedPurchases.has(orderNumber)) {
+      if (this.isDebug) {
+        console.log(`[EventBus] Duplicate purchase event blocked for order ${orderNumber}`);
+      }
       return null;
     }
-    this.completedPurchases.add(orderNumber);
 
-    const eventId = `evt_pur_${orderNumber.replace(/[^A-Za-z0-9]/g, '_')}`;
+    // Canonical event_id from server or deterministic fallback
+    const eventId = orderResult.event_id || `evt_pur_${String(orderNumber).replace(/[^A-Za-z0-9]/g, '_')}`;
+    
+    // Server canonical event_time: Browser must NOT generate a new Date() for purchase
+    const eventTime = orderResult.event_time || (orderResult.created_at ? new Date(orderResult.created_at).toISOString() : new Date().toISOString());
 
-    return this.emit("purchase", {
+    if (this.isDebug) {
+      console.log(`%c[EventBus] Canonical Purchase Registered`, 'color: #0284c7; font-weight: bold;', {
+        order_number: orderNumber,
+        event_id: eventId,
+        event_time: eventTime,
+        value: orderResult.total,
+        currency: orderResult.currency || "BDT"
+      });
+    }
+
+    const purchaseEventObj = this.emit("purchase", {
       event_id: eventId,
+      event_time: eventTime,
       transaction_id: orderNumber,
       order_number: orderNumber,
       ecommerce: {
@@ -258,6 +294,18 @@ class EventDispatcher {
         ]
       }
     });
+
+    this.completedPurchases.add(orderNumber);
+    this.purchaseEvents.set(orderNumber, purchaseEventObj);
+
+    return purchaseEventObj;
+  }
+
+  /**
+   * Retrieve cached canonical purchase event by order number
+   */
+  getPurchaseEvent(orderNumber) {
+    return this.purchaseEvents.get(orderNumber) || null;
   }
 }
 

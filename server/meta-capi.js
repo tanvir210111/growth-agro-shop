@@ -406,8 +406,19 @@ async function sendEvent(eventData = {}) {
     };
   }
 
-  // Phase 8: Purchase Event Control (Single Authoritative Queue in Laravel)
+  // Phase 8 & 10: Purchase Event Control & sGTM CAPI Deduplication
   if (eventName === 'Purchase') {
+    // Rule 3: If Meta CAPI is already exclusively dispatched by Server-Side GTM, do not create a second Node.js -> Meta Graph API purchase path
+    if (config.meta_capi_sender === 'sgtm' || process.env.META_CAPI_SENDER === 'sgtm') {
+      return {
+        success: true,
+        skipped: true,
+        sender: 'sgtm',
+        reason: 'Meta CAPI is exclusively dispatched by Server-Side GTM',
+        event_id: eventId
+      };
+    }
+
     const purchaseMode = config.purchase_event_mode || 'instant';
     if (purchaseMode !== 'instant') {
       return {
@@ -439,9 +450,22 @@ async function sendEvent(eventData = {}) {
   const preparedUserData = buildUserData(eventData.user_data || {});
   const customData = eventData.custom_data && typeof eventData.custom_data === 'object' ? eventData.custom_data : {};
 
+  // Parse canonical event_time: Browser time = Server canonical event time (in unix epoch seconds)
+  let eventTimeSeconds = Math.floor(Date.now() / 1000);
+  if (eventData.event_time) {
+    if (typeof eventData.event_time === 'number') {
+      eventTimeSeconds = eventData.event_time > 1e11 ? Math.floor(eventData.event_time / 1000) : Math.floor(eventData.event_time);
+    } else if (typeof eventData.event_time === 'string') {
+      const parsed = Date.parse(eventData.event_time);
+      if (!isNaN(parsed) && parsed > 0) {
+        eventTimeSeconds = Math.floor(parsed / 1000);
+      }
+    }
+  }
+
   const payloadObject = {
     event_name: eventName,
-    event_time: Math.floor(Date.now() / 1000),
+    event_time: eventTimeSeconds,
     event_id: eventId,
     event_source_url: eventData.event_source_url || 'https://growthagro.shop/',
     action_source: 'website',

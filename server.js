@@ -49,6 +49,15 @@ const LARAVEL_PORT = parseInt(process.env.LARAVEL_PORT, 10) || 8000;
 const LARAVEL_HOST = process.env.LARAVEL_HOST || '127.0.0.1';
 let laravelProcess = null;
 
+// Phase 10: Server Canonical Event Timing & Latency Diagnostics Buffer
+const trackingDiagnosticsLog = [];
+function recordTrackingTiming(item) {
+  trackingDiagnosticsLog.push(item);
+  if (trackingDiagnosticsLog.length > 100) {
+    trackingDiagnosticsLog.shift();
+  }
+}
+
 function isStorefrontRoute(pathname) {
   if (pathname === '/' || pathname === '') return true;
   // Allow landing page preview route through to Laravel
@@ -445,11 +454,17 @@ const server = http.createServer(async (req, res) => {
         // Server-Side Deduplication / Idempotency Check
         const existingOrder = findDuplicateOrder(phone, productId, variantId, idempotencyKey);
         if (existingOrder) {
+          const replayEventId = 'evt_pur_' + String(existingOrder.order_number).replace(/[^A-Za-z0-9]/g, '_');
+          const replayEventTime = existingOrder.created_at || new Date().toISOString();
+
           return sendJson(res, 200, {
             success: true,
             is_replay: true,
             order: {
               order_number: existingOrder.order_number,
+              event_id: replayEventId,
+              event_time: replayEventTime,
+              transaction_id: existingOrder.order_number,
               status: existingOrder.status,
               product: existingOrder.product_name || calculated.product.shortName,
               variant: existingOrder.variant_name || calculated.variant.name,
@@ -461,7 +476,21 @@ const server = http.createServer(async (req, res) => {
               payment_method: existingOrder.payment_method,
               source: existingOrder.source,
               fraud_level: existingOrder.fraud_level,
-              advance_amount: existingOrder.advance_amount
+              advance_amount: existingOrder.advance_amount,
+              created_at: existingOrder.created_at
+            },
+            tracking: {
+              event: 'purchase',
+              event_id: replayEventId,
+              event_time: replayEventTime,
+              transaction_id: existingOrder.order_number,
+              order_number: existingOrder.order_number,
+              ecommerce: {
+                transaction_id: existingOrder.order_number,
+                value: existingOrder.total,
+                currency: existingOrder.currency || 'BDT',
+                shipping: existingOrder.delivery_charge || 0
+              }
             }
           });
         }
@@ -552,44 +581,63 @@ const server = http.createServer(async (req, res) => {
           console.warn('[Bridge Error]', bridgeErr.message);
         }
 
-        // Server-Side Meta CAPI: Dispatch Purchase event with deterministic event_id = purchase_{orderNumber}
-        try {
-          const metaCapi = require('./server/meta-capi');
-          const cookieHeader = req.headers.cookie || '';
-          const fbpMatch = cookieHeader.match(/_fbp=([^;]+)/);
-          const fbcMatch = cookieHeader.match(/_fbc=([^;]+)/);
-          const purchaseEventId = 'purchase_' + newOrder.order_number;
+        // Server creates canonical event_id = evt_pur_<order_number> and canonical event_time = T
+        const canonicalEventId = 'evt_pur_' + String(newOrder.order_number).replace(/[^A-Za-z0-9]/g, '_');
+        const canonicalEventTime = newOrder.created_at || new Date().toISOString();
 
-          metaCapi.sendEvent({
-            event_name: 'Purchase',
-            event_id: purchaseEventId,
-            event_source_url: req.headers.referer || `http://${req.headers.host}${newOrder.landing_page || '/'}`,
-            user_data: {
-              phone: newOrder.phone,
-              customer_name: newOrder.customer_name,
-              city: newOrder.delivery_zone === 'inside' ? 'dhaka' : null,
-              country: 'bd',
-              external_id: newOrder.order_number,
-              client_ip_address: clientIp,
-              client_user_agent: req.headers['user-agent'] || '',
-              fbp: fbpMatch ? fbpMatch[1] : null,
-              fbc: fbcMatch ? fbcMatch[1] : null
-            },
-            custom_data: {
-              currency: newOrder.currency || 'BDT',
-              value: Number(newOrder.total || 0),
-              num_items: Number(newOrder.quantity || 1),
-              content_ids: [newOrder.product_name || calculated.product.shortName || 'chicken-booster']
-            }
-          }).then((capiRes) => {
-            if (capiRes && capiRes.deferred) {
-              console.log(`[Meta CAPI] Purchase dispatch deferred for ${newOrder.order_number}: ${capiRes.reason}`);
-            }
-          }).catch((capiErr) => {
-            console.warn('[Meta CAPI] Purchase dispatch failed (fail-open):', capiErr.message);
-          });
-        } catch (capiErr) {
-          console.warn('[Meta CAPI] Error initiating purchase dispatch (fail-open):', capiErr.message);
+        recordTrackingTiming({
+          order_number: newOrder.order_number,
+          event_id: canonicalEventId,
+          event_time: canonicalEventTime,
+          created_at: newOrder.created_at,
+          server_timestamp_ms: Date.now(),
+          source: newOrder.source,
+          total: newOrder.total,
+          currency: newOrder.currency || 'BDT'
+        });
+
+        // Server-Side Meta CAPI:
+        // Rule 3: If Server-Side GTM (sGTM) is the active CAPI sender, do NOT dispatch from Node.js to avoid duplicate CAPI events.
+        const isSgtmCapiSender = process.env.META_CAPI_SENDER !== 'node';
+        if (!isSgtmCapiSender) {
+          try {
+            const metaCapi = require('./server/meta-capi');
+            const cookieHeader = req.headers.cookie || '';
+            const fbpMatch = cookieHeader.match(/_fbp=([^;]+)/);
+            const fbcMatch = cookieHeader.match(/_fbc=([^;]+)/);
+
+            metaCapi.sendEvent({
+              event_name: 'Purchase',
+              event_id: canonicalEventId,
+              event_time: canonicalEventTime,
+              event_source_url: req.headers.referer || `http://${req.headers.host}${newOrder.landing_page || '/'}`,
+              user_data: {
+                phone: newOrder.phone,
+                customer_name: newOrder.customer_name,
+                city: newOrder.delivery_zone === 'inside' ? 'dhaka' : null,
+                country: 'bd',
+                external_id: newOrder.order_number,
+                client_ip_address: clientIp,
+                client_user_agent: req.headers['user-agent'] || '',
+                fbp: fbpMatch ? fbpMatch[1] : null,
+                fbc: fbcMatch ? fbcMatch[1] : null
+              },
+              custom_data: {
+                currency: newOrder.currency || 'BDT',
+                value: Number(newOrder.total || 0),
+                num_items: Number(newOrder.quantity || 1),
+                content_ids: [newOrder.product_name || calculated.product.shortName || 'chicken-booster']
+              }
+            }).then((capiRes) => {
+              if (capiRes && capiRes.deferred) {
+                console.log(`[Meta CAPI] Purchase dispatch deferred for ${newOrder.order_number}: ${capiRes.reason}`);
+              }
+            }).catch((capiErr) => {
+              console.warn('[Meta CAPI] Purchase dispatch failed (fail-open):', capiErr.message);
+            });
+          } catch (capiErr) {
+            console.warn('[Meta CAPI] Error initiating purchase dispatch (fail-open):', capiErr.message);
+          }
         }
 
         // Clean public response (no internal DB IDs, no sensitive PII exposure)
@@ -597,6 +645,9 @@ const server = http.createServer(async (req, res) => {
           success: true,
           order: {
             order_number: newOrder.order_number,
+            event_id: canonicalEventId,
+            event_time: canonicalEventTime,
+            transaction_id: newOrder.order_number,
             status: newOrder.status,
             product: newOrder.product_name,
             variant: newOrder.variant_name,
@@ -610,6 +661,19 @@ const server = http.createServer(async (req, res) => {
             fraud_level: newOrder.fraud_level,
             advance_amount: newOrder.advance_amount,
             created_at: newOrder.created_at
+          },
+          tracking: {
+            event: 'purchase',
+            event_id: canonicalEventId,
+            event_time: canonicalEventTime,
+            transaction_id: newOrder.order_number,
+            order_number: newOrder.order_number,
+            ecommerce: {
+              transaction_id: newOrder.order_number,
+              value: newOrder.total,
+              currency: newOrder.currency || 'BDT',
+              shipping: newOrder.delivery_charge || 0
+            }
           }
         });
       } catch (err) {
@@ -870,6 +934,15 @@ const server = http.createServer(async (req, res) => {
         console.error('[Internal Sync Error]', err.message);
         return sendJson(res, 500, { success: false, error: 'Order sync failed: ' + err.message });
       }
+    }
+
+    // 8a-2. Tracking Timing & Latency Diagnostics (GET /api/tracking/timing-diagnostics)
+    if (reqPath === '/api/tracking/timing-diagnostics' && method === 'GET') {
+      return sendJson(res, 200, {
+        success: true,
+        count: trackingDiagnosticsLog.length,
+        events: trackingDiagnosticsLog
+      });
     }
 
     // 8b. Landing Page Tracking Ingestion & Server CAPI Bridge (POST /api/tracking/event)
