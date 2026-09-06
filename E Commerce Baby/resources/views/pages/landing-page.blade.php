@@ -36,6 +36,30 @@
   <!-- Centralized Meta/Facebook Pixel -->
   @include('partials.meta-pixel')
 
+  <!-- Google Tag Manager Configuration & DataLayer Initialization (Privacy-Compliant) -->
+  <meta name="gtm-container-id" content="GTM-TNKT5VTS">
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    (function() {
+      var metaEl = document.querySelector('meta[name="gtm-container-id"]');
+      var metaId = metaEl ? metaEl.getAttribute('content') : null;
+      var queryId = null;
+      try {
+        var params = new URLSearchParams(window.location.search);
+        queryId = params.get('gtm_id');
+      } catch(e) {}
+      window.GTM_CONTAINER_ID = window.GTM_CONTAINER_ID || queryId || metaId || "GTM-TNKT5VTS";
+    })();
+
+    // Official GTM Web Snippet
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer',window.GTM_CONTAINER_ID);
+  </script>
+  <!-- End Google Tag Manager -->
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -875,6 +899,10 @@
   </style>
 </head>
 <body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TNKT5VTS"
+  height="0" width="0" style="display:none;visibility:hidden" id="gtm-noscript"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
 
   <!-- 1. TOP HEADER -->
   <header class="top-header">
@@ -1497,25 +1525,25 @@
       }
 
       const atcEventId = 'atc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+      addToCartFired = true;
+      sessionStorage.setItem(dedupeKey, '1');
+
+      let subtotalVal = 0;
+      let totalItems = 0;
+      if (typeof variantQuantities === 'object') {
+        Object.keys(variantQuantities).forEach(k => {
+          const q = variantQuantities[k] || 0;
+          if (q > 0 && CATALOG[k]) {
+            subtotalVal += CATALOG[k].price * q;
+            totalItems += q;
+          }
+        });
+      }
+
+      const fallbackPrice = {{ (float)($firstPkgPrice ?? 0) }};
+      const orderValue = subtotalVal > 0 ? subtotalVal : fallbackPrice;
 
       if (META_ADD_TO_CART_ENABLED && typeof window.fbq === 'function') {
-        addToCartFired = true;
-        sessionStorage.setItem(dedupeKey, '1');
-        let subtotalVal = 0;
-        let totalItems = 0;
-        if (typeof variantQuantities === 'object') {
-          Object.keys(variantQuantities).forEach(k => {
-            const q = variantQuantities[k] || 0;
-            if (q > 0 && CATALOG[k]) {
-              subtotalVal += CATALOG[k].price * q;
-              totalItems += q;
-            }
-          });
-        }
-
-        const fallbackPrice = {{ (float)($firstPkgPrice ?? 0) }};
-        const orderValue = subtotalVal > 0 ? subtotalVal : fallbackPrice;
-
         window.fbq('track', 'AddToCart', {
           content_ids: ['{{ addslashes($landingPage->product_id ?: $landingPage->slug) }}'],
           content_name: '{{ addslashes($landingPage->product_name ?: ($landingPage->title ?: $landingPage->name)) }}',
@@ -1528,36 +1556,36 @@
         }, {
           eventID: atcEventId
         });
+      }
 
-        if (window.GrowthAgroTracking) {
-          window.GrowthAgroTracking.track('add_to_cart', {
-            event_id: atcEventId,
-            entity_type: 'landing_page',
-            entity_id: LANDING_PAGE_SLUG,
-            event_value: orderValue > 0 ? orderValue : fallbackPrice,
-            properties: {
-              items_count: totalItems > 0 ? totalItems : 1,
-              currency: 'BDT'
-            }
-          });
-        }
-
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({
-          event: 'add_to_cart',
+      if (window.GrowthAgroTracking) {
+        window.GrowthAgroTracking.track('add_to_cart', {
           event_id: atcEventId,
-          ecommerce: {
-            currency: 'BDT',
-            value: orderValue > 0 ? orderValue : fallbackPrice,
-            items: [{
-              item_id: 'chicken-booster',
-              item_name: 'Chicken Booster',
-              price: orderValue > 0 ? orderValue : fallbackPrice,
-              quantity: totalItems > 0 ? totalItems : 1
-            }]
+          entity_type: 'landing_page',
+          entity_id: LANDING_PAGE_SLUG,
+          event_value: orderValue > 0 ? orderValue : fallbackPrice,
+          properties: {
+            items_count: totalItems > 0 ? totalItems : 1,
+            currency: 'BDT'
           }
         });
       }
+
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'add_to_cart',
+        event_id: atcEventId,
+        ecommerce: {
+          currency: 'BDT',
+          value: orderValue > 0 ? orderValue : fallbackPrice,
+          items: [{
+            item_id: 'chicken-booster',
+            item_name: 'Chicken Booster',
+            price: orderValue > 0 ? orderValue : fallbackPrice,
+            quantity: totalItems > 0 ? totalItems : 1
+          }]
+        }
+      });
     }
 
     let checkoutStartedFired = false;
