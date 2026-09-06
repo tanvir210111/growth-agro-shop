@@ -17,6 +17,18 @@
   <!-- Centralized Meta Pixel & PageView -->
   @include('partials.meta-pixel')
 
+  <!-- Google Tag Manager Configuration & DataLayer Initialization -->
+  <meta name="gtm-container-id" content="GTM-TNKT5VTS">
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer',"GTM-TNKT5VTS");
+  </script>
+  <!-- End Google Tag Manager -->
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -334,6 +346,10 @@
   </style>
 </head>
 <body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TNKT5VTS"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
 
   <!-- Minimal Clean Header -->
   <header class="success-header">
@@ -509,6 +525,30 @@
           num_items: {{ array_sum(array_column($order['items'] ?? [], 'quantity')) ?: 1 }}
         }, {
           eventID: purchaseEventId
+        });
+      }
+
+      // Web GTM DataLayer Push: Purchase Event
+      const gtmPurchaseDedupeKey = 'gtm_tracked_purchase_' + orderNo;
+      if (!sessionStorage.getItem(gtmPurchaseDedupeKey)) {
+        sessionStorage.setItem(gtmPurchaseDedupeKey, '1');
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'purchase',
+          event_id: purchaseEventId,
+          ecommerce: {
+            transaction_id: orderNo,
+            value: totalVal,
+            currency: 'BDT',
+            items: {!! json_encode(array_values(array_map(function($it) {
+              return [
+                'item_id' => 'chicken-booster',
+                'item_name' => $it['title'] ?? 'Chicken Booster',
+                'price' => (float)($it['price'] ?? 0),
+                'quantity' => (int)($it['quantity'] ?? 1),
+              ];
+            }, $order['items'] ?? []))) !!}
+          }
         });
       }
     })();

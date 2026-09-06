@@ -40,6 +40,12 @@
   <meta name="gtm-container-id" content="GTM-TNKT5VTS">
   <script>
     window.dataLayer = window.dataLayer || [];
+    var pvEventId = '{{ $pageViewEventId ?? "" }}' || ('pv_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+    window.dataLayer.push({
+      event: 'page_view',
+      event_id: pvEventId,
+      page_location: window.location.href
+    });
     (function() {
       var metaEl = document.querySelector('meta[name="gtm-container-id"]');
       var metaId = metaEl ? metaEl.getAttribute('content') : null;
@@ -1644,6 +1650,37 @@
           eventID: icEventId
         });
       }
+
+      // 3. Web GTM DataLayer Push: InitiateCheckout Event
+      let icSubtotalVal = 0;
+      let icTotalItems = 0;
+      if (typeof variantQuantities === 'object') {
+        Object.keys(variantQuantities).forEach(k => {
+          const q = variantQuantities[k] || 0;
+          if (q > 0 && CATALOG[k]) {
+            icSubtotalVal += CATALOG[k].price * q;
+            icTotalItems += q;
+          }
+        });
+      }
+      const icFallbackPrice = {{ (float)($firstPkgPrice ?? 0) }};
+      const icOrderValue = icSubtotalVal > 0 ? icSubtotalVal : icFallbackPrice;
+
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'initiate_checkout',
+        event_id: icEventId,
+        ecommerce: {
+          currency: 'BDT',
+          value: icOrderValue > 0 ? icOrderValue : icFallbackPrice,
+          items: [{
+            item_id: 'chicken-booster',
+            item_name: 'Chicken Booster',
+            price: icOrderValue > 0 ? icOrderValue : icFallbackPrice,
+            quantity: icTotalItems > 0 ? icTotalItems : 1
+          }]
+        }
+      });
     }
 
     function fireAddToCart() {
