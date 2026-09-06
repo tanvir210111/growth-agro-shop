@@ -1541,6 +1541,22 @@
             }
           });
         }
+
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'add_to_cart',
+          event_id: atcEventId,
+          ecommerce: {
+            currency: 'BDT',
+            value: orderValue > 0 ? orderValue : fallbackPrice,
+            items: [{
+              item_id: 'chicken-booster',
+              item_name: 'Chicken Booster',
+              price: orderValue > 0 ? orderValue : fallbackPrice,
+              quantity: totalItems > 0 ? totalItems : 1
+            }]
+          }
+        });
       }
     }
 
